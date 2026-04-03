@@ -34,7 +34,7 @@ exit('ddd');*/
 
 Hook::listen('adminlogin');
 $appname=lang('appname');
-$navtitle=lang('setting');
+$navtitle=lang('appname');
 
 $do = isset($_GET['do']) ? trim($_GET['do']) : '';
 if($do == 'addPrompt'){

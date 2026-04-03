@@ -49,6 +49,9 @@ if ($operation == 'addsearch') {//增加关键词搜索次数
 }elseif($operation == 'getsearchfoldernum'){
     $appid = isset($_GET['appid']) ? trim($_GET['appid']) : '';
     $pathkeys = isset($_GET['pathkeys']) ? trim($_GET['pathkeys']):'';
+    if(empty($pathkeys)){
+        exit(json_encode(array( 'data' => array())));
+    }
     $pathkeyarr = explode(',',$pathkeys);
     $data = C::t('pichome_folder')->getFolderNumByPathkey($appid,$pathkeyarr);
     exit(json_encode(array( 'data' => $data)));
@@ -90,19 +93,12 @@ elseif ($operation == 'searchmenu_num') {
         $wheresql .= ' and r.ext in(%n) ';
         $para[] = ['mp3','ogg','wav','wmv','flac','aac','asf','aiff','au','mid','ra','rma'];
     }
-    if(isset($_GET['aid'])){
-        $aid = intval($_GET['aid']);
-        $imageRids = [];
-        Hook::listen('search_condition_filter',$imageRids,['aid'=>$aid]);
-        if(!empty($imageRids['rids'])){
-            $wheresql .= ' and r.rid in(%n)';
-            $para[] = $imageRids['rids'];
-        }
-    }
+
     //用户权限等级
     $para[]= $_G['pichomelevel'];
 
     $appid = isset($_GET['appid']) ? [trim($_GET['appid'])] : [-1];
+    $vappids = [];
     //库权限判断部分
     foreach (DB::fetch_all("select appid,path,view,type from %t where isdelete = 0 and appid in(%n)", array('pichome_vapp',$appid)) as $v) {
         if ($v['type'] != 3 && !IO::checkfileexists($v['path'],1)) {
@@ -113,6 +109,19 @@ elseif ($operation == 'searchmenu_num') {
         }
     }
 
+    $imageRids = [];
+    if(isset($_GET['aid'])){
+        $aid = intval($_GET['aid']);
+        $searchparams= array(
+            'appids'=>$vappids,
+            'aid'=>$aid,
+        );
+        Hook::listen('search_condition_filter',$imageRids,$searchparams);
+        if(!empty($imageRids['rids'])){
+            $wheresql .= ' and r.rid in(%n)';
+            $para[] = $imageRids['rids'];
+        }
+    }
     $whererangesql = [];
     //库条件
     if ($vappids) {
@@ -1236,7 +1245,19 @@ elseif ($operation == 'search_menu') {
             $vappids[] = $v['appid'];
         }
     }
-
+    $imageRids = [];
+    if(isset($_GET['aid'])){
+        $aid = intval($_GET['aid']);
+        $searchparams= array(
+            'appids'=>$vappids,
+            'aid'=>$aid,
+        );
+        Hook::listen('search_condition_filter',$imageRids,$searchparams);
+        if(!empty($imageRids['rids'])){
+            $wheresql .= ' and r.rid in(%n)';
+            $para[] = $imageRids['rids'];
+        }
+    }
     $whererangesql = [];
     //库条件
     if ($vappids) {
@@ -2577,7 +2598,7 @@ elseif($operation == 'realfianllypath'){
     if(!$aiKey){
         exit(json_encode(['success'=>false,'msg'=>'lowser AI object']));
     }
-    $force = isset($_GET['isforce']) ? intval($_GET['isforce']):1;
+    $force = isset($_GET['isforce']) ? intval($_GET['isforce']):0;
     $ret=array();
     $data = Hook::listen('imageAiData',$ret,['rid'=>$rid,'isforce'=>$force,'tplid'=>$tplid,'aiKey'=>$aiKey]);
 
@@ -2660,17 +2681,23 @@ elseif($operation == 'realfianllypath'){
         }
     }
     //获取以图搜图任务
-    $imageSearchSetting = getglobal('setting/imageSearch_setting');
-    $allowSearchExts=$imageSearchSetting['exts']?(explode(',',$imageSearchSetting['exts'])):array();
-    if($imageSearchSetting['status'] && $appdata['type'] !=2){
+    $imageSearchFlag = getglobal('setting/imageSearchFlag');
+
+    if($imageSearchFlag && $appdata['type'] !=2){
         //获取待入库的任务
-        $imgtotal = DB::result_first("select count(*) from %t i left join %t r on i.rid = r.rid where r.appid = %s",['image_search','pichome_resources',$appid]);
-        if($imgtotal) {
+
+        Hook::listen('imageSearchTask',$datanums,$appid);
+       /* $imgtotal = DB::result_first("select count(*) from %t i left join %t r on i.rid = r.rid where r.appid = %s",['image_search','pichome_resources',$appid]);
+        if($imagesearchnums){
+            $datanums[] = ['lablename' => lang('imagesearch_stats'), 'data' => $imagesearchnums['completed'] . '/' .  $imagesearchnums['total']];
+        }
+        if($imagesearchnums['imgtotal']) {
             $alimgnum = DB::result_first("select count(*) from %t i left join %t r on i.rid = r.rid where r.appid = %s and i.status = %d",['image_search','pichome_resources',$appid,1]);
 
             $datanums[] = ['lablename' => lang('imagesearch_stats'), 'data' => $alimgnum . '/' . $imgtotal];
             if ($alimgnum < $imgtotal) $queryInterval = 3;
         }
+       */
     }
     if($appdata['type'] == 1 || $appdata['type'] == 3){
         //计算待生成缩略图总文件数
@@ -2686,9 +2713,10 @@ elseif($operation == 'realfianllypath'){
                }
            }
            if ($getthumbnum < $filenum) $queryInterval = 3;
-           $datanums[] = ['lablename' => lang('create_thumb'), 'data' => $getthumbnum . '/' . $filenum];
+           $datanums['thumb'] = ['lablename' => lang('create_thumb'), 'data' => $getthumbnum . '/' . $filenum];
        }
     }
+
     //获取task_record任务列表
     $taskrecorddata = DB::fetch_all("select * from %t where appid = %s",['task_record',$appid,0]);
     foreach($taskrecorddata as $v){

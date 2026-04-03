@@ -482,13 +482,15 @@ class table_lang extends dzz_table
         $this->inittable($lang);
         if(empty($ids)) return true;
 
-        foreach(DB::fetch_all("select skey,svalue from %t where idtype = %d and idvalue In(%n)",array($this->_table,$idtype,$ids)) as $v){
-            preg_match_all('/attach::\d+/',$v['svalue'],$match);
-            foreach($match[0] as $val){
-                $oaid = str_replace('attach::','',$val);
-                C::t('attachment')->delete_by_aid($oaid);
+        foreach(DB::fetch_all("select skey,svalue from %t where idtype = %d and idvalue In(%n)",array($this->_table,$idtype,$ids)) as $value){
+
+            preg_match_all('/path=(\w+)/',$value['svalue'],$match);
+            foreach($match[1] as $v){
+                $aidstr =  dzzdecode($v);
+                $oaid = str_replace('attach::','',$aidstr);
+                C::t('attachment')->addcopy_by_aid($oaid,-1);
             }
-            parent::delete($v['skey']);
+            parent::delete($value['skey']);
 
         }
         //return DB::delete($this->_table, 'idtype = ' . $idtype . ' AND idvalue In(' . dimplode($ids) . ')');

@@ -3,6 +3,7 @@
 <link rel="stylesheet" type="text/css" href="{MOD_PATH}/template/pc/assets/css/details.css?{VERHASH}"/>
 <link rel="stylesheet" type="text/css" href="{MOD_PATH}/template/pc/assets/css/xuanzhuan/index.css?{VERHASH}"/>
 <script type="text/javascript" src="static/vue_components/collectdialog/index.js?{VERHASH}"></script>
+<script type="text/javascript" src="{MOD_PATH}/template/pc/assets/js//tag.js?{VERHASH}"></script>
 <script type="text/javascript" src="static/js/watermark.js?{VERHASH}"></script>
 <script>
 	function CopyTxt(item,text){
@@ -67,7 +68,7 @@
 				DocumentBack:true,
 				DocumentRefresh:1,
 				DocumentHref:'',
-				DocumentAdminId:'$_G[adminid]',
+				DocumentAdminId:'$_G['adminid']',
 				HideInformation: false,
 				IsFullScreen:false,
 				imagesData: {},
@@ -202,7 +203,7 @@
 					this.path = storpath;
 				}
 			}
-			var paths = sessionStorage.getItem('imgs');
+			let paths = sessionStorage.getItem('imgs');
 			if(paths){
 				this.paths = paths.split(',');
 			}
@@ -311,8 +312,8 @@
 					if(item.tag){
 						for(var t in item.tag){
 							var tstr = {
-								key:t,
-								val:item.tag[t]
+								tid:t,
+								tagname:item.tag[t]
 							};
 							tags.push(tstr);
 						}
@@ -412,6 +413,7 @@
 
 			
 			window.onresize = function(){
+				if(!document.getElementById('ImgScroll')) return ;
 				var h = document.getElementById('ImgScroll').clientHeight;
 				document.querySelector('#ImgScroll .el-scrollbar__view').style.lineHeight = h+'px';
 				self.previewSize();
@@ -482,6 +484,7 @@
 		dzzoffice_details.component(key, component)
 	}
 	dzzoffice_details.component('comavatar', comavatar);
+	dzzoffice_details.component('tem_tag', tem_tag);
 	dzzoffice_details.component('international',international);
 	dzzoffice_details.use(DzzCollectdialog);
 	// 屏蔽警告信息
@@ -489,5 +492,4 @@
 	dzzoffice_details.mount('#dzzoffice');
 
 </script>
-
-<!--{template common/container/pc/footer}-->
+</body></html>

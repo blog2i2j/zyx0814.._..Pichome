@@ -122,8 +122,8 @@ elseif($method == 'db_init') {
 	$dbpw = $_config['db'][1]['dbpw'];
 	$dbuser = $_config['db'][1]['dbuser'];
 	$tablepre = $_config['db'][1]['tablepre'];
-	$adminemail = 'admin@oaooa.com';
-	$company = 'pichome';
+	$adminemail = 'admin@yourname.com';
+	$company = 'FilePress';
 
 	$error_msg = array();
 	if(isset($form_db_init_items) && is_array($form_db_init_items)) {
@@ -184,7 +184,12 @@ elseif($method == 'db_init') {
 					$dbhost1=$dbhost;
 				}
 				if(empty($port)) $port='3306';
-				$link =  new mysqli($dbhost1, $dbuser, $dbpw, '', $port, $unix_socket);
+                try {
+                    $link = new mysqli($dbhost1, $dbuser, $dbpw, '', $port, $unix_socket);
+                } catch (\mysqli_sql_exception $e) {
+                    $error_msg =  $e->getMessage();
+                    die($error_msg);
+                }
 				$errno =  $link->connect_errno;
 				$error =  $link->connect_error;
 			}else{
@@ -352,7 +357,7 @@ elseif($method == 'db_init') {
 }
 elseif($method == 'admin_init') {
 	$submit = true;
-	$adminemail = 'admin@oaooa.com';
+	$adminemail = 'admin@yourname.com';
 	$error_msg = array();
 	if(isset($form_admin_init_items) && is_array($form_admin_init_items)) {
 		foreach($form_admin_init_items as $key => $items) {

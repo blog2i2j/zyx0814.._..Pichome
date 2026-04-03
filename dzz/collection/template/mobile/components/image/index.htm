@@ -1,0 +1,48 @@
+<div class="pic-container-scroll">
+	<div class="img-container">
+		<div id="imgContainer" :class="ParamSort.layout.value=='imageList'?'imagelist':''">
+			
+			<template v-if="ParamSort.layout.value=='table'">
+				<!--{template mobile/components/image/model_table}-->
+			</template>
+			<template v-else>
+				<!--{template mobile/components/image/model_other}-->
+			</template>
+			<template  v-if="ParamImages.data.length&&ParamBasic.page>=ParamBasic.totalpage&&!ParamImages.loading&&!ParamImages.valloading">
+				<div style="position: absolute;bottom: 0;left: 0;width: 100%;line-height: 40px;text-align: center;color: var(--content-text);font-size: 14px;">
+					<!--{if {$_G['adminid']} == 1 || $_GET['op'] == 'all'}-->
+					<p>{lang all_completed}</p>
+					<!--{else}-->
+					<p>{lang all_completed1}</p>
+					<!--{/if}-->
+				</div>
+			</template>
+			<template v-if="ParamImages.valloading">
+				<div style="position: absolute;bottom: 0;left: 0;width: 100%;line-height: 40px;text-align: center;color: var(--content-text);font-size: 14px;">
+					<van-loading type="spinner" size="24px">{lang loading}</van-loading>
+				</div>
+			</template>
+			
+			
+		</div>
+		<template v-if="ParamImages.data.length==0&&!ParamImages.loading&&!ParamImages.valloading">
+			<!--{if {$_G['adminid']} == 1  || $_GET['op'] == 'all'}-->
+			<van-empty
+			  class="custom-image"
+			  image="dzz/pichome/image/nodata.svg"
+			  description="{lang no_data}"
+			/>
+			<!--{else}-->
+			<van-empty
+			  class="custom-image"
+			  image="dzz/pichome/image/nodata.svg"
+			  description="{lang no_data1}"
+			/>
+			<!--{/if}-->
+			
+		</template>
+		
+	</div>
+	
+</div>
+<van-overlay :show="ParamImages.loading" :z-index="5000" />

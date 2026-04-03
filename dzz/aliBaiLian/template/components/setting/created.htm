@@ -1,0 +1,93 @@
+<el-dialog
+	title="{lang model_add}"
+	:close-on-click-modal="false"
+	v-model="Catalogue.dialogVisible"
+	>
+	
+	
+	<el-form label-width="auto" :model="Catalogue" ref="catalogueFormModel">
+		<el-form-item label="{lang modelName}" prop="name" :rules="[{ required: true, message: '{lang modelName_empty}'}]">
+			<el-input v-model="Catalogue.name" placeholder="{lang modelCodeName}"></el-input>
+		</el-form-item>
+		<el-form-item label="{lang modelCodeName}" prop="model" :rules="[{ required: true, message: '{lang modelCodeName_empty}'}]">
+			<el-input v-model="Catalogue.model" placeholder="{lang modelCodeName}"></el-input>
+		</el-form-item>
+		<el-form-item label="{lang description}" >
+			<el-input v-model="Catalogue.description" type="textarea" placeholder="{lang description_placeholder}"></el-input>
+		</el-form-item>
+		<el-form-item label="{lang vendor}" prop="vendor" >
+			<el-input v-model="Catalogue.vendor" placeholder="{lang vendor}"></el-input>
+		</el-form-item>
+		<el-form-item label="{lang modelType}" prop="type" >
+			<el-input v-model="Catalogue.type" placeholder="{lang modelType}"></el-input>
+		</el-form-item>
+				
+
+	</el-form>
+	
+
+	<template #footer>
+        <span class="dialog-footer">
+            <el-button @click="Catalogue.dialogVisible = false">{lang cancel}</el-button>
+            <el-button type="primary" @click="CatalogueSubmit">{lang submit}</el-button>
+        </span>
+    </template>
+	
+</el-dialog>
+<script type="text/javascript">
+	var CreatedMixin = {
+		data(){
+			return {
+				Catalogue:{
+					model:'',
+					name:'',
+					description:'',
+					vendor:'',
+					type:'',
+					dialogVisible:false
+				},
+			}
+		},
+		methods:{
+			
+			async CatalogueSubmit(){
+				var self = this;
+				self.loading = true;
+				var res = await axios.post(MOD_URL+'&op=setting&do=editModel',{
+					name:this.Catalogue.name,
+					model:this.Catalogue.model,
+					description:this.Catalogue.description,
+					vendor:this.Catalogue.vendor,
+					type:this.Catalogue.type
+				});
+				if(res == 'intercept'){
+					return false;
+				}
+				var json = res.data;
+				if(json.success){
+					let index=self.tableData.findIndex(function(val){
+						return  val.model == json.data.model;
+					});
+					if(index>-1){
+						self.tableData[index]=json.data;
+					}else{
+						self.tableData.push(json.data);
+					}
+
+					this.Catalogue={
+						model:'',
+						name:'',
+						description:'',
+						vendor:'',
+						type:'',
+						dialogVisible:false
+					}
+
+				}else{
+					self.$message.error(json.msg);
+				}
+				self.loading = false;
+			},
+		}
+	}
+</script>

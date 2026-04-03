@@ -1,0 +1,348 @@
+<van-popup class="screen-popup page-popup" v-model="Classifys.PopupVisible" position="right" style="width: 100%;height: 100%;" @open="ClassifysOpen" @closed="ClassifysClosed" style="display: flex;flex-direction: column;">
+	<van-nav-bar left-arrow @click-left="Classifys.PopupVisible=false" title="{lang classify_management}"></van-nav-bar>
+	<div class="scroll-box" style="padding: 0px 4px;height: 100%;overflow: auto;padding-bottom: 20%;">
+		<div class="screen-classify-collapse">
+			<classify-all 
+				v-if="Classifys.isshowloading" 
+				:parammodel="Classifys" 
+				:paramdata="Classifys.data" 
+				@select="ClassifysChange" 
+				:clid="ParamBasic.clid" 
+				:expandedkeys="Classifys.expandedkeys" 
+				:ischeckedchild="false" 
+				:keyword="Classifys.search.name" 
+				@append="ClassifysAppenddata" 
+				@classifyexpandedkeyschange="classifyexpandedkeyschange" 
+				:issearch="Classifys.issearch" 
+				:level="0"></classify-all>
+		</div>
+	</div>
+	<footer class="pic-toolbar footershow">
+		<div class="tabbar">
+			<template v-for="item in Classifys.Footer">
+				<template v-if="item.show">
+					<div class="tab-item" @click="ClassifyFooterClick(item)">
+						<i :class="item.icon"></i>
+					</div>
+				</template>
+			</template>
+		</div>
+	</footer>
+</van-popup>
+<van-popup class="seasrch-popup footer-popup" v-model="Classifys.search.PopupVisible" round position="bottom" :style="{ height: '90%' }" @open="ClassifySearchPopupOpen" @close="ClassifySearchPopupClose">
+	<div class="vam-popup-title" @click="Classifys.search.PopupVisible=false">{lang search}</div>
+	<div class="van-search-box">
+		<van-search class="popup-search-input" v-model.trim="Classifys.search.name" shape="round" placeholder="{lang please_input}" maxlength="50" :clearable="false">
+			<template #right-icon>
+				<van-icon v-show="Classifys.search.name" @click="Classifys.search.name=''" name="cross" />
+			</template>
+		</van-search>
+	</div>
+	<div class="btn-bottom">
+		<van-row gutter="20">
+		  <van-col span="24" style="text-align: center;">
+			  <van-button round type="info" size="large" @click="Classifys.search.PopupVisible=false" v-cloak>{lang confirms}</van-button>
+		  </van-col>
+		</van-row>
+	
+	</div>
+</van-popup>
+<script type="text/javascript">
+	var ClassifyMixin = {
+		data(){
+			return {
+				Classifys:{
+					PopupVisible:false,
+					data:[],
+					expandedkeys:[],
+					value:'',
+					active:[],
+					checkedvalue:[],
+					loading:false,
+					isshowloading:false,
+					issearch:false,
+					node:'',
+					Footer:{
+						search:{type:'search',icon:'icon ri-search-line',show:true},
+						edit:{type:'edit',icon:'icon ri-edit-line',show:false},
+						add:{type:'add',icon:'icon van-icon van-icon-plus',show:true},
+						sibling:{type:'sibling',icon:'icon ri-insert-row-top',show:false},
+						child:{type:'child',icon:'icon ri-node-tree',show:false},
+						del:{type:'del',icon:'icon ri-delete-bin-line',show:false},
+					},
+					search:{
+						PopupVisible:false,
+						name:'',
+						realname:'',
+					}
+				}
+			}
+		},
+		watch:{
+			'Classifys.loading':{
+				handler(val){
+					var self = this;
+					if(val){
+						self.$toast.loading({
+							message: '{lang loading}',
+							overlay:true,
+							className:'conter-toast',
+							duration: 0,
+							forbidClick: true,
+							loadingType: 'spinner',
+						});
+					}else{
+						self.$toast.clear();
+					}
+				},
+				deep:true,
+				// immediate:true
+			},
+			'Classifys.value':{
+				handler(val){
+					var self = this;
+					if(val){
+						self.Classifys.Footer.edit.show = true;
+						self.Classifys.Footer.sibling.show = true;
+						self.Classifys.Footer.child.show = true;
+						self.Classifys.Footer.del.show = true;
+					}else{
+						self.Classifys.Footer.edit.show = false;
+						self.Classifys.Footer.sibling.show = false;
+						self.Classifys.Footer.child.show = false;
+						self.Classifys.Footer.del.show = false;
+					}
+				},
+				deep:true,
+			},
+		},
+		methods:{
+			ClassifysAppenddata(data){
+				if(data.type == 'parent'){
+					this.Classifys.data = data.val;
+				}else{
+					data.data.children = data.val;
+					if(this.Classifys.expandedkeys.indexOf(parseInt(data.data.cid)) < 0){
+						this.Classifys.expandedkeys.push(parseInt(data.data.cid))
+					}
+				}
+			},
+			classifyexpandedkeyschange(id){
+				if(this.Classifys.expandedkeys.indexOf(parseInt(id)) < 0){
+					this.Classifys.expandedkeys.push(parseInt(id));
+				}
+				if(this.Classifys.active.indexOf(id) < 0){
+					this.Classifys.active.push(id);
+				}
+			},
+			ClassifySearchPopupOpen(){
+				this.Classifys.search.realname = JSON.parse(JSON.stringify(this.Classifys.search.name));
+			},
+			async ClassifySearchPopupClose(){
+				var self = this;
+				if(this.Classifys.search.realname != this.Classifys.search.name){
+					self.Classifys.isshowloading = false;
+					self.Classifys.expandedkeys = [];
+					self.Classifys.active = [];
+					self.Classifys.data = [];
+					if(this.Classifys.search.name){
+						self.Classifys.issearch = true;
+						var res = await axios.post(MOD_URL+'&op=ajax&operation=searchcat',{
+							clid:self.ParamBasic.clid,
+							keyword:self.Classifys.search.name
+						});
+						if(res == 'intercept'){
+							return false;
+						}
+						var json = res.data;
+						for(var i in json.success){
+							var item = json.success[i];
+							var pathkey = item.pathkey.replaceAll('_','');
+							var pathkeys = pathkey.split('-');
+							if(pathkeys.length){
+								for(var x in pathkeys){
+									var xitem = parseInt(pathkeys[x]);
+									if(self.Classifys.expandedkeys.indexOf(xitem)<0){
+										self.Classifys.expandedkeys.push(xitem);
+										self.Classifys.active.push(pathkeys[x]);
+									}
+								}
+							}
+							
+						}
+						self.$nextTick(function(){
+							self.Classifys.isshowloading = true;
+						});
+							
+					}else{
+						self.Classifys.issearch = false;
+						self.$nextTick(function(){
+							self.Classifys.isshowloading = true;
+						});
+					}
+					
+				}
+			},
+			ClassifyFooterClick(data){
+				var self = this;
+				switch(data.type){
+					case 'search':
+						self.Classifys.search.PopupVisible = true;
+					break;
+					case 'edit':
+						self.Operation.type = 'editchild';
+						self.Operation.name = self.Classifys.node.catname;
+						self.Operation.node = self.Classifys.node;
+						self.Operation.PopupVisible = true;
+					break;
+					case 'add':
+						self.Operation.type = 'addparent';
+						self.Operation.PopupVisible = true;
+					break;
+					case 'sibling':
+						self.Operation.type = 'addsibling';
+						self.Operation.node = self.Classifys.node;
+						self.Operation.PopupVisible = true;
+					break;
+					case 'child':
+						self.Operation.type = 'addchild';
+						self.Operation.node = self.Classifys.node;
+						self.Operation.PopupVisible = true;
+					break;
+					case 'del':
+						self.$dialog.confirm({
+							title: '{lang prompt}',
+							message: '{lang final_delete_confirm}',
+						}).then(async function(){
+							self.$toast.loading({
+								overlay:true,
+								message: '{lang Deleting}',
+								forbidClick: true,
+								duration:0,
+								loadingType: 'spinner',
+							});
+							var res = await axios.post(MOD_URL+'&op=collect&do=delcollectcat',{cid:self.Classifys.node.cid});
+							if(res == 'intercept'){
+								return false;
+							}
+							var json = res.data;
+							if(json.success){
+								self.ClassifysDelete(self.Classifys.node.pcid,self.Classifys.node.cid,self.Classifys.data)
+								self.Classifys.value = '';
+								self.Classifys.node = '';
+								self.Classifys.checkedvalue = [];
+								self.$toast.clear();
+							}else{
+								self.$toast.fail(json.error);
+							}
+						}).catch(function(){
+						});
+					break;
+				}
+			},
+			ClassifysChange(data){
+				
+				if(this.Classifys.value == data.cid){
+					this.Classifys.value = '';
+					this.Classifys.checkedvalue = [];
+				}else{
+					this.Classifys.node = data;
+					this.Classifys.value = data.cid;
+					this.Classifys.checkedvalue = [data.cid];
+				}
+			},
+			
+			ClassifysAppend(id,data,item){
+				for(var i in data){
+					var kitem = data[i];
+					var key = parseInt(kitem.cid);
+					if(key == parseInt(id)){
+						kitem.children.push(item);
+						return false;
+					}
+					if(kitem.children && kitem.children.length){
+						this.ClassifysAppend(id,kitem.children,item);
+					}
+				}
+			},
+			ClassifysDelete(pid,id,data){
+				
+				if(parseInt(pid) > 0){
+					for(var i in data){
+						var kitem = data[i];
+						var key = parseInt(kitem.cid);
+						if(key == parseInt(pid)){
+							var index = 0;
+							for(var x in kitem.children){
+								var xitem = kitem.children[x];
+								if(parseInt(xitem.cid) == parseInt(id)){
+									index = x;
+									break;
+								}
+							}
+							kitem.children.splice(parseInt(index),1);
+							if(!kitem.children.length){
+								kitem['loaded'] = false;
+								kitem['loading'] = false;
+								kitem['leaf'] = true;
+								
+							}
+							var gindex = this.Classifys.active.indexOf(pid);
+							if(gindex>-1){
+								this.Classifys.active.splice(parseInt(gindex),1);
+							}
+							return false;
+						}
+						if(kitem.children && kitem.children.length){
+							this.ClassifysDelete(pid,id,kitem.children);
+						}
+					}
+				}else{
+					var pindex = 0;
+					for(var i in data){
+						var kitem = data[i];
+						var key = parseInt(kitem.cid);
+						if(key == parseInt(id)){
+							pindex = i;
+							break;
+						}
+							
+					}
+					data.splice(parseInt(pindex),1);
+				}
+			},
+			ClassifysOpen(){
+				var self = this;
+				self.Classifys.isshowloading = true;
+				// this.Classifys.loading = true;
+				// $.post(MOD_URL+'&op=ajax&operation=getcollectcat',{
+				// 	clid:self.ParamBasic.clid
+				// },function(json){
+				// 	var arr = [];
+				// 	for(var i in json.success){
+				// 		var item = json.success[i];
+				// 		item['loaded'] = false;
+				// 		item['loading'] = false;
+				// 		item['children'] = [];
+				// 		arr.push(item);
+				// 	}
+				// 	self.Classifys.data = arr;
+				// 	self.Classifys.loading = false;
+					
+				// },'json');
+			},
+			ClassifysClosed(){
+				var self = this;
+				this.Classifys.loading = false;
+				this.Classifys.isshowloading = false;
+				this.Classifys.data = [];
+				this.Classifys.value = '';
+				this.Classifys.node = '';
+				this.Classifys.active = [];
+				this.Classifys.checkedvalue = [];
+				this.Classifys.search.name = '';
+				this.Classifys.search.realname = '';
+			},
+		}
+	};
+</script>

@@ -342,12 +342,13 @@
 						});
 						var fdata = data.data;
 						fdata['state'] = 0;
+						fdata['isdelete'] = 0;
 						fdata['filenum'] = 0;
 						fdata['percent'] = 0;
 						fdata['connect'] = parseInt(self.Catalogue.type) == 3?4:1;
 						fdata['type'] = self.Catalogue.type;
 						fdata['getinfonum'] = 0;
-						self.Table.data.splice(1,0,fdata);
+						self.Table.data.unshift(fdata);
 					}
 					
 					self.Catalogue.dialogVisible = false;

@@ -45,8 +45,8 @@ const comavatar = {
                 </div>
                 <template #dropdown>
                     <el-dropdown-menu slot="dropdown" style="width: 165px;">
-                        <el-dropdown-item command="personal">{{Lang.text2}}</el-dropdown-item>
-                        <el-dropdown-item command="systeminfo" v-if="adminid==1">{{Lang.text3}}</el-dropdown-item>
+                        <el-dropdown-item command="personal"><a href="user.php?mod=my" >{{Lang.text2}}</a></el-dropdown-item>
+                        <el-dropdown-item command="manage" v-if="adminid==1"><a href="index.php?mod=manage">{{Lang.text3}}</a></el-dropdown-item>
                         <el-divider class="adjust-divider"></el-divider>
 						<el-dropdown-item command="about">{{Lang.text4}}</el-dropdown-item>
                         <el-dropdown-item command="OutLogin">{{Lang.text5}}</el-dropdown-item>
@@ -146,8 +146,8 @@ const comavatar = {
                 case 'setting':
                     window.location.href = 'index.php?mod=pichome&op=admin&do=basic';
                 break;
-                case 'systeminfo':
-                    window.location.href = 'index.php?mod=systeminfo';
+                case 'manage':
+                    window.location.href = 'index.php?mod=manage';
                 break;
                 case 'tab':
                     window.location.href = 'index.php?mod=tab';

@@ -48,7 +48,7 @@ foreach ($datas as $v) {
     }
     if ($v['lwidth'] != $thumbsize['large']['width'] || $v['lheight'] != $thumbsize['large']['height'] ||
         $v['lwaterposition'] != $wp || $v['lwatertype'] != $wt || $v['lwatercontent'] != $wcontent) {
-        C::t('thumb_record')->update($v['rid'],array('ltimes'=>intval($v['ltimes'])+1,'ldateline'=>TIMESTAMP));
+        //C::t('thumb_record')->update($v['rid'],array('ltimes'=>intval($v['ltimes'])+1,'ldateline'=>TIMESTAMP));
         $setarr['lchk'] = 1;
     }
     C::t('thumb_record')->update($v['rid'],$setarr);

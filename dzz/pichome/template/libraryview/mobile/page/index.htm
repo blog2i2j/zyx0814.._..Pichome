@@ -66,7 +66,7 @@
 							</template>
 						</el-popover>
 					</div>
-					<el-header height="50px" style="padding: 0px;padding-bottom: 4px;">
+					<el-header height="auto" style="padding: 0px;padding-bottom: 4px;">
 						<dzz-screen
 							ref="ScreenBoxRef"
 							:resize="DocumentResize"
@@ -154,8 +154,8 @@
 			},
 		},
 		created(){
-			<!--{if intval($_G[setting][pathinfo])}-->
-			let param = '{$_GET[hashparams]}';
+			<!--{if intval($_G['setting']['pathinfo'])}-->
+			let param = '{$_GET['hashparams']}';
 			if(param){
 				param = JSON.parse(param)
 				this.DocumentAppid = param.appid;

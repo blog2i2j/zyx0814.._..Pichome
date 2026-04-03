@@ -264,9 +264,15 @@
                 $authorization = $this->get_authorization($secret_key,$secret_id,$StartTimestamp, $EndTimestamp, $fileUri, $headers);
                 $data = $this->getapidatas($this->bucket,$this->qcos_config['region'],$queryurl, $params, $authorization);
                 $result =$data['AccessControlList']['Grant'];
-                foreach($result as $v){
-                    if($v['Permission'] == 'READ') $readperm= 2;
+
+                if(isset($result['Permission'])){
+                    if($result['Permission'] == 'READ') $readperm= 2;
+                }elseif(is_array($result)) {
+                    foreach ($result as $v) {
+                        if ($v['Permission'] == 'READ') $readperm = 2;
+                    }
                 }
+
                 $setarr = ['cachekey' => $aclpermcache, 'cachevalue' => $readperm, 'dateline' => time()];
                 C::t('cache')->insert_cachedata_by_cachename($setarr,3600);
                 return $readperm;

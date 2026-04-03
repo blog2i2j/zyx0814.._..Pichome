@@ -61,9 +61,9 @@ class dzz_error
 			if(in_array($func, $skipfunc)) {
 				break;
 			}
-			$error[line] = sprintf('%04d', $error['line']);
+			$error['line'] = sprintf('%04d', $error['line']);
 
-			$show .= "<li>[Line: $error[line]]".$file."($func)</li>";
+			$show .= '<li>[Line:'.$error['line'].']'.$file."($func)</li>";
 			$log .= !empty($log) ? ' -> ' : '';$file.':'.$error['line'];
 			$log .= $file.':'.$error['line'];
 		}
@@ -81,7 +81,7 @@ class dzz_error
 		$title_backtrace = lang('backtrace');
 		$title_help = lang('db_help_link');
 
-		$db = &DB::object();
+		$db = DB::object();
 		$dberrno = $db->errno();
 		$dberror = str_replace($db->tablepre,  '', $db->error());
 		$sql = dhtmlspecialchars(str_replace($db->tablepre,  '', $sql));
@@ -150,7 +150,7 @@ class dzz_error
 							$fun .= (defined('DZZ_DEBUG') && DZZ_DEBUG) ? $arg : '%d';
 						} elseif(is_float($arg)) {
 							$fun .= (defined('DZZ_DEBUG') && DZZ_DEBUG) ? $arg : '%f';
-						} else {
+						} elseif(is_string($arg)) {
 							$fun .= (defined('DZZ_DEBUG') && DZZ_DEBUG) ? '\''.dhtmlspecialchars(substr(self::clear($arg), 0, 10)).(strlen($arg) > 10 ? ' ...' : '').'\'' : '%s';
 						}
 						$mark = ', ';
@@ -225,7 +225,7 @@ class dzz_error
 	    background: none repeat scroll 0 0 #FFFFCC;
 	    border: 1px solid #aaaaaa;
 	    color: #000000;
-	    font: arial, sans-serif;
+	    font-family: 'arial', 'sans-serif';
 	    font-size: 9pt;
 	    line-height: 160%;
 	    margin-top: 1em;
@@ -273,7 +273,7 @@ EOT;
 </body>
 </html>
 EOT;
-		$exit && exit();
+		exit();
 
 	}
 
@@ -344,7 +344,7 @@ EOT;
 </body>
 </html>
 EOT;
-		$exit && exit();
+		exit();
 	}
 
 	public static function clear($message) {

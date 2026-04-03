@@ -4,35 +4,44 @@
             return {
                 Aikeys:{
                     visible:false,
+                    key:''
                 },
                 AikeysForm:[]
             }
         },
         methods:{
+            handleAIBatch(key){
+                this.Aikeys.visible = true;
+                this.Aikeys.key = key;
+            },
             AikeysOpen(){
                 this.AikeysForm = [];
-                for (const key in this.RightData.Aikey.filedkey) {
-                    if (Object.hasOwnProperty.call(this.RightData.Aikey.filedkey, key)){
-                        const element = this.RightData.Aikey.filedkey[key];
-                        this.AikeysForm.push({
-                            data:element.tpls,
-                            flag:element.flag,
-                            value:'',
-                            title:element.lablename,
-                        });
+                for (const i in this.RightData.Aikey) {
+                    const vitem = this.RightData.Aikey[i];
+                    this.AikeysForm[vitem.key]=[];
+                    for (const key in vitem.filedkey) {
+                        if (Object.hasOwnProperty.call(vitem.filedkey, key)) {
+                            const element = vitem.filedkey[key];
+                            this.AikeysForm[vitem.key].push({
+                                data: element.tpls,
+                                flag: element.flag,
+                                value: '',
+                                title: element.lablename,
+                            });
+                        }
                     }
                 }
             },
             async AikeysSubmit(){
                 let self = this;
                 let getContent = [];
-                for (let index = 0; index < this.AikeysForm.length; index++) {
-                    const element = this.AikeysForm[index];
+                for (let index = 0; index < this.AikeysForm[this.Aikeys.key].length; index++) {
+                    const element = this.AikeysForm[this.Aikeys.key][index];
                     if(!element.value)continue;
                     getContent.push({
                         flag:element.flag,
                         tplid:element.value,
-                        key:this.RightData.Aikey.key
+                        key:this.Aikeys.key
                     });
                 }
                 let param = {

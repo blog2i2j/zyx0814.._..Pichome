@@ -1,0 +1,108 @@
+<van-popup v-model="MyPopupVisible"  class="my-popup"  position="right">
+	<van-nav-bar title="{lang My_settings}" left-arrow @click-left="MyNavbarLeftClick"></van-nav-bar>
+	<div class="scroll-box">
+		<van-cell-group>
+			<!--{if $_G['uid']}-->
+			<van-cell clickable title="{lang Personal_settings}" @click="MyClick('person')">
+				<template #right-icon>
+				    <i class="ri-arrow-right-up-line"></i>
+				</template>
+			</van-cell>
+			<!--{/if}-->
+			<van-cell clickable title="{lang Help_document}" @click="MyClick('help')">
+				<template #right-icon>
+				    <i class="ri-arrow-right-up-line"></i>
+				</template>
+			</van-cell>
+			<van-cell clickable title="{lang Problem_feedback}" @click="MyClick('question')">
+				<template #right-icon>
+				    <i class="ri-arrow-right-up-line"></i>
+				</template>
+			</van-cell>
+			<van-cell clickable title="{lang about} PicHome" is-link @click="MyClick('about')"></van-cell>
+			<!--{if $_G['uid']}-->
+			<van-cell clickable title="{lang logout}" @click="MyClick('out')">
+				<template #right-icon>
+				    <i class="ri-logout-box-r-line"></i>
+				</template>
+			</van-cell>
+			<!--{else}-->
+			<van-cell clickable title="{lang login} PicHome" @click="MyClick('login')" is-link></van-cell>
+			<!--{/if}-->
+			
+		</van-cell-group>
+	</div>
+</van-popup>
+<van-popup v-model="AboutPopupVisible"  class="about-popup"  position="right">
+	<van-nav-bar title="{lang about} PicHome" left-arrow @click-left="AboutNavbarLeftClick"></van-nav-bar>
+	<div class="scroll-box">
+		<div class="aboutlogo">
+			<img src="dzz/pichome/image/phlogo.png" alt="">
+		</div>
+		<div class="aboutmessage">
+			<div class="aboutlist">
+				<span class="title">{lang software_name}：</span><span class="mes">PicHome</span>
+			</div>
+			<div class="aboutlist">
+				<span class="title">{lang version_information}：</span><span class="mes">$_G['setting']['version']</span>
+			</div>
+			<div class="aboutlist">
+				<span class="title">{lang copyright_information}：</span><span class="mes">Powered By oaooa PicHome © 2020-2021 PicHome</span>
+			</div>
+			<div class="aboutlist">
+				<span class="title">{lang Website_address}：</span><span class="mes"><a class="address" href="https://oaooa.com/" target="_blank">oaooa.com</a></span>
+			</div>
+		</div>
+	</div>
+</van-popup>
+<script type="text/javascript">
+	var MyMixin = {
+		data(){
+			return {
+				MyPopupVisible:false,
+				AboutPopupVisible:false,
+			}
+		},
+		methods:{
+			MyNavbarLeftClick(){
+				this.MyPopupVisible = false;
+			},
+			AboutNavbarLeftClick(){
+				this.AboutPopupVisible = false;
+			},
+			MyClick(type){
+				var self = this;
+				switch(type){
+					case 'person':
+						window.location.href = 'index.php?mod=pichome&op=user&do=personal';
+					break;
+					case 'help':
+						window.location.href = "https://www.yuque.com/pichome";
+					break;
+					case 'question':
+						window.location.href = "https://support.qq.com/products/340252";
+					break;
+					case 'about':
+						this.AboutPopupVisible = true;
+					break;
+					case 'out':
+						self.$dialog.confirm({
+						  title: '{lang board_message}',
+						  message: '{lang js_exit}',
+						}).then(() => {
+						    // on confirm
+							jQuery.get('user.php?mod=login&op=logging&action=logout&formhash={FORMHASH}&t='+new Date().getTime(),function(data){
+								window.location.reload();
+							});
+						}).catch(() => {
+						    // on cancel
+						});
+					break;
+					case 'login':
+						window.location.href = SITEURL+'user.php?mod=login';
+					break;
+				}
+			}
+		}
+	};
+</script>

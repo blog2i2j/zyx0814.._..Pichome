@@ -678,6 +678,12 @@ $lang = array(
     'file_recommend'=>'文件推荐',
     'tab_recommend'=>'专辑推荐',
     'banner_ads'=>'横幅广告',
+    'library_show'=>'库展示',
+    'publish_recommend'=>'发布推荐',
+    'publish_search'=>'搜索',
+    'publish_collect_show'=>'合集展示',
+
+
     'model_style_get_fail'=>'模板样式获取失败',
     'select_template'=>'选择模板',
     'style'=>'样式',
@@ -704,7 +710,7 @@ $lang = array(
     'Sorting_type' => '排序类型',
     'layout' => '布局',
     'to'=>'至',
-    'not_grpup'=>'未分组',
+    'not_group'=>'未分组',
     'data_source' => '数据来源',
     'Multilingual_settings' => '多语言设置',
     'question' => '问题',
@@ -767,7 +773,7 @@ $lang = array(
     'Paste' => '粘贴',
     'Paste_failed' => '粘贴失败',
     'Paste_success' => '粘贴成功',
-
+    'filenums'=>'文件数量',
     
     'All_locked'=>'全部锁定',
     'All_unlock'=>'全部解锁',
@@ -786,5 +792,15 @@ $lang = array(
     'Add_options'=>'添加选项',
     'Image_address'=>'图片地址',
     'sys'=>'摄影师',
+    'tabnumber'=>'编号',
     'search_picture'=>'以图搜图',
+    'defalut_layout' => '默认布局',
+    'default_show_info' => '默认显示信息',
+    'All_labels' => '全部标签',
+    'Common_tags' => '常用标签',
+    'fileOrganize' => '文件整理中...',
+    'fileZipDownloading' => '文件下载中...',
+    'fileZipPackaging' => '文件压缩中...',
+    'favorites'=>'收藏夹',
+    'my'=>'我的',
 );

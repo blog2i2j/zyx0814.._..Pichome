@@ -48,7 +48,7 @@ if($operation == 'fetch'){
 	    'rid'=>$rid,
         'filename'=>$resourcesdata['name'],
         'appid'=>$resourcesdata['appid'],
-        'uid'=>$uid,
+        'uid'=>getglobal('uid'),
         'dateline'=>TIMESTAMP
     ];
 	C::t('pichome_views')->insert($viewsdata);

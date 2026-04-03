@@ -1,0 +1,366 @@
+<!--{template common/container/pc/header_start}-->
+<link rel="stylesheet" type="text/css" href="{MOD_PATH}/template/collect/default/view/pc/assets/css/index.css?{VERHASH}"/>
+<link rel="stylesheet" href="static/scss/default/index.css?{VERHASH}">
+<script type="text/javascript" src="{MOD_PATH}/template/library/default/view/mobile/assets/js/menu.js?{VERHASH}"></script>
+<!--{template common/container/pc/header_end}-->
+<div id="dzzoffice">
+    <el-container>
+        <!--{template collect/default/view/mobile/components/header}-->
+        <el-main style="padding: 0;padding: 0;" class="dzz-container">
+            <el-scrollbar ref="refscrollbar">
+                <div class="headline" :class="(pageset.title || pageset.subtitle)?'mask':''" v-if="(pageset._file_background && pageset._file_background[0] && pageset._file_background[0]['src']) || pageset.title || pageset.subtitle">
+                    <el-image
+                            v-if="pageset._file_background && pageset._file_background[0] && pageset._file_background[0]['src']"
+                            style="width: 100%;height: 100%;"
+                            fit="cover"
+                            :src="pageset._file_background[0]['src']"></el-image>
+                    <div class="text">
+                        <div class="container">
+                            <el-text tag="p" class="title">{{pageset.title}}</el-text>
+                            <el-text v-html="pageset.subtitle"></el-text>
+                        </div>
+                    </div>
+                </div>
+                <div class="container">
+                    <div style="display: flex;margin:20px 0;">
+                        <div class="content-left" style="flex: 1;" v-loading="loading">
+                            <template v-if="pageset.style=='details'">
+                                <div class="list-details ">
+                                    <ul v-if="tableData&&tableData.length">
+                                        <li class="content-li" v-for="item in tableData">
+                                            <el-link :href="item.url" :underline="false" target="_blank">
+                                                <el-image class="l-img" :src="item.img">
+                                                    <template #error>
+                                                        <div class="image—placeholder-error"
+                                                             style="width:100%;height:100%;text-align:center;align-content: center;background-color:var(--el-color-info-dark-2);">
+                                                        </div>
+                                                    </template>
+                                                </el-image>
+                                            </el-link>
+                                            <div class="r-c">
+                                                <el-link class="title" :href="item.url" target="_blank">{{item.pname}}
+                                                </el-link>
+                                                <el-text tag="p" icon="time" class="time">
+                                                    <el-icon>
+                                                        <Timer/>
+                                                    </el-icon>
+                                                    {{item.dateline}}
+                                                </el-text>
+                                                <el-text tag="p" class="message" line-clamp="3">
+                                                    {{item.metadescription}}
+                                                </el-text>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                    <el-empty v-else description="{lang no_data}"></el-empty>
+                                </div>
+                            </template>
+                            <template v-else-if="pageset.style=='imageList'">
+                                <div class="list-imageList ">
+                                    <ul v-if="tableData&&tableData.length">
+                                        <li class="content-li" v-for="item in tableData">
+                                            <a :href="item.url" :underline="false" target="_blank">
+                                                <el-image class="l-img" tag="a" :href="item.url" :underline="false"
+                                                          target="_blank" :src="item.img">
+                                                    <template #error>
+                                                        <div class="image—placeholder-error"
+                                                             style="width:100%;height:100%;text-align:center;align-content: center;background-color:var(--el-color-info-dark-2);">
+                                                        </div>
+                                                    </template>
+                                                </el-image>
+                                            </a>
+                                            <div class="r-c">
+                                                <el-link class="title" :href="item.url" :underline="false"
+                                                         target="_blank">{{item.pname}}
+                                                </el-link>
+                                                <el-text tag="p" class="message is-line-clamp" line-clamp="3">
+                                                    {{item.metadescription}}
+                                                </el-text>
+                                            </div>
+
+                                        </li>
+                                    </ul>
+                                    <el-empty v-else description="{lang no_data}"></el-empty>
+                                </div>
+                            </template>
+                            <template v-else-if="pageset.style=='tabodd'">
+                                <div class="list-tabodd">
+                                    <ul v-if="tableData&&tableData.length">
+                                        <li class="content-li" v-for="item in tableData">
+                                            <a :href="item.url" :underline="false" target="_blank">
+                                                <el-image class="l-img" :src="item.img">
+                                                    <template #error>
+                                                        <div class="image—placeholder-error"
+                                                             style="width:100%;height:100%;text-align:center;align-content: center;background-color:var(--el-color-info-dark-2);">
+                                                        </div>
+                                                    </template>
+                                                </el-image>
+                                            </a>
+                                            <div class="r-c">
+                                                <el-link class="title" :href="item.url" :underline="false"
+                                                         target="_blank">{{item.pname}}
+                                                </el-link>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                    <el-empty v-else description="{lang no_data}"></el-empty>
+                                </div>
+                            </template>
+                            <template v-else-if="pageset.style=='tabeven'">
+                                <div class="list-tabeven">
+                                    <ul v-if="tableData&&tableData.length">
+                                        <li class="content-li" v-for="item in tableData">
+                                            <a :href="item.url" :underline="false" target="_blank">
+                                                <el-image class="l-img" :src="item.img">
+                                                    <template #error>
+                                                        <div class="image—placeholder-error"
+                                                             style="width:100%;height:100%;text-align:center;align-content: center;background-color:var(--el-color-info-dark-2);">
+                                                        </div>
+                                                    </template>
+                                                </el-image>
+                                            </a>
+                                            <div class="r-c">
+                                                <el-link class="title" :href="item.url" :underline="false"
+                                                         target="_blank">{{item.pname}}
+                                                </el-link>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                    <el-empty v-else description="{lang no_data}"></el-empty>
+                                </div>
+                            </template>
+                            <div style="display: flex;justify-content: center;padding:20px 0 10px 0">
+                                <el-pagination v-if="pageData.count>pageData.pagesize"
+                                               large
+                                               background
+                                               layout="prev, pager, next"
+                                               :page-size="pageData.pagesize"
+                                               :page-sizes="pageData.pagesizes"
+                                               :total="pageData.count"
+                                               :current-page="pageData.page"
+                                               @current-change="handlePageChange"
+                                ></el-pagination>
+                            </div>
+                        </div>
+                        <div class="content-right" v-if="pageset.issearch || latestData && latestData.length">
+                            <el-affix :offset="70">
+                                <div class="r-b search" v-if="pageset.issearch">
+                                    <el-text class="r-title">{lang search}</el-text>
+                                    <el-input size="large" v-model.trim="keyword" clearable @change="handlekeyword"
+                                              @keyup.enter.native="handlekeyword">
+                                        <template #append>
+                                            <el-button icon="Search" @click="handlekeyword" type="warning"></el-button>
+                                        </template>
+                                    </el-input>
+                                </div>
+                                <div class="r-b hot" v-if="latestData&&latestData.length">
+                                    <el-text v-if="pageset.hottitle" class="r-title">{{pageset.hottitle}}</el-text>
+                                    <ul>
+                                        <li class="r-li" v-for="item in latestData">
+
+                                            <a :href="item.url" :underline="false" target="_blank">
+                                                <el-image class="r-img" :src="item.img">
+                                                    <template #error>
+                                                        <div class="image—placeholder-error"
+                                                             style="width:100%;height:100%;text-align:center;align-content: center;background-color:var(--el-color-info-dark-2);">
+                                                        </div>
+                                                    </template>
+                                                </el-image>
+                                            </a>
+                                            <div class="r-c">
+                                                <el-link class="title" :href="item.url" :underline="false"
+                                                         target="_blank">{{item.pname}}
+                                                </el-link>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </el-affix>
+                        </div>
+                    </div>
+                    <el-footer
+                        v-if="pageset.bottomEnable" 
+                        style="padding: 15px;">
+                        <div class="page-footer block" style="border-radius: var(--el-border-radius-base);border: var(--el-border);">
+                            <el-text v-if="pageset._textarea_bottomtitle" v-html="pageset._textarea_bottomtitle" tag="p" style="display: flex;align-items: center;justify-content: center;margin-top: 0.5em;"></el-text>
+                            <div  style="display: flex;align-items: center;justify-content: center;margin-top:0.5em" v-if="pageset.beian || pageset.beianmps">
+                                <el-link v-if="pageset.beian" href="https://beian.miit.gov.cn/" title="{lang beian}" target="_blank">{{pageset.beian}}</el-link>
+                                <el-link v-if="pageset.beianmps" title="{lang beianmps}" style="margin-left:1em;" href="https://beian.mps.gov.cn/" target="_blank">{{pageset.beianmps}}</el-link>
+                            </div>
+                        </div>
+                    </el-footer>
+                </div>
+                    
+            </el-scrollbar>
+        </el-main>
+        <el-footer class="page-header" id="footer_header" style="padding: 0px 10px;border: 0;border-top:1px solid var(--el-border-color);height: 60px;" v-if="pageset.topNavigation">
+            <!--{template collect/default/view/mobile/components/footer}-->
+        </el-footer>
+    </el-container>
+</div>
+
+<script type="text/javascript">
+    const {createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch, computed, onBeforeUpdate, onUnmounted } = Vue;
+    const dzzoffice = createApp({
+        el: '#dzzoffice',
+        data() {
+            return {
+                DocumentThemeColor: '',//dark,
+                pageset: $json_pageset,
+                tableData: [],//列表数据
+                latestData: [],//最热
+                keyword: '',
+                fkeyword: '',
+                pageData: {
+                    pagesizes: [20, 50, 100],
+                    pagesize: 20,
+                    count: 0,
+                    page: 1
+                },
+
+                loading: false,
+                fixedClass: '',
+            }
+        },
+        watch: {
+            DocumentThemeColor: {
+                handler(newval) {
+                    document.querySelector('html').className = newval
+                },
+                deep: true,
+                // immediate:true
+            },
+            fkeyword: {
+                handler(newval) {
+                    window.location.hash = '#keyword=' + encodeURI(newval);
+                }
+            }
+
+        },
+        created() {
+            this.getBannerData();
+            let theme = localStorage.getItem('theme');
+            if (theme) {
+                this.DocumentThemeColor = theme;
+            } else {
+                this.DocumentThemeColor = 'light'
+            }
+            let keyword = this.CommonGetHashParam('keyword');
+            if (keyword) {
+                this.keyword = decodeURI(keyword);
+                this.fkeyword = decodeURI(keyword);
+            }
+            //this.GetData();
+            this.GetDataList();
+            this.getLatestByPid();
+            window.onhashchange = () => {
+                let keyword = this.CommonGetHashParam('keyword');
+                this.keyword = decodeURI(keyword);
+                this.GetDataList();
+            };
+        },
+        mixins: [FooterMixin],
+        methods: {
+            handleScroll(data) {
+                let box = document.querySelector('.content-right');
+                let scrollTop = Math.round(data.target.scrollTop);
+                if (scrollTop > 300) {
+                    box.style.marginTop = (scrollTop - 300) + 'px';
+                } else {
+                    box.style.marginTop = '0px';
+                }
+
+            },
+            handlekeyword() {
+                this.pageData.page = 1;
+                this.fkeyword = this.keyword;
+                //this.GetDataList();
+            },
+            handlePageChange(page) {
+                this.pageData.page = page;
+                this.GetDataList();
+                let self = this;
+                self.$nextTick(function () {
+                    self.$refs.refscrollbar.scrollTo({top: 300});
+                });
+            },
+
+            async GetDataList() {
+                let self = this;
+                this.loading = true;
+                let param = {
+                    page: this.pageData.page,
+                    perpage: this.pageData.pagesize,
+                    keyword: this.keyword,
+                    pid: '$id'
+                }
+                let {data: res} = await axios.post('{MOD_URL}&op=ajax&do=getColletLists', param);
+                // this.latestData = res.latestData?res.latestData:[];
+
+                this.tableData = res.data ? res.data : [];
+                this.pageData.count = parseInt(res.count);
+                this.pageData.pagesize = parseInt(res.perpage);
+                this.loading = false;
+
+
+
+            },
+            async getLatestByPid() {
+                let self = this;
+                let param = {
+                    pid: '$id'
+                }
+                let {data: res} = await axios.post('{MOD_URL}&op=ajax&do=getLatestByPid', param);
+                this.latestData = res.data ? res.data : [];
+            },
+            DocumentThemeChange() {
+                if (this.DocumentThemeColor == 'light') {
+                    this.DocumentThemeColor = 'dark';
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    this.DocumentThemeColor = 'light';
+                    localStorage.setItem('theme', 'light');
+                }
+            },
+            CommonGetHashParam(name, url) {
+
+                if (!url) {
+                    url = location.hash;
+                }
+                if (!name) {
+                    return '';
+                }
+                var reg = new RegExp("(^#|&)" + name + "=([^&]*)(&|$)");
+                if (!url) {
+                    return '';
+                }
+                var r = url.match(reg);
+                if (r !== null) {
+                    return decodeURIComponent(r[2]);
+                }
+            }
+        },
+        mounted() {
+
+        },
+        components: {
+            menuitem
+        }
+
+    });
+    dzzoffice.use(ElementPlus, {
+        locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+    });
+    for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+        dzzoffice.component(key, component)
+    }
+    dzzoffice.component('comavatar', comavatar);
+    dzzoffice.component('international', international);
+    // 屏蔽警告信息
+    dzzoffice.config.warnHandler = function () {
+        return null
+    };
+    dzzoffice.mount('#dzzoffice');
+</script>
+
+<!--{template common/container/pc/footer}-->

@@ -15,7 +15,7 @@ class table_pichome_resourcestab extends dzz_table
         parent::__construct();
     }
 
-    public function insert($setarr)
+    public function insert($setarr, $return_insert_id = false, $replace = false, $silent = false)
     {
         if ($id = DB::result_first("select id from %t where tid = %d and rid = %s", array($this->_table, $setarr['tid'],$setarr['rid']))) {
             parent::update($id, $setarr);

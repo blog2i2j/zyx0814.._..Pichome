@@ -22,7 +22,8 @@ class localexport
     private $appid = 0;//库id
     private $uid = 0;//用户id
     private $username = null;//用户名
-    private $filenum = 0;//总文件数
+    private $filenum = 0;//导入后总文件数
+    private $filenum1 = 0;//总文件数
     private $getinfosizelimit = 100;//限制获取信心文件大小，单位M
     private $checklimit = 1000;
     private $onceexportnum = 100;
@@ -249,16 +250,17 @@ class localexport
         $spl_object = new SplFileObject($readtxt, 'rb');
 
         $spl_object->seek($start);
-        if ($this->lastid < $this->filenum && $this->exportstatus == 2) {
+        if ($this->exportstatus == 2) {
             if(dzz_process::getlocked($this->processname)) exit('vapp isdeleted');
             $i = 0;
             while (is_file($readtxt) && !$spl_object->eof()) {
                 $i++;
+                $this->lastid++;
                 if ($i > $this->onceexportnum) {
-
+                    C::t('pichome_vapp')->update($this->appid, array('lastid' => $this->lastid));
                     break;
-
                 }
+
                 $file = $spl_object->current();
 
                 $file = trim($file);
@@ -276,6 +278,8 @@ class localexport
                     // $fid = $this->createfolerbypath($filepath);
                     $fdata = C::t('pichome_folder')->createfolerbypath($this->appid,$filepath,'');
                     $spl_object->next();
+                    C::t('pichome_vapp')->update($this->appid, array('lastid' => $this->lastid));
+
                     continue;
                 }
                 else {
@@ -301,7 +305,8 @@ class localexport
                         if($hasrid)C::t('pichome_resources')->delete_by_rid($rid);
                         $this->filenum -= 1;
                         $getmd5 = 0;
-                    } else {
+                    }
+                    else {
                         $filedata = IO::getMeta($realfilepath,1);
 
                         //修改时间
@@ -459,24 +464,25 @@ class localexport
                         }
 
                     }
-                    $percent = floor(($this->donum / $this->filenum) * 100);
+                    $percent = floor(($this->lastid / $this->filenum) * 100);
+                  //  $percent = floor(($this->donum / $this->filenum) * 100);
                     $percent = ($percent > 100) ? 100 : $percent;
-                    $state = ($percent >= 100) ? 3 : 2;
-                    if ($state == 3) {
-                        @unlink($readtxt);
-                        $lastid = 0;
-                    } else {
-                        $lastid = $this->donum;
-                    }
+                    //$state = ($percent >= 100) ? 3 : 2;
+                   $lastid = $this->lastid;
+
                     $indexdata = ['rid'=>$rid,'appid'=>$this->appid,'dateline'=>$mtime,'ext'=>$ext,'apptype'=>1,'getmd5'=>1];
                     Hook::listen('addfileafter',$indexdata);
                     //记录导入起始位置，以备中断后从此处,更改导入状态为正在导入
-                    C::t('pichome_vapp')->update($this->appid, array('lastid' => $lastid, 'percent' => $percent, 'donum' => $this->donum, 'state' => $state, 'filenum' => $this->filenum));
+                    C::t('pichome_vapp')->update($this->appid, array('lastid' => $lastid, 'percent' => $percent, 'donum' => $this->donum,  'filenum' => $this->filenum));
                 }
                 $spl_object->next();
 
             }
-
+            if($spl_object->eof()){
+                //txt完成，进入state=3状态
+                @unlink($readtxt);
+                C::t('pichome_vapp')->update($this->appid, array('lastid' => 0,'percent' => 0, 'state' => 3, 'donum' => $this->donum));
+            }
         }
 
         return array('success' => true);

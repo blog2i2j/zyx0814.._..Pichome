@@ -7,7 +7,7 @@
         
     </template>
     <template v-else>
-        <a href="{$_G[siteurl]}">
+        <a href="{$_G['siteurl']}">
             <el-image class="logo" src="data/attachment/sitelogo/sitelogo.png?{VERHASH}" fit="contain" style="margin-right: 12px;width: 40px;height: 40px;">
                 <template #error><div class="el-image__placeholder"></div></template>
             </el-image>
@@ -37,7 +37,7 @@
 			class="headerkeyword"
 			v-model="HeaderKeyword"
 			@keydown.enter="HeaderKeywordInput"
-            style="z-index: 1000;position: relative;width: 450px;"
+            style="z-index: 100;position: relative;width: 450px;"
             placeholder="{lang search}"
 			size="large">
             <template #prefix>
@@ -45,7 +45,7 @@
             </template>
             <template #suffix>
 				<el-button v-if="HeaderKeyword || searchdata.img" link icon="Close" style="font-size: 20px;" @click.stop="clearkeyword"></el-button>
-				<!--{if intval($_G['setting']['imageSearch_setting']['status'])}-->
+				<!--{if intval($_G['setting']['imageSearchFlag'])}-->
 				<el-popover
 					ref="cameraPopover"
 					popper-class="camera-popover"
@@ -56,7 +56,8 @@
 					popper-style="{let:0}"
 					:teleported="false"
 					:tabindex="1000"
-					@show="SearchUploadPopoverShow">
+					@show="SearchUploadPopoverShow"
+					@hide="SearchUploadPopoverHide">
 					<div class="camera-dropdown">
 						<el-upload
 							class="camera-upload"
@@ -97,16 +98,16 @@
     <!--{template libraryview/pc/components/index/rightBtn}-->
     <international current="$_G['language']"></international>
     <comavatar
-        :level="parseInt($_G[pichomelevel])"
-        iscollect="<!--{if defined('PICHOME_LIENCE') && (!$_G[config][pichomeclosecollect] || $_G[adminid])}--><!--{/if}-->"
-        :adminid="parseInt($_G[adminid])"
+        :level="parseInt($_G['pichomelevel'])"
+        iscollect="<!--{if defined('PICHOME_LIENCE') && (!$_G['config']['pichomeclosecollect'] || $_G['adminid'])}--><!--{/if}-->"
+        :adminid="parseInt($_G['adminid'])"
         PICHOME_LIENCE="<!--{if defined('PICHOME_LIENCE')}--><!--{/if}-->"
-        :uid="parseInt($_G[uid])"
+        :uid="parseInt($_G['uid'])"
         upgrade="<!--{if $_G['setting']['upgrade']}--><!--{/if}-->"
-        version="$_G[setting][version]"
+        version="$_G['setting']['version']"
         formhash="{FORMHASH}">
         <el-avatar size="40">
-            {eval echo avatar_block($_G[uid]);}
+            {eval echo avatar_block($_G['uid']);}
         </el-avatar>
     </comavatar>
     
@@ -123,6 +124,7 @@
 					loading:false,
 					img:'',
 				},
+				searchImagePropover:false
             }
         },
         watch:{
@@ -130,6 +132,15 @@
         },
         mixins:[HeaderRightBtnMixin],
         methods:{
+			SearchUploadPopoverShow(){
+				let self = this;
+				self.searchImagePropover = true;
+				self.$refs.headerkeyword.blur();//失去焦点
+			},
+			SearchUploadPopoverHide(){
+				let self = this;
+				self.searchImagePropover = false;
+			},
             HeaderKeywordInput(val){
 				this.CommonGetImageData();
 			},

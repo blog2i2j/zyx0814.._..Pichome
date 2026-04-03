@@ -9,7 +9,7 @@ class helper_browser
     //判断返回的字符串提取对应的字符做出判断
     //A function to determine what browser and version we are using.
 
-    static function getBrowser($useragent = null)
+    public static function getBrowser($useragent = null)
     {
         // check for most popular browsers first
         // unfortunately, that's IE. We also ignore Opera and Netscape 8
@@ -98,7 +98,7 @@ class helper_browser
     }
 
     //判断是否为企业微信
-    static function is_wxwork()
+    public static function is_wxwork()
     {
         if (strpos($_SERVER['HTTP_USER_AGENT'], 'wxwork') !== false) {
             return true;
@@ -107,7 +107,7 @@ class helper_browser
         }
     }
 
-    static function ismobile()
+    public static function ismobile()
     {
         $agent = strtolower($_SERVER['HTTP_USER_AGENT']);
         if (preg_match("/WindowsWechat/i", $agent)) {
@@ -134,7 +134,7 @@ class helper_browser
     //A function to determine the platform we are on.
     //判断平台的种类
 
-    static function getplatform()
+    public static function getplatform()
     {
         $agent = strtolower($_SERVER['HTTP_USER_AGENT']);
         $os = array();;

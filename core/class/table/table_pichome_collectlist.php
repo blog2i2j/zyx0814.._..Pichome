@@ -84,7 +84,7 @@ class table_pichome_collectlist extends dzz_table
 
     }
 
-    public function delete($id){
+    public function delete($id, $unbuffered = false){
         if(!is_array($id)) $id = (array)$id;
         if(parent::delete($id)){
             //删除对应分享

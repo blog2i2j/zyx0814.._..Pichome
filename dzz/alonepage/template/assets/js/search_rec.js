@@ -3,22 +3,22 @@ const Tmpsearch_rec = {
         model:{
             required:true,
             type: Object,
-            default:{},
+            default:{}
         },
         field:{
             required:true,
             type: Object,
-            default:{},
+            default:{}
         },
         ParenIndex:{
             required:true,
             type: Number,
-            default:0,
+            default:0
         },
         typecollection:{
             required:true,
             type: Object,
-            default:{},
+            default:{}
         }
     },   
     template:`
@@ -108,10 +108,14 @@ const Tmpsearch_rec = {
         function handleUploadSucess(response, file, fileList){//上传成功
             if(response.files && response.files.length){
                 let files = response.files[0];
-                props.model.data[0].data[0].aid = files.data.aid;
-                props.model.data[0].data[0].img = files.data.img;
+                if(files.error){
+                    ElementPlus.ElMessage({message:files.error,type:'error'});
+                }else if( files.data) {
+                    props.model.data[0].data[0].aid = files.data.aid;
+                    props.model.data[0].data[0].img = files.data.img;
+                }
             }
-        };
+        }
         function searchclassifyChange(data){
             let datas = [];
             if(data.length){
@@ -138,7 +142,7 @@ const Tmpsearch_rec = {
                 datas.forEach(element => {
                     let curr = props.model.data[0].data[0].hotsValue.find(function(current){
                         return current.id == element.id;
-                    })
+                    });
                     if(curr){
                         element.value = curr.value;
                     }
@@ -149,7 +153,7 @@ const Tmpsearch_rec = {
                     props.model.data[0].data[0].defaultclassify = data[0]+'';
                 }
             }else{
-                props.model.data[0].data[0].defaultclassify = ''
+                props.model.data[0].data[0].defaultclassify = '';
                 props.model.data[0].data[0].hotsValue = [];
             }
         }
@@ -162,6 +166,6 @@ const Tmpsearch_rec = {
             handleUploadSucess,
             searchclassifyChange,
             deleteimage
-        }
+        };
     }
-}
+};

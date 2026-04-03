@@ -1,0 +1,230 @@
+<van-popup class="screen-popup page-popup orguser-popup" v-model="Orguser.PopupVisible" position="right" style="width: 100%;height: 100%;" @open="OrguserPopupOpen" @closed="OrguserPopupClosed">
+	<van-nav-bar left-arrow @click-left="Orguser.PopupVisible=false" title="{lang user_management}"></van-nav-bar>
+	<div class="scroll-box" style="padding: 0px 4px;height: 100%;overflow: auto;padding-bottom: 35%;">
+		<div class="screen-classify-collapse">
+			<van-cell-group>
+				<van-cell v-for="(item,index) in Orguser.data">
+					<template #title>
+						<div>
+							<div style="display: inline-block;" v-html="item.icon"></div>
+							<span>{{item.username}}</span>
+						</div>
+					</template>
+					<template #default>
+						<template v-if="parseInt(item.adminid)==1">
+							<van-button size="small" type="info" style="width: 80px;" disabled v-cloak>{lang system_admin}</van-button>
+						</template>
+						<template v-else-if="parseInt($_G['uid']) == parseInt(item.uid)">
+							<van-button size="small" type="info" disabled style="width: 80px;" v-cloak>
+								<template v-if="parseInt(item.perm)==1">{lang view_memeber}</template>
+								<template v-else-if="parseInt(item.perm)==2">{lang edit_memeber}</template>
+								<template v-else-if="parseInt(item.perm)>2">{lang manage_memeber}</template>
+							</van-button>
+						</template>
+						<template v-else>
+							<!--{if intval($perm)>2}-->
+							<van-button size="small" type="info" @click="OrguserPopupPerm(index)" style="width: 80px;" v-cloak>
+								<template v-if="parseInt(item.perm)==1">{lang view_memeber}</template>
+								<template v-else-if="parseInt(item.perm)==2">{lang edit_memeber}</template>
+								<template v-else-if="parseInt(item.perm)>2">{lang manage_memeber}</template>
+							</van-button>
+							<!--{else}-->
+							<van-button size="small" type="info" disabled style="width: 80px;" v-cloak>
+								<template v-if="parseInt(item.perm)==1">{lang view_memeber}</template>
+								<template v-else-if="parseInt(item.perm)==2">{lang edit_memeber}</template>
+								<template v-else-if="parseInt(item.perm)>2">{lang manage_memeber}</template>
+							</van-button>
+							<!--{/if}-->
+						</template>
+						<!--{if intval($perm)>2}-->
+						<van-button size="small" type="danger" @click="OrguserPopupdelete(index)" style="width: 80px;" v-cloak>
+							<template v-if="parseInt($_G['uid']) == parseInt(item.uid)">{lang leave}</template>
+							<template v-else>{lang remove}</template>
+						</van-button>
+						<!--{else}-->
+						<van-button v-if="parseInt($_G['uid']) == parseInt(item.uid)" size="small" type="danger" @click="OrguserPopupdelete(index)" v-cloak>{lang leave}</van-button>
+						<div v-else style="width: 42px;height: 32px;display: inline-block;vertical-align: bottom;"></div>
+						<!--{/if}-->
+						
+					</template>
+				</van-cell>
+			</van-cell-group>
+		</div>
+	</div>
+	<!--{if intval($perm)>2}-->
+	<footer class="pic-toolbar footershow">
+		<div class="tabbar">
+			<template v-for="item in Orguser.Footer">
+				<template v-if="item.show">
+					<div class="tab-item" @click="OrguserFooterClick(item)">
+						<i :class="item.icon"></i>
+					</div>
+				</template>
+			</template>
+		</div>
+	</footer>
+	<!--{/if}-->
+</van-popup>
+<van-action-sheet
+	style="padding-top: 10px;"
+	v-model="Orguser.ActionSheet.visible"
+	:actions="Orguser.ActionSheet.data"
+	cancel-text="{lang cancel}"
+	@select="OrguserActionSheetChange"
+	close-on-click-action>
+</van-action-sheet>
+<!--{template mobile/components/details/orguser/add}-->
+<!--{template mobile/components/details/orguser/search}-->
+<script type="text/javascript">
+	var OrguserMixin = {
+		data(){
+			return{
+				Orguser:{
+					PopupVisible:false,
+					data:[],
+					datauids:[],
+					Footer:{
+						search:{type:'search',icon:'icon ri-search-line',show:true},
+						add:{type:'add',icon:'icon van-icon van-icon-plus',show:true},
+					},
+					keyword:'',
+					ActionSheet:{
+						visible:false,
+						index:0,
+						data:[{ name: '{lang view_memeber}',type:1 }, { name: '{lang edit_memeber}',type:2 }, { name: '{lang manage_memeber}',type:3 }]
+					}
+				}
+			}
+		},
+		mixins:[OrguserAddMixin,OrguserearchMixin],
+		methods:{
+			async OrguserActionSheetChange(item){
+				var self = this;
+				self.$toast.loading({
+					message: '{lang In_the_save}',
+					overlay:true,
+					className:'conter-toast',
+					duration: 0,
+					forbidClick: true,
+					loadingType: 'spinner',
+				});
+				var param = {
+					clid:self.ParamBasic.clid,
+					objuid:self.Orguser.data[self.Orguser.ActionSheet.index].uid,
+					perm:item.type
+				};
+				var res = await axios.post(MOD_URL+'&op=collect&do=addusertocollect',param);
+				if(res == 'intercept'){
+					return false;
+				}
+				var json = res.data;
+				self.$toast.clear();
+				if(json.success){
+					self.Orguser.data[self.Orguser.ActionSheet.index].perm = item.type;
+				}else{
+					self.$toast.fail(json.error);
+				}
+			},
+			OrguserPopupPerm(index){
+				this.Orguser.ActionSheet.index = index;
+				this.Orguser.ActionSheet.visible = true;
+			},
+			OrguserPopupOpen(){
+				var self = this;
+				this.OrguserPopupGetData();
+			},
+			OrguserPopupdelete(index){
+				var self = this;
+				if(parseInt(self.Orguser.data[index].perm) == 3 || parseInt(self.Orguser.data[index].perm) == 4){
+					var num = 0;
+					for(var i in self.Orguser.data){
+						if(parseInt(self.Orguser.data[i].perm)>2){
+							num ++;
+						}
+					}
+					if(num<2){
+						self.$toast.fail('{lang manager_is_must}');
+						return false;
+					}
+				}
+				self.$dialog.confirm({
+					title: '{lang prompt}',
+					message: '{lang del_collets_user_confirm}',
+				}).then(async function(){
+					self.$toast.loading({
+						overlay:true,
+						message: '{lang Deleting}',
+						forbidClick: true,
+						duration:0,
+						loadingType: 'spinner',
+					});
+					var res = await axios.post(MOD_URL+'&op=collect&do=delusertocollect',{
+						clid:self.ParamBasic.clid,
+						objuid:self.Orguser.data[index].uid
+					});
+					if(res == 'intercept'){
+						return false;
+					}
+					var json = res.data;
+					self.$toast.clear();
+					if(json.success){
+						
+						var findex = self.Orguser.datauids.indexOf(parseInt(self.Orguser.data[index].uid));
+						self.Orguser.datauids.splice(findex,1);
+						self.Orguser.data.splice(index,1);
+					}else{
+						self.$toast.fail(json.error);
+					}
+				}).catch(function(){
+				    // on cancel
+				});
+			},
+			async OrguserPopupGetData(){
+				var self = this;
+				self.Orguser.data = [];
+				self.$toast.loading({
+					message: '{lang loading}',
+					overlay:true,
+					className:'conter-toast',
+					duration: 0,
+					forbidClick: true,
+					loadingType: 'spinner',
+				});
+				var res = await axios.post(MOD_URL+'&op=ajax&operation=getcollectuser',{
+					clid:self.ParamBasic.clid,
+					keyword:self.Orguser.keyword
+				});
+				if(res == 'intercept'){
+					return false;
+				}
+				var data = res.data;
+				if(data.success){
+					var arr = [];
+					var uids = [];
+					for(var i in data.success){
+						var item = data.success[i];
+						uids.push(parseInt(item.uid));
+						arr.push(item);
+					}
+					self.Orguser.data = arr;
+					self.Orguser.datauids = uids;
+					self.$toast.clear();
+				}else{
+					self.$toast.fail('{lang get_data_fail}');
+				}
+					
+			},
+			OrguserFooterClick(data){
+				if(data.type == 'add'){
+					this.OrguserAdd.PopupVisible = true;
+				}else if( data.type == 'search'){
+					this.Orguserearch.PopupVisible = true;
+				}
+			},
+			OrguserPopupClosed(){
+				this.Orguserearch.keyword = '';
+				this.OrguserAdd.keyword = '';
+			}
+		}
+	};
+</script>

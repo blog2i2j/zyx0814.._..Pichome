@@ -19,11 +19,11 @@ if($do=='getNavigation'){
             'url'=>'user.php?mod=my'
         );
     }
-
-    if( defined('PICHOME_LIENCE')){
+    if( defined('PICHOME_LIENCE')) {
+        $navlist[] = ['id' => 'collection', 'name' => lang('my_collect'), 'url' => 'index.php?mod=collection&op=view', 'number' => $number];
+    }
+    if (defined('LICENSE_VERSION') && LICENSE_VERSION == 'Enterprise') {
         $number = DB::result_first("select count(clid) from %t where uid = %d and perm > %d",array('pichome_collectuser',$uid,0));
-        $navlist[] = ['id'=>'collection','name'=>lang('my_collect'),'url'=>'index.php?mod=collection&op=view','number'=>$number];
-
         if(!$ismobile) {
             $collectlis = Hook::listen('collectlist');
             if (isset($collectlis[0])) {
@@ -42,16 +42,8 @@ if($do=='getNavigation'){
                     'url' => 'index.php?mod=fileCollect&op=setting'
                 );
             }
-
         }
 
-       /* //我的专辑
-        $tabgroupdata = [];
-        Hook::listen('gettabgroupdata',$tabgroupdata,'edits');
-        $managetabgroup = [];
-       foreach($tabgroupdata as $key=>$value){
-           if($value['editperm'])$managetabgroup[] = $value;
-       }*/
     }
 
 

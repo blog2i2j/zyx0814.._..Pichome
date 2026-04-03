@@ -1,0 +1,197 @@
+<!--{template common/container/pc/header_start}-->
+<link rel="stylesheet" type="text/css" href="{MOD_PATH}/template/singlefile/default/view/pc/assets/css/header.css?{VERHASH}"/>
+<link rel="stylesheet" type="text/css" href="{MOD_PATH}/template/singlefile/default/view/pc/assets/css/details.css?{VERHASH}"/>
+<script src="{MOD_PATH}/template/library/details/view/mobile/assets/js/pinchzoom.js?{VERHASH}"></script>
+<script src="{MOD_PATH}/template/library/details/view/mobile/assets/js/imagezoom.js?{VERHASH}"></script>
+<link rel="stylesheet" href="{MOD_PATH}/template/library/details/view/mobile/assets/css/xuanzhuan/index.css?{VERHASH}">
+<script type="text/javascript" src="{MOD_PATH}/template/library/default/view/mobile/assets/js/menu.js?{VERHASH}"></script>
+<link rel="stylesheet" href="static/scss/default/index.css?{VERHASH}">
+<style>
+	.ImgScroll{
+		height: 100%;
+		display: flex;
+		align-items: center;
+	}
+	.pinch-zoom-container{
+		width: 100%;
+	}
+</style>
+<script>
+	function CopyTxt(item,text){
+		var input = document.createElement('input'); input.setAttribute('id', 'copyInput');
+		input.setAttribute('value', text);
+		document.getElementsByTagName('body')[0].appendChild(input);
+		document.getElementById('copyInput').select();
+		document.execCommand('copy');
+		item.$message({
+		  message: '{lang copy_clipboard}',
+		  type: 'success'
+		});
+		document.getElementById('copyInput').remove();
+	};
+</script>
+<!--{template common/container/pc/header_end}-->
+<div id="dzzoffice">
+	<el-container class="page-main">
+		<el-header class="page-header"  height="60px" style="--el-header-padding: 0 10px;">
+				<!--{template singlefile/default/view/mobile/components/header}-->
+		</el-header>
+		<el-container>
+			<el-main style="overflow: hidden;padding:0" class="dzz-container">
+				<!--{template singlefile/default/view/mobile/components/image}-->
+			</el-main>
+		</el-container>
+		<el-footer class="page-header" id="footer_header"  height="60px" style="padding: 0px 10px;border: 0;border-top:1px solid var(--el-border-color);" v-if="pageset.topNavigation">
+			<!--{template singlefile/default/view/mobile/components/footer}-->
+		</el-footer>
+	</el-container>
+	<!--分享对话框加载-->
+	<!--{eval  include template('shareAddDialog','./dzz/shares/template/')}-->
+	<!--{template singlefile/default/view/mobile/components/right}-->
+</div>
+
+<script type="text/javascript">
+	const { createApp, reactive, toRefs, onUnmounted , ref, onMounted, nextTick, watch, computed, onBeforeUpdate , onUnmounted } = Vue;
+	const dzzoffice = createApp({
+		el: '#dzzoffice',
+		data() {
+			return {
+				rid:'',
+				HtmlLoading:true,
+				DocumentAdminId:'$_G['adminid']',
+				HideInformation:false,
+				imagesData:{} ,
+				DocumentThemeColor:'',//dark,
+				previews:{
+					data:[],
+					transform:0,
+					active:0,
+					size:false
+				},
+				pageset:$json_pageset
+			}
+		},
+		watch: {
+			DocumentThemeColor:{
+				handler(newval){
+					document.querySelector('html').className = newval
+				},
+				deep:true,
+				// immediate:true
+			}
+		},
+		created() {
+			let theme = localStorage.getItem('theme');
+			if(theme){
+				this.DocumentThemeColor=theme;
+			}else{
+				this.DocumentThemeColor = 'light'
+			}
+			this.getBannerData();
+			this.GetDetailsData("{$data['pval']}");
+
+		},
+		mixins:[HeaderMixins,FooterMixin,RightMixin,ImageMixin,ShareAddDialogMixin],
+		methods: {
+
+			async GetDetailsData(val){
+				let self = this;
+				if(!val)return false;
+				let {data: res} = await axios.post('{MOD_URL}&op=ajax&do=getfiledetails',{
+					pid:'$id',
+					path:val
+				})
+				if(res.status == 2){
+					self.$message.error(res.error)
+					return false;
+				}
+				let foldernames = [];
+				if(res.resourcesdata.foldernames){
+					for (const key in res.resourcesdata.foldernames) {
+						const element = res.resourcesdata.foldernames[key];
+						foldernames.push(element)
+					}
+				}
+				let tag = [];
+				if(res.resourcesdata.tag){
+					for (const key in res.resourcesdata.tag) {
+						const element = res.resourcesdata.tag[key];
+						tag.push(element)
+					}
+				}
+				this.imagesData = res.resourcesdata;
+				this.imagesData['foldernames'] = foldernames;
+				this.imagesData['tag'] = tag;
+				this.previews.data = res.resourcesdata.preview;
+				self.$nextTick(function(){
+					self.HtmlLoading = false;
+				});
+			},
+			DocumentThemeChange(){
+				if(this.DocumentThemeColor=='light'){
+					this.DocumentThemeColor='dark';
+					localStorage.setItem('theme','dark');
+				}else{
+					this.DocumentThemeColor='light';
+					localStorage.setItem('theme','light');
+				}
+			},
+			headerImgOperation(type){//图片快捷点击
+				var type = parseInt(type);
+				var self = this;
+				if(type==1){
+					var proportion = 1;
+					this.ImgParam.proportion = proportion;
+					let slider = document.querySelector('.el-slider');
+					this.ImgParam.slider = (slider.width/2)*proportion;
+			
+				}else if(type==2){
+					this.imageSet();
+				}else if(type==3){
+					var num = this.ImgParam.rotate + 90;
+					if(num>=360){
+						num=0;
+					}
+					this.ImgParam.rotate = num;
+				}else if(type==4){
+					var scaleX = this.ImgParam.scaleX;
+					if(scaleX == 0){
+						this.ImgParam.scaleX = -1;
+					}else{
+						this.ImgParam.scaleX = 0;
+					}
+				}else if(type==5){
+					var scaleY = this.ImgParam.scaleY;
+					if(scaleY == 0){
+						this.ImgParam.scaleY = -1;
+					}else{
+						this.ImgParam.scaleY = 0;
+					}
+				}
+				
+			},
+		},
+		mounted() {
+			var self = this;
+
+		},
+		components: {
+			comavatar,
+            imagezoom,
+			menuitem
+		},
+
+	});
+	dzzoffice.use(ElementPlus, {
+		locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+	});
+	for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+		dzzoffice.component(key, component)
+	}
+	dzzoffice.component('international',international);
+	// 屏蔽警告信息
+	dzzoffice.config.warnHandler = function(){return null};
+	dzzoffice.mount('#dzzoffice');
+</script>
+
+<!--{template common/container/pc/footer}-->

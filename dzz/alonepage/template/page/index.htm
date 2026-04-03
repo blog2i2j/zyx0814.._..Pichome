@@ -1,7 +1,6 @@
 <!--{template common/container/pc/header_start}-->
 <link rel="stylesheet" href="static/scss/default/index.css?{VERHASH}">
 <link rel="stylesheet" href="{MOD_PATH}/template/assets/css/index.css?{VERHASH}">
-<script type="text/javascript" src="static/js/sortable.min.js?{VERHASH}"></script>
 <script type="text/javascript" src="static/vue_components/locale/index.js?{VERHASH}"></script>
 <!--{template common/container/pc/header_end}-->
 <style>
@@ -20,20 +19,46 @@
 </style>
 <div id="dzzoffice">
 	<el-container class="page-main">
-		<!--{template common/container/pc/ad_pic_header}-->
+		<!--{template common/container/pc/header_return}-->
 		<el-main style="overflow: hidden;position: relative;padding: 0;">
 			<el-scrollbar>
-				<div class="page-container">
-					<div class="warp-box">
+				<div class="page-container container">
+					<div class="admin-tabs-header">
+						<el-menu
+								:default-active="activeName"
+								mode="horizontal"
+								class="admin-tabs"
+								@select="handleTabsClick">
+							<el-menu-item index="list" style="width: 100px;font-size: 16px;">
+								{lang list}
+								<el-text size="small" style="margin-left: 6px;">{{total0}}</el-text>
+							</el-menu-item>
+							<el-menu-item index="recycle" style="width: 100px;margin-left: 8px;font-size: 16px;">{lang recycle}
+								<el-text size="small" style="margin-left: 6px;">{{total1}}</el-text>
+							</el-menu-item>
+						</el-menu>
+						<div class="admin-tabs-action">
+							<el-input
+									size="large"
+									placeholder="{lang search}"
+									style="width: 200px;margin-right: 10px;"
+									class="el-input__inner"
+									clearable
+									v-model="keyword"
+									@keyup.enter="handleSearch"
+									@clear="handleSearch"
+									@change="handleSearch"
+							>
+							</el-input>
+							<el-button v-if="activeName!='recycle'" icon="CirclePlus" size="large" type="primary" @click="handleedit('add')">{lang create}</el-button>
+						</div>
+					</div>
+					<div class="warp-box" v-loading="listloading" style="margin-bottom:20px;">
 						<el-table 
 							:data="tableData" 
 							row-key="id" 
 							:row-class-name="tableRowClassName">
-							<el-table-column label="{lang sort}" width="60px" align="center">
-								<template #default="scope">
-									<el-icon v-if="!parseInt(scope.row.issystem)" class="dzz-move"><Rank /></el-icon>
-								</template>
-							</el-table-column>
+
 							<el-table-column 
 							label="{lang name}"
 							prop="name"
@@ -92,16 +117,31 @@
 							<el-table-column label="{lang operation}" width="200px">
 								<template #default="scope">
 									<el-tooltip
+											v-if="!parseInt(scope.row.isdelete)"
 										effect="dark"
 										content="{lang edit}"
 										placement="bottom">
 										<el-button @click.stop="detail(scope.row)" type="info"  icon="EditPen" plain></el-button>
 									</el-tooltip>
-									<el-tooltip
+									<!-- <el-tooltip
 										effect="dark"
 										content="{lang setting}"
 										placement="bottom">
 										<el-button @click="handleedit('edit',scope.row)" type="info"  icon="Setting" plain></el-button>
+									</el-tooltip> -->
+									<el-tooltip
+										v-if="!parseInt(scope.row.isdelete)"
+										effect="dark"
+										content="{lang publish}"
+										placement="bottom">
+										<el-button @click="handlePosition(scope.row.id)" type="info"  icon="Position" plain></el-button>
+									</el-tooltip>
+									<el-tooltip
+											v-if="parseInt(scope.row.isdelete)"
+											effect="dark"
+											content="{lang restore}"
+											placement="bottom">
+										<el-button @click="handleRestore(scope.row.id)" type="info"  icon="refresh" plain></el-button>
 									</el-tooltip>
 									<template v-if="!parseInt(scope.row.issystem)">
 										<el-popconfirm title="{lang delete_tip}" @confirm="handleDelete(scope.row.id)">
@@ -121,16 +161,21 @@
 								</template>
 							</el-table-column>
 						</el-table>
-						<div class="el-table__append-wrapper">
-                            <el-button 
-                                style="width: 100%;border-radius: 0;height: 65px;font-size: 16px;" 
-                                plain 
-                                text 
-								@click="handleedit('add')"
-                                icon="CirclePlus">{lang add}</el-button>
-                        </div>
+
 					</div>
-					
+					<div class="pageContainer" v-if="pageset.total>pageset.perpage" style="padding:0 0 20px 0;display:flex;justify-content: center">
+						<el-pagination
+								large
+								background
+								@size-change="handleSizeChange"
+								@current-change="handleCurrentChange"
+								:current-page="currentPage"
+								:page-sizes="pageset.pagesizes"
+								:page-size="pageset.perpage"
+								layout="total, sizes, prev, pager, next, jumper"
+								:total="pageset.total">
+						</el-pagination>
+					</div>
 				</div>
 			</el-scrollbar>
 			
@@ -142,65 +187,73 @@
 	const BasicUrl = MOD_URL+'&op=alonepageinterface&do=';
 	const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch } = Vue;
 	const dzzoffice = createApp({
-		mixins:[HeaderMixin,RightMixin],
-		created() {
-            this.HeaderMenu.active = 'alonepage'
+		data() {
+			return {
+				DocumentThemeColor: '',
+				activeName:'list',
+				tableData: [],
+				total1:parseInt('{$total1}'),
+				total0:parseInt('{$total0}'),
+				keyword:'',
+				listloading:false,
+				pageset:{
+					page:1,
+					perpage:20,
+					total:0,
+					pagesizes:[10,20,50,100]
+				}
+			}
 		},
-		setup(){
-			let DocumentThemeColor = ref();
-			let HeaderMenuIndex = 'alonepage';
-			let tableData = ref([]);
-			function TableSortable(){//排序
-				let tbody = document.querySelector('.el-table__body-wrapper tbody')
-				Sortable.create(tbody, {
-					handle: ".dzz-move",
-					animation: 150, // ms, number 单位：ms，定义排序动画的时间
-					// 拖拽移动的时候
-					onMove: function (/**Event*/evt,) {
-						let classList = evt.related.classList;
-						if(classList.value.indexOf('tr-disabled') > -1){
-							return false;
-						}
-						
-					},
-					onUpdate: function(/**Event*/evt) {
-						const currentRow = tableData.value.splice(evt.oldIndex, 1)[0];
-                        tableData.value.splice(evt.newIndex, 0, currentRow);
-						nextTick(async () => {
-							let ids = [];
-							for (let index = 0; index < tableData.value.length; index++) {
-								const element = tableData.value[index];
-								ids.push(element.id)
-							}
-							const {data: res} = await axios.post(BasicUrl+'sortpage',{
-								ids:ids.join(',')
-							});
-							if(res.success){
-								ElementPlus.ElMessage({
-									type:'success',
-									message:'{lang do_success}'
-								});
-							}else{
-								ElementPlus.ElMessage.error(res.msg || '{lang do_failed}');
-							}
-						})
-					}
-				})
-			};
+		mixins:[RightMixin],
+		created() {
+			//主题颜色
+			let theme = localStorage.getItem('theme');
+			if(theme){
+				this.DocumentThemeColor=theme;
+			}else{
+				this.DocumentThemeColor = 'light'
+			}
+			let  alonepage_tab= localStorage.getItem('alonepage_tab');
+			if(alonepage_tab){
+				this.activeName = alonepage_tab;
+			}else{
+				this.activeName = 'list';
+			}
+			this.getData();
+		},
+		watch:{
+			DocumentThemeColor:{
+				handler(newval){
+					document.querySelector('html').className = newval
+				},
+				deep:true,
+				// immediate:true
+			}
+		},
+		methods: {
+
+			handleSizeChange(perpage){
+				this.pageset.perpage = perpage;
+				this.getData();
+			},
+			handleCurrentChange(page){
+				this.pageset.page = page;
+				this.getData();
+			},
 			//获取二维码
-			async function handleTableGeturlqrcode(id){
-                const self = this;
-				var {data: res} = await axios.post(BasicUrl+'geturlqrcode',{
-					id:id
+			async handleTableGeturlqrcode(id) {
+				const self = this;
+				var {data: res} = await axios.post(BasicUrl + 'geturlqrcode', {
+					id: id
 				});
-				if(res.success){
-                    this.SettingQrcode.qrcodeurl = res.qrcode;
-				}else{
+				if (res.success) {
+					this.SettingQrcode.qrcodeurl = res.qrcode;
+				} else {
 					ElementPlus.ElMessage.error(res.msg || '{lang Get_QR_error}');
 				}
-			};
-			function handleedit(type,item){//编辑、添加
-				if(type == 'edit'){
+			},
+			handleedit(type, item) {//编辑、添加
+				if (type == 'edit') {
 					this.SettingForm.id = item.id
 					this.SettingDialog.Visible = true;
 					this.SettingForm.pagename = item.pagename;
@@ -209,133 +262,155 @@
 				let text = '';
 				let title = '{lang create}';
 				let start = true;
+				let self=this;
 				ElementPlus.ElMessageBox.prompt('{lang name}', title, {
 					confirmButtonText: '{lang confirms}',
 					cancelButtonText: '{lang cancel}',
-					inputValue:text,
-					inputValidator:function(val){
-						if(start){
+					inputValue: text,
+					inputValidator: function (val) {
+						if (start) {
 							start = false;
 							return true;
 						}
-						if(val){
+						if (val) {
 							let status = false;
-							for (let index = 0; index < tableData.value.length; index++) {
-								const element = tableData.value[index];
-								if(type == 'edit' && element.id == item.id){
+							for (let index = 0; index < self.tableData.length; index++) {
+								const element = self.tableData[index];
+								if (type == 'edit' && element.id == item.id) {
 									continue;
 								}
-								if(element.pagename == val){
+								if (element.pagename == val) {
 									status = true;
 									break;
 								}
 							}
-							if(status){
+							if (status) {
 								return '{lang name_not_same}'
-							}else{
+							} else {
 								return true;
 							}
-						}else{
+						} else {
 							return '{lang name_cannot_empty}';
 						}
-						
-					},
-					inputPlaceholder:'{lang Please_input_name}'
-					}).then(async ({ value }) => {
-						var param = {};
-						if(type == 'edit'){
-							param = {
-								addpage:true,
-								formhash:'{FORMHASH}',
-								id:item.id,
-								pagename:value
-							}
-						}else{
-							param = {
-								addpage:true,
-								formhash:'{FORMHASH}',
-								pagename:value
-							}
-						}
-						const {data: res} = await axios.post(BasicUrl+'addpage',param);
-						if(res.success){
-							if(type == 'edit'){
-								item.pagename = value;
-								ElementPlus.ElMessage({
-									type:'success',
-									message:'{lang edit_success}'
-								});
-							}else{
-								tableData.value.push({
-									id:res.data.id,
-									url:SITEURL+res.data.url,
-									pagename:res.data.pagename,
-								});
-								ElementPlus.ElMessage({
-									type:'success',
-									message:'{lang add_success}'
-								});
-							}
-							
-							
-						}else{
-							ElementPlus.ElMessage.error(res.msg || '{lang add_error}');
-						}
-						
-					}).catch(() => {
 
-					})
-			};
-			function detail(data){//设置单页
-				window.location.href = MOD_URL+'&op=setting&id='+data.id
-			};
-			async function handleDelete(id,index){//删除
-				index = tableData.value.findIndex(current => current.id == id);
-				const {data: res} = await axios.post(BasicUrl+'delpage',{
-					id:id
+					},
+					inputPlaceholder: '{lang Please_input_name}'
+				}).then(async ({value}) => {
+					var param = {};
+					if (type == 'edit') {
+						param = {
+							addpage: true,
+							formhash: '{FORMHASH}',
+							id: item.id,
+							pagename: value
+						}
+					} else {
+						param = {
+							addpage: true,
+							formhash: '{FORMHASH}',
+							pagename: value
+						}
+					}
+					const {data: res} = await axios.post(BasicUrl + 'addpage', param);
+					if (res.success) {
+						if (type == 'edit') {
+							item.pagename = value;
+							ElementPlus.ElMessage({
+								type: 'success',
+								message: '{lang edit_success}'
+							});
+						} else {
+							self.tableData.unshift({
+								id: res.data.id,
+								url: SITEURL + res.data.url,
+								pagename: res.data.pagename,
+								dateline:res.data.dateline
+							});
+							this.total0++;
+							ElementPlus.ElMessage({
+								type: 'success',
+								message: '{lang add_success}'
+							});
+						}
+					} else {
+						ElementPlus.ElMessage.error(res.msg || '{lang add_error}');
+					}
+				}).catch(() => {
+
+				})
+			},
+			detail(data) {//设置单页
+				window.location.href = MOD_URL + '&op=setting&id=' + data.id
+			},
+			handleTabsClick(val) {
+				if (this.activeName == val) return false;
+				this.activeName = val;
+				window.localStorage.setItem('alonepage_tab', val);
+				this.pageset.page = 1;
+				this.getData();
+			},
+			async handleDelete(id) {//删除
+				index = this.tableData.findIndex(current => current.id == id);
+				const {data: res} = await axios.post(BasicUrl + 'pageDelete', {
+					id: id
 				});
-				if(res.success){
-					tableData.value.splice(index,1);
+				if (res.success) {
+					this.tableData.splice(index, 1);
 					ElementPlus.ElMessage({
-						type:'success',
-						message:'{lang delete_success}'
+						type: 'success',
+						message: '{lang delete_success}'
 					});
-				}else{
+					if(this.activeName=='list'){
+						this.total0--;
+						this.total1++;
+					}else{
+						this.total0++;
+						this.total1--;
+					}
+
+				} else {
 					ElementPlus.ElMessage.error(res.msg || '{lang delete_error}');
 				}
-			};
-			getData()
-			async function getData(){//获取数据
-				const {data: res} = await axios.post(BasicUrl+'pagelist');
-				tableData.value = res.data;
-			};
-			onMounted(function(){
-				TableSortable();//初始化拖动排序
-				//主题颜色
-				let theme = localStorage.getItem('theme');
-				if(theme){
-					DocumentThemeColor.value = theme;
-				}else{
-					DocumentThemeColor.value = 'light'
+			},
+			async handleRestore(id) {//删除
+				index = this.tableData.findIndex(current => current.id == id);
+				const {data: res} = await axios.post(BasicUrl + 'pageRestore', {
+					id: id
+				});
+				if (res.success) {
+					this.tableData.splice(index, 1);
+					ElementPlus.ElMessage({
+						type: 'success',
+						message: '{lang delete_success}'
+					});
+					this.total0++;
+					this.total1--;
+				} else {
+					ElementPlus.ElMessage.error(res.msg || '{lang delete_error}');
 				}
-			});
-			
-			
-			watch(()=>DocumentThemeColor.value, (newval)=>{
-				document.querySelector('html').className = newval
-			},{
-				deep: true,
-			})
-			function DocumentThemeChange(){//主题色切换
-				if(DocumentThemeColor.value=='light'){
-					DocumentThemeColor.value='dark';
-					localStorage.setItem('theme','dark');
-				}else{
-					DocumentThemeColor.value='light';
-					localStorage.setItem('theme','light');
-				}
-			};
-			function tableRowClassName(data){
+			},
+			async handlePosition(data) {//发布
+				window.open('index.php?mod=publish&op=choose&ptype=4&value=' + data)
+			},
+			handleSearch(){
+				this.pageset.page = 1;
+				this.getData();
+			},
+			async getData() {//获取数据
+				const self=this;
+				this.tableData=[];
+				this.listloading=true;
+				const {data: res} = await axios.post(BasicUrl + 'pagelist', {
+					isdelete: self.activeName=='recycle' ?1:0,
+					page: self.pageset.page,
+					perpage: self.pageset.perpage,
+					keyword: self.keyword,
+				});
+				this.listloading=false;
+				this.tableData = res.data;
+				this.pageset.total = parseInt(res.total);
+			},
+			tableRowClassName(data){
 				let row = data.row;
 				if(parseFloat(row.issystem)){
 					return 'tr-disabled';
@@ -343,20 +418,11 @@
 					return '';
 				}
 			}
-			return {
-				handleedit,
-				handleDelete,
-				detail,
-				tableData,
-				TableSortable,
-				HeaderMenuIndex,
-				DocumentThemeColor,
-				DocumentThemeChange,
-				handleTableGeturlqrcode,
-				tableRowClassName
-			}
 		},
+		onMounted(){
 
+
+		}
 	});
 	dzzoffice.use(ElementPlus, {
 		locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},

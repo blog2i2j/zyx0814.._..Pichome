@@ -2,8 +2,8 @@
         v-model="editDialog.visible"
         title="{lang share_edit}"
         align="center"
-        width="450px"
-        style="max-width:100%"
+        width="100%"
+        style="max-width:100%;margin:0"
         @open="getShareData">
     <el-form  ref="editFormRef" :model="editDialogForm" label-position="top">
         <el-form-item label="{lang share_title}" prop="title">
@@ -47,6 +47,7 @@
                 editDialog: {
                     title:'',
                     sid:'',
+                    sperm:0,
                     visible: false,
                 },
                 btnloading:false,
@@ -56,7 +57,7 @@
                     times:0,
                     password:'',
                     fendtime:'',
-                    perm:0
+                    sperm:0
                 },
                 rules: {
                     title: [

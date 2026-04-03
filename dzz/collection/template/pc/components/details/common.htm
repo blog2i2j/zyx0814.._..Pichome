@@ -1,0 +1,151 @@
+<script type="text/javascript">
+	const CommonMixin = {
+		data(){
+			return {
+			}
+		},
+		methods:{
+			async CommonGetImageData(type){
+				var self = this;
+				
+				self.$nextTick(function(){
+					self.CommonSetHash();//设置hash
+					self.ImageProps.urlparam = self.CommonSetParam();//获取提交参数
+					self.$refs.RefImageLayout.restart()
+				});
+			},
+			CommonSetHash(){
+				var self = this;
+				var ScreenParam = self.$refs.ScreenBoxRef.GetParam('hash');
+
+                var OrderParam = {};
+				var Params = {}
+				Params['id'] = self.LeftActiveid;
+
+				if(self.HeaderKeyword){
+					Params['keyword'] = self.HeaderKeyword;
+				}
+				Params = {...Params,...ScreenParam,...OrderParam,};
+				var arr = [];
+				for(var key in Params){
+					arr.push(key+'='+Params[key]);
+				}
+				var hash = arr.join('&');
+				location.hash=hash;
+			},
+			CommonSetParam(){
+				var self = this;
+				var Params = {};
+				var ScreenParam = self.$refs.ScreenBoxRef.GetParam();
+				var OrderParam = self.HeaderRightBtnGetParam();
+				if(self.Leftshareid){
+					Params['shareid'] = self.Leftshareid;
+				}else{
+					Params['clid'] = self.Leftclid;
+				}
+				if(self.LeftActiveid == 'not'){
+					Params['cid'] = -1;
+				}else{
+					if(self.LeftActiveid != 'all'){
+						Params['cid'] = self.LeftActiveid;
+					}
+				}
+				if(self.HeaderKeyword){
+					Params['keyword'] = self.HeaderKeyword;
+				}
+				return {...Params,...ScreenParam,...OrderParam};
+			},
+			CommonGetHashParam(name,url){
+				if(!url){
+					var hash=location.hash;
+					var url=hash.replace(/&.+$/i,'').replace('#','');
+				}else{
+					var url=location.hash;
+				}
+				if (!name) {
+					return '';
+				}
+				var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+				if (!url) {
+					return '';
+				}
+				var r = url.match(reg);
+				if (r !== null) {
+					return decodeURIComponent(r[2]);
+				}
+			},
+			CommonDeleteAll(){
+				const self = this;
+				this.HeaderKeyword = '';
+				self.$refs.ScreenBoxRef.DeleteAll();
+				this.CommonGetImageData();
+				
+			},
+			CommonInit(){
+				//主题颜色
+				let theme = localStorage.getItem('theme');
+				if(theme){
+					this.DocumentThemeColor=theme;
+				}else{
+					this.DocumentThemeColor = 'light'
+				}
+
+		
+				//筛选显示隐藏
+				let showscreen = sessionStorage.getItem('showscreen');
+				if(parseInt(showscreen) > -1){
+					this.Screenshow = parseInt(showscreen)?true:false;
+				}
+
+				//布局方式
+				let layout = sessionStorage.getItem('layout');
+				this.HeaderRightBtnShow.layout = layout || 'waterFall';
+				this.ImageProps.layout = layout || 'waterFall';
+	
+				//其它信息
+				let other = sessionStorage.getItem('other');
+				this.HeaderRightBtnShow.other = other || '';
+				this.ImageProps.ShowMessage.other = other || '';
+
+				//显示信息
+				let display = sessionStorage.getItem('display');
+				if(display && display != 'empty'){
+					display = display.split(',');
+					this.HeaderShowChange({
+						type:'display',
+						value:display
+					});
+				}else{
+					this.HeaderRightBtnShow.display = [];
+					this.ImageProps.ShowMessage.display = [];
+				}
+				//排序方式
+				let sort = sessionStorage.getItem('sort');
+				this.HeaderRightBtnShow.sort = sort || 'desc';
+		
+				let order = sessionStorage.getItem('order');
+				this.HeaderRightBtnShow.order = order || 'btime';
+	
+				this.CommonGetImageData();
+			},
+			async GetLeftexpandedkeys(){
+				const self = this;
+				if(self.LeftActiveid == 'all' || self.LeftActiveid == 'not' || self.LeftActiveid == 'user'){
+					return false;
+				}
+				const {data: res} = await axios.post(MOD_URL+'&op=ajax&operation=getexpandedkeys',{
+					cid:self.LeftActiveid,
+				});
+				if(res.data && res.data.length > 1){
+					res.data.pop()
+					for (let index = 0; index < res.data.length; index++) {
+						const element = res.data[index];
+						this.LeftTree.expandedkeys.push(parseInt(element))
+					}
+				}
+				self.LeftTree.show = true;
+				
+			},
+		}
+	}
+</script>

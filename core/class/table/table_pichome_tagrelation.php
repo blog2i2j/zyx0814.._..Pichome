@@ -13,7 +13,7 @@
             $this->_cache_ttl = 3600;
             parent::__construct();
         }
-        public function insert($setarr){
+        public function insert($setarr, $return_insert_id = false, $replace = false, $silent = false){
 
             if($id = DB::fetch_first("select id from %t  where cid = %s and tid = %d",array($this->_table,$setarr['cid'],$setarr['tid']))){
                 return $id;

@@ -12,9 +12,15 @@
 <script type="text/javascript" src="{MOD_PATH}/template/assets/js/manual_rec.js?{VERHASH}"></script>
 <script type="text/javascript" src="{MOD_PATH}/template/assets/js/file_rec.js?{VERHASH}"></script>
 <script type="text/javascript" src="{MOD_PATH}/template/assets/js/db_ids.js?{VERHASH}"></script>
+<script type="text/javascript" src="{MOD_PATH}/template/assets/js/image_mix.js?{VERHASH}"></script>
 <script type="text/javascript" src="{MOD_PATH}/template/assets/js/banner.js?{VERHASH}"></script>
+
 <script type="text/javascript" src="{MOD_PATH}/template/assets/js/tab.js?{VERHASH}"></script>
+
 <script type="text/javascript" src="{MOD_PATH}/template/assets/js/search_rec.js?{VERHASH}"></script>
+<script type="text/javascript" src="{MOD_PATH}/template/assets/js/collect_ids.js?{VERHASH}"></script>
+<script type="text/javascript" src="{MOD_PATH}/template/assets/js/collect_rec.js?{VERHASH}"></script>
+<script type="text/javascript" src="{MOD_PATH}/template/assets/js/search_pub.js?{VERHASH}"></script>
 <script type="text/javascript" src="static/vue_components/locale/index.js?{VERHASH}"></script>
 <script>
 	const BasicUrl = MOD_URL+'&op=alonepageinterface&do=';
@@ -55,11 +61,19 @@
 					tab:[],
 					search:[]
 				},
+				licenseVersion:0
 			}
 		},
 
 		created(){
 			let  _this = this;
+			<!--{if defined('LICENSE_VERSION') && LICENSE_VERSION == 'Enterprise'}-->
+			_this.licenseVersion=2;
+			<!--{elseif defined('LICENSE_VERSION') && LICENSE_VERSION == 'Team'}-->
+			_this.licenseVersion=1;
+			<!--{else}-->
+			_this.licenseVersion=0;
+			<!--{/if}-->
 			axios.all([AxiosUrl('typecollection'),AxiosUrl('getpagecontent','&id=$id','get')]).then(
 				axios.spread((res1,res2)=>{
 					_this.GetTypeCollection(res1.data)
@@ -105,6 +119,7 @@
 			MainHandlerContentValue(item){
 				let str = {
 					loading:false,
+					showtitle:item.showtitle,
 					tid:item.tid,//块id
 					type:item.type,//块类型
 					title:item.title,//块名称
@@ -141,6 +156,34 @@
 						}
 						
 					break;
+					case 'search_pub':
+						if(item.data && item.data.length){
+							let fstr = {
+								tdid:item.data[0].tdid,
+								data:[],
+							}
+							if(item.data[0].tdata && item.data[0].tdata.length){
+								for (let index = 0; index < item.data[0].tdata.length; index++) {
+									let fitem = item.data[0].tdata[index];
+									fstr.data.push(
+											{
+												key:0,
+												img:fitem.imgurl || '',
+												aid:fitem.aid || 0,
+												title:fitem.title || '',
+												desc:fitem.desc || '',
+												searchclassify:fitem.searchclassify || [],
+												defaultclassify:fitem.defaultclassify || '',
+												hots:parseInt(fitem.hots) || 0,
+												hotsValue:fitem.hotsValue || [],
+											},
+									)
+								}
+							}
+							str.data.push(fstr);
+						}
+
+						break;
 					case 'slide':
 						if(item.data && item.data.length){
 							let fstr = {
@@ -347,7 +390,73 @@
 							}
 							
 						}
-					break;
+						break;
+					case 'collect_rec':
+						if(item.data && item.data.length){
+							for (let index = 0; index < item.data.length; index++) {
+								let fitem = item.data[index];
+								let fstr = {
+									name:fitem.tdataname || '{lang title}',
+									tdid:fitem.tdid || 0,
+									key:0,
+									data:[],
+									langkey:fitem.langkey || '',
+								}
+								for (let findex = 0; findex < fitem.tdata.length; findex++) {
+									const ditem = fitem.tdata[findex];
+									fstr.data.push(
+											{
+												ftype: parseInt(ditem.ftype) || 0,//是0库还是1智能数据
+												ids: ditem.ids || [],//数据源id
+												sort: parseInt(ditem.sort) || 1,
+												number: parseInt(ditem.number) || 0,//获取数量
+												time:parseInt(ditem.time) || 600,//获取数量
+												isfilename: parseInt(ditem.isfilename) || 0,//文件名
+												moretxt: ditem.moretxt || '{lang more}',
+												link: ditem.link || '',
+												linkval: ditem.linkval || '',
+
+											},
+									)
+								}
+								str.data.push(fstr);
+							}
+
+						}
+						break;
+					case 'collect_ids':
+						if(item.data && item.data.length){
+							for (let index = 0; index < item.data.length; index++) {
+								let fitem = item.data[index];
+								let fstr = {
+									name:fitem.tdataname || '{lang title}',
+									tdid:fitem.tdid || 0,
+									key:0,
+									data:[],
+									langkey:fitem.langkey || '',
+								}
+								for (let findex = 0; findex < fitem.tdata.length; findex++) {
+									const ditem = fitem.tdata[findex];
+									fstr.data.push(
+											{
+												ftype: parseInt(ditem.ftype) || 0,//是0库还是1智能数据
+												id: ditem.id || '',//数据源id
+												sort: parseInt(ditem.sort) || 1,
+												number: parseInt(ditem.number) || 0,//获取数量
+												time:parseInt(ditem.time) || 600,//获取数量
+												isfilename: parseInt(ditem.isfilename) || 0,//文件名
+												moretxt: ditem.moretxt || '{lang more}',
+												link: ditem.link || '',
+												linkval: ditem.linkval || '',
+
+											},
+									)
+								}
+								str.data.push(fstr);
+							}
+
+						}
+						break;
 					case 'question':
 						if(item.data && item.data.length){
 							for (let index = 0; index < item.data.length; index++) {
@@ -444,6 +553,22 @@
 							
 						}
 					break;
+					case 'image_mix':
+						if(item.data && item.data.length){
+							for (let index = 0; index < item.data.length; index++) {
+								let fitem = item.data[index];
+								let fstr = {
+									tdid:fitem.tdid || 0,
+									name:fitem.tdataname,
+									key:0,
+									data:fitem.tdata,
+									langkey:fitem.langkey || '',
+								}
+								str.data.push(fstr);
+							}
+							
+						}
+					break;
 				}
 				return str;
 			},
@@ -470,9 +595,14 @@
 			Tmpmanual_rec,
 			Tmpfile_rec,
 			Tmpdb_ids,
+			Tmpimage_mix,
 			Tmpbanner,
 			Tmptab_rec,
 			Tmpsearch_rec,
+			Tmpcollect_ids,
+			Tmpcollect_rec,
+			Tmpsearch_pub,
+
 		}
 	});
 	dzzoffice.use(ElementPlus, {

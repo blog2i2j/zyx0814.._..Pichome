@@ -1,0 +1,67 @@
+<style>
+    .search-content {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .search-content>div{
+        margin-bottom: 20px;
+    }
+    .search-content .search-form .el-input-group__append .el-button {
+        color: var(--el-button-text-color);
+        background-color: var(--el-button-bg-color);
+        border-color: var(--el-button-border-color);
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        height: 62px;
+        width: 100px;
+        font-size: 30px;
+        font-weight: 700;
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-box-align: center;
+        -ms-flex-align: center;
+        align-items: center;
+        -webkit-box-pack: center;
+        -ms-flex-pack: center;
+        justify-content: center;
+    }
+</style>
+
+<div class="search-content mb20">
+    <div class="search-img">
+        <img src="$tdata['tdata'][0]['img']">
+    </div>
+    <div class="search-title">$tdata['tdata'][0]['title']</div>
+    <div class="search-desc">$tdata['tdata'][0]['desc']</div>
+    <div class="search-form">
+        <form action="index.php" method="get">
+            <input type="hidden" name="mod" value="publish">
+            <input type="hidden" name="op" value="search">
+            <input type="hidden" name="do" value="search">
+            <div class="el-input el-input--large el-input-group el-input-group--append el-input--prefix el-input--suffix input-with-select"
+                 style="border-radius: var(--el-input-border-radius);border-left: var(--el-border);">
+
+                <div class="el-input__wrapper" role="button" tabindex="-1">
+                    <span class="el-input__prefix">
+                        <span class="el-input__prefix-inner"></span>
+                    </span>
+                    <input class="el-input__inner" name="keyword" type="text" autocomplete="off" tabindex="0" placeholder="{lang search}">
+                </div><!-- append slot -->
+                <div class="el-input-group__append">
+                    <button aria-disabled="false" type="submit" class="el-button el-button--primary el-button--large">
+                        <span class="">
+                            <i class="el-icon">
+                                <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 38C30.3888 38 38 30.3888 38 21C38 11.6112 30.3888 4 21 4C11.6112 4 4 11.6112 4 21C4 30.3888 11.6112 38 21 38Z" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round"></path><path d="M26.657 14.3431C25.2093 12.8954 23.2093 12 21.0001 12C18.791 12 16.791 12.8954 15.3433 14.3431" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path><path d="M33.2216 33.2217L41.7069 41.707" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                            </i>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

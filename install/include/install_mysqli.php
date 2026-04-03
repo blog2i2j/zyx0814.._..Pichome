@@ -73,10 +73,15 @@ class dbstuff {
 	}
 
 	function query($sql, $type = '', $cachetime = FALSE) {
+
 		$resultmode = $type == 'UNBUFFERED' ? MYSQLI_USE_RESULT : MYSQLI_STORE_RESULT;
-		if(!($query = $this->link->query($sql, $resultmode)) && $type != 'SILENT') {
-			$this->halt('SQL:', $sql);
-		}
+        try{
+            $query = $this->link->query($sql, $resultmode);
+        } catch (\mysqli_sql_exception $e) {
+            $this->halt($e->getMessage(), $sql);
+            die;
+        }
+
 		$this->querynum++;
 		$this->histories[] = $sql;
 		return $query;

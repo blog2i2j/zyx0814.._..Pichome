@@ -1,0 +1,270 @@
+<div ref="headerscrollbar" class="filters-row hidden-scrollbar" style="display: flex;gap: 8px;">
+	<template  v-for="item in bannerData.top">
+		<div class="dropdown-filter" :class="{'is-active':bannerActive==item.id}">
+			<el-button 
+				text 
+				size="large" 
+				style="flex: 1;" 
+				@click.stop="handleParentSelect(item)" 
+				:type="bannerActive==item.id?'primary':''" 
+				:bg="bannerActive==item.id">
+				<el-text 
+					size="large" 
+					tag="b" 
+					style="color: var(--el-button-text-color);">{{item.bannername}}</el-text>
+				<template v-if="item.children && item.children.length">
+					<el-icon style="margin-left: 5px;"><Arrow-Down /></el-icon>
+				</template>
+			</el-button>
+		</div>
+	</template>
+    
+</div>
+
+<el-drawer
+    v-model="headerDrawer.visble"
+	append-to="#footer_header"
+    direction="btt"
+	size="85%"
+	title="导航"
+	modal-class="footer-drawer-overlay"
+	custom-class="m-header-munu">
+	<el-menu
+        v-if="headerDrawer.visble"
+		class="dzz-menu-m"
+		:default-openeds="headerDrawer.defaultopeneds"
+		:default-active="bannerData.active">
+            <el-sub-menu 
+            :index="headerDrawer.data.id" 
+            :class="{'is-active':bannerData.active==headerDrawer.data.id}"
+            popper-class="dzz-sub-menu">
+                <template #title>
+                    <el-image  v-if="headerDrawer.data.icon" class="icon" :src="headerDrawer.data.icon" fit="cover">
+                        <template #error><div class="el-image__placeholder"></div></template>
+                    </el-image>
+                    {{headerDrawer.data.bannername}}
+                    <div class="title-text" @click.stop="parseInt(headerDrawer.data.btype) != 5 && handleSelect(headerDrawer.data)"></div>
+                </template>
+                <menuitem 
+                    :datalist="headerDrawer.data.children" 
+                    @handleselect="handleSelect"
+                    :active="bannerData.active"></menuitem>
+            </el-sub-menu>
+	</el-menu>
+</el-drawer>
+
+<script>
+	function obtainData(arr,realurl){
+		if(!arr.length)return false;
+		if(arr[0].realurl == realurl) return arr[0];
+		return obtainData(arr.slice(1), realurl) || obtainData(arr[0].children, realurl);
+	}
+    const FooterMixin = {
+        data(){
+			return {
+				headerkeyword:'',
+				fheaderkeyword:'',
+				Screenshow:true,
+				imagereload:false,
+				HeaderActive:'',
+				// collectlisarr:$collectlisarr,
+				// tabarr:$tabarr,
+                headerDrawer:{
+                    visble:false,
+                    data:[],
+					defaultopeneds:[]
+                },
+				headerCollect:{
+                    visble:false,
+                },
+				headerTabmessage:{
+					gid:0,
+					visible:false
+				},
+				bannerData:{
+					top:[],
+					bottom:[],
+					active:[],
+					item:''
+				},
+				bannerActive:0,
+			}
+		},
+		methods:{
+			async getBannerData(){
+				const self = this;
+				const {data: res} = await axios.get('{MOD_URL}&op=ajax&do=bannerlist&pid=$id');
+				if(!res.success) {
+					this.bannerData={
+						top:[],
+						bottom:[],
+						active:[],
+						item:''
+					};
+					return false;
+				}
+				this.bannerData = res.data.bannerlist;
+				let href = window.location.href;
+				//ipv6中含有 []的处理
+				let reg1 = new RegExp(SITEURL.replace('[','\\[').replace(']','\\]'),"g");
+				let active = href.replace(reg1,"").split('#')[0];
+				let curr;
+				if(active){
+					<!--{if intval($_G['setting']['pathinfo'])}-->
+					let param = '{$_GET['hashparams']}';
+					
+					if(param){
+						param = JSON.parse(param);
+						let url = 'index.php?mod=publish&id='+param.id;
+						curr = obtainData(this.bannerData.top,url);
+						
+						if(curr){
+
+							this.banncomplete(curr);
+						}
+					}else{
+						curr = obtainData(this.bannerData.top,active);
+						if(curr){
+							this.banncomplete(curr);
+						}else{
+							let pageid = this.GetUrlParam('id');
+							if(pageid){
+								let url = 'index.php?mod=publish&id='+pageid;
+								let curr = obtainData(this.bannerData.top,url);
+								if(curr){
+									this.banncomplete(curr);
+								}
+							}
+						}
+					}
+					<!--{else}-->
+					curr = obtainData(this.bannerData.top,active);
+					if(curr){
+						this.banncomplete(curr);
+					}else{
+						let pageid = this.GetUrlParam('id');
+						if(pageid){
+							let url = 'index.php?mod=publish&id='+pageid+'#id='+pageid
+							let curr = obtainData(this.bannerData.top,url);
+							if(curr){
+								this.banncomplete(curr);
+							}
+						}
+					}
+					<!--{/if}-->
+
+					if(curr){
+
+						let newStr = curr.pathkey.replace(/_/g, "");
+						let arrActive = newStr.split("-");
+						if(arrActive.length > 1){
+							this.bannerActive = arrActive[0];
+						}
+					}
+					
+				}else{
+					if(this.bannerData && this.bannerData.top && this.bannerData.top.length){
+						if(parseInt(this.bannerData.top[0].btype) == 3){
+							for (let index = 0; index < this.bannerData.top.length; index++) {
+								const element = this.bannerData.top[index];
+								if(parseInt(element.btype) != 3){
+									this.banncomplete(element);
+									break;
+								}
+							}
+						}else{
+							this.banncomplete(this.bannerData.top[0]);
+						}
+						
+					}
+				}
+				// datalist.value = bannerlist.value[props.position];
+				// actives.value = bannerlist.value.active;
+			},
+			banncomplete(data,type){
+				let btype = parseInt(data.btype);
+				this.bannerData.item = data;
+				this.bannerData.active = data.id;
+				this.bannerActive = data.id;
+			},
+			querySearch(queryString, cb) {
+				// const results = queryString
+				// 	? restaurants.value.filter(createFilter(queryString))
+				// 	: restaurants.value
+				// call callback function to return suggestions
+				cb([])
+			},
+            handleParentSelect(data){
+				let self = this;
+				this.headerDrawer.defaultopeneds = [data.id];
+                if(data.children && data.children.length){
+					this.getAllIds(data.children);
+					self.$nextTick(function(){
+						self.headerDrawer.data = data;
+                    	self.headerDrawer.visble = true;
+					});
+                }else{
+                    this.handleSelect(data);
+                }
+				
+			},
+			getAllIds(tree) {
+				//遍历树  获取id数组
+				for (const i in tree) {
+					this.headerDrawer.defaultopeneds.push(tree[i].id); // 遍历项目满足条件后的操作
+					if (tree[i].children) {
+						//存在子节点就递归
+						this.getAllIds(tree[i].children);
+					}
+				}
+			},
+			handleSelect(data){
+				let self = this;
+				self.headerDrawer.visble = false;
+				self.$nextTick(function(){
+					if(parseInt(data.btype) == 3){
+						if(data.realurl){
+							window.open(data.realurl)
+						}else if(data.url){
+							window.open(data.url)
+						}else{
+							self.$message.error('{lang no_link_address}');
+						}
+						
+						return false;
+					}
+
+					if(data.url){
+						window.location.href = data.url;
+					}else{
+						window.location.href = data.realurl;
+
+					}
+				});
+				
+
+			},
+			//获取哈希参数
+			GetUrlParam(name){
+				let hash = location.hash;
+				hash = hash.replace(/^#/i, '');
+				if (!name) {
+					return false;
+				}
+				var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+				if (!hash) {
+					return false;
+				}
+				var r = hash.match(reg);
+
+				if (r !== null) {
+					return decodeURIComponent(r[2]);
+				}
+			},
+
+
+
+
+		},
+	}
+</script>

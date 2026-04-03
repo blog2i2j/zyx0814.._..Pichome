@@ -9,7 +9,7 @@
 <link rel="stylesheet" type="text/css" href="static/scss/layout.css?{VERHASH}"/>
 <script type="text/javascript" src="static/vue_components/HeaderSort/index.js?{VERHASH}"></script>
 
-<!--{if PICHOME_LIENCE == 2}-->
+<!--{if defined('LICENSE_VERSION') && LICENSE_VERSION == 'Enterprise'}-->
 <script type="text/javascript" src="static/vue_components/TabMessage/index.js?{VERHASH}"></script>
 <link rel="stylesheet" media="noexist" onload="this.media='all'" href="static/vue_components/TabMessage/index.css?{VERHASH}">
 <link rel="stylesheet" media="noexist" onload="this.media='all'" href="static/vue_components/TabExport/index.css?{VERHASH}">
@@ -73,10 +73,11 @@
 				:itemdata="bannerData.item"
 				@handlepreference="handlepreference"
 				@clearkeyword="clearkeyword"
+				:issearchimage="{$_G['setting']['imageSearchFlag']}"
 				:keyword="headerkeyword"
 				:headeralldata="headeralldata"></theme-default>
 		</el-container>
-		<el-header class="page-header page-footer_m"  height="50px" style="border:0;border-top: var(--el-border);">
+		<el-header class="page-header page-footer_m"  height="60px" style="border:0;border-top: var(--el-border);padding: 0px 10px;">
 			<!--{template fashion/mobile/components/footer}-->
         </el-header>
 	</el-container>
@@ -100,8 +101,8 @@
 				headeralldata:{
 					data:[],
 					message:{
-						sitebeiantxt:'{$_G[setting][sitebeiantxt]}',
-						sitebeian:'{$_G[setting][sitebeian]}',
+						sitebeiantxt:'{$_G['setting']['sitebeiantxt']}',
+						sitebeian:'{$_G['setting']['sitebeian']}',
 					}
 				},
 				tilebanner:[],
@@ -114,6 +115,7 @@
 		created(){
 			const self = this;
 			let data = '$bannerdata';
+			
 			let childdata = $tilebanner;
 			for (const key in childdata) {
 				const element = childdata[key];
@@ -178,7 +180,14 @@
 					this.PageType = 'page';
 					this.GetContentData();
 				}else{
+
+					if(data.url){
+						location.href = data.url;
+					}else{
+						location.href = data.realurl;
+					}
 					return false;
+
 				}
 			},
 			//获取栏目数据
@@ -191,8 +200,8 @@
 				let active = href.replace(reg1,"");
 				let curr;
 				if(active){
-					<!--{if intval($_G[setting][pathinfo])}-->
-					let param = '{$_GET[hashparams]}';
+					<!--{if intval($_G['setting']['pathinfo'])}-->
+					let param = '{$_GET['hashparams']}';
 					if(param){
 						param = JSON.parse(param);
 						let url = 'index.php?mod=banner&op=index&id='+param.id+'#id='+param.id;
@@ -284,18 +293,18 @@
 				this.ContentData = res.data;
 			},
 			//获取哈希参数
-			GetUrlParam(name){
-				let hash = location.hash;
-				hash = hash.replace(/^#/i, '');
+			GetUrlParam(name,url){
+				if(!url){
+					url=location.hash;
+				}
 				if (!name) {
-					return false;
+					return '';
 				}
-				var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
-				if (!hash) {
-					return false;
+				var reg = new RegExp("(^#|&)" + name + "=([^&]*)(&|$)");
+				if (!url) {
+					return '';
 				}
-				var r = hash.match(reg);
-
+				var r = url.match(reg);
 				if (r !== null) {
 					return decodeURIComponent(r[2]);
 				}
@@ -362,7 +371,7 @@
 	dzzoffice.use(DzzShareDialog);
 
 
-	<!--{if PICHOME_LIENCE == 2}-->
+	<!--{if defined('LICENSE_VERSION') && LICENSE_VERSION == 'Enterprise'}-->
 	dzzoffice.component('fulltext', fulltext);
 	dzzoffice.component('tab_message', tab_message);
 	dzzoffice.component('tabExport', tabExport);

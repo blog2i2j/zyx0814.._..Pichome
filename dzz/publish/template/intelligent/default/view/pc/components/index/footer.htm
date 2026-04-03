@@ -1,0 +1,15 @@
+<div class="page-footer" >
+    <template v-if="DataPageset.bottomNavigation">
+    <navigationmenu
+            style="justify-content: center"
+            position="bottom"
+            @handleselect="handleNavgationSelect"
+            dataurl="{MOD_URL}&op=ajax&do=bannerlist&pid=$id"
+    ></navigationmenu>
+    </template>
+    <el-text v-if="DataPageset._textarea_bottomtitle" v-html="DataPageset._textarea_bottomtitle" tag="p" style="display: flex;align-items: center;justify-content: center;margin-top: 0.5em;"></el-text>
+    <div  style="display: flex;align-items: center;justify-content: center;margin-top:0.5em">
+     <el-link v-if="DataPageset.beian" href="https://beian.miit.gov.cn/" title="{lang beian}" target="_blank">{{DataPageset.beian}}</el-link>
+     <el-link v-if="DataPageset.beianmps" title="{lang beianmps}" style="margin-left:1em;" href="https://beian.mps.gov.cn/" target="_blank">{{DataPageset.beianmps}}</el-link>
+    </div>
+</div>

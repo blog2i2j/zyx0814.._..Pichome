@@ -176,6 +176,7 @@ class template {
 		$template = preg_replace("/\{(\\\$[a-zA-Z0-9_\-\>\[\]\'\"\$\.\x7f-\xff]+)\}/s", "<?=\\1?>", $template);
         $template = preg_replace_callback("/[\n\r\t]*\{Hook\s+([\w]+)\}[\n\r\t]*/is", array($this, 'parse_template_callback_hook'), $template);//钩子解析
         $template = preg_replace_callback("/[\n\r\t]*\{Hook\s+([\w]+)\#(.+?)\#\}[\n\r\t]*/is", array($this, 'parse_template_callback_hook_1'), $template);//钩子解析,传参形式
+        $template = preg_replace_callback("/[\n\r\t]*\{Hook\s+([\w]+)\#(.+?)\#(.+?)\#\}[\n\r\t]*/is", array($this, 'parse_template_callback_hook_2'), $template);//钩子解析,传参形式
 		$template = preg_replace_callback("/$var_regexp/s", array($this, 'parse_template_callback_addquote_1'), $template);
 		$template = preg_replace_callback("/\<\?\=\<\?\=$var_regexp\?\>\?\>/s", array($this, 'parse_template_callback_addquote_1'), $template);
 
@@ -211,8 +212,37 @@ class template {
         return "<?php Hook::listen('".$matches[1]."'); ?>";
     }
    function parse_template_callback_hook_1($matches){
-	   $param=array($matches[2]);
-        return "<?php Hook::listen('".$matches[1]."',".$param.");?>"; //传参形式
+
+       $json=json_decode($matches[2],true);
+       if(is_array($json)){
+           $params=$json;
+       }elseif(strpos($matches[2],'＄')===0){
+           $params=str_replace('＄','$',$matches[2]);
+       }else{
+           $params=array($matches[2]);
+       }
+        return "<?php Hook::listen('".$matches[1]."',".$params.");?>"; //传参形式
+    }
+    function parse_template_callback_hook_2($matches){
+
+        $json=json_decode($matches[2],true);
+        if(is_array($json)){
+            $params=$json;
+        }elseif(strpos($matches[2],'＄')===0){
+            $params=str_replace('＄','$',$matches[2]);
+        }else{
+            $params=array($matches[2]);
+        }
+        $extra=null;
+        $json1=json_decode($matches[3],true);
+        if(is_array($json1)){
+            $extra=$json1;
+        }elseif(strpos($matches[3],'＄')===0){
+            $params=str_replace('＄','$',$matches[3]);
+        }else{
+            $extra=array($matches[3]);
+        }
+        return "<?php Hook::listen('".$matches[1]."',".$params.",".$extra.");?>"; //传参形式
     }
 
 	function replace_js_language_var($arr) {
@@ -389,9 +419,31 @@ class template {
 	}
 //	模版lang替换
 	function languagevar($var) {
+        global $lang,$_G;
+
 		!isset($this -> language['inner']) && $this -> language['inner'] = array();
 		$langvar = &$this -> language['inner'];
-		
+        if(!is_array($langvar)){
+            $langvar=$lang;
+        }elseif(is_array($lang)){
+            $langvar = array_merge($langvar, $lang);
+        }
+        $curpath='';
+        if(strpos($var,'|')!==false){
+            $checkLanguage = $_G['language'];
+            $defaultLanguage=$_G['defaultlang'];
+            list($var,$curpath)=explode('|',$var);
+            if(!empty($curpath)){
+                if (file_exists(DZZ_ROOT . './' . $curpath . '/language/' . $checkLanguage . '/' . 'lang.php')) {
+                    include DZZ_ROOT . './' . $curpath . '/language/' . $checkLanguage . '/' . 'lang.php';
+                } elseif(file_exists(DZZ_ROOT . './' . $curpath . '/language/'.$defaultLanguage.'/' . 'lang.php')){
+                    include DZZ_ROOT . './' . $curpath . '/language/'.$defaultLanguage.'/' . 'lang.php';
+                }
+                if(is_array($lang)) {
+                    $langvar = array_merge($langvar, $lang);
+                }
+            }
+        }
 		if (!isset($langvar[$var])) {
 			$this -> language['inner'] = lang();
 		}
@@ -403,9 +455,31 @@ class template {
 	}
 //	模版lang替换
 	function languagevar1($var) {
-		$langvar = lang();
+        global $lang,$_G;
+        $langvar = lang();
+        if(!is_array($langvar)){
+            $langvar=$lang;
+        }elseif(is_array($lang)){
+            $langvar = array_merge($langvar, $lang);
+        }
+        $curpath='';
+        if(strpos($var,'|')!==false){
+            $checkLanguage = $_G['language'];
+            $defaultLanguage=$_G['defaultlang'];
+            list($var,$curpath)=explode('|',$var);
+            if(!empty($curpath)){
+                if (file_exists(DZZ_ROOT . './' . $curpath . '/language/' . $checkLanguage . '/' . 'lang.php')) {
+                    include DZZ_ROOT . './' . $curpath . '/language/' . $checkLanguage . '/' . 'lang.php';
+                } elseif(file_exists(DZZ_ROOT . './' . $curpath . '/language/'.$defaultLanguage.'/' . 'lang.php')){
+                    include DZZ_ROOT . './' . $curpath . '/language/'.$defaultLanguage.'/' . 'lang.php';
+                }
+                if(is_array($lang)) {
+                    $langvar = array_merge($langvar, $lang);
+                }
+            }
+        }
 		if (!isset($langvar[$var])) {
-	 		return '!'.$var.'!';
+	 		return $var;
 		}
 		$jsonencode = json_encode($langvar[$var]);
 		if(is_array($langvar[$var])){

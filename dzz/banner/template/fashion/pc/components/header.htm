@@ -1,14 +1,15 @@
-<a  href="{$_G[siteurl]}" class="h-left" style="text-decoration: none;margin-right: 20px;">
-	<el-image class="logo" src="data/attachment/sitelogo/sitelogo.png?{VERHASH}" title="$_G[setting][sitename]" fit="contain">
+<a  href="{$_G['siteurl']}" class="h-left" style="text-decoration: none;margin-right: 20px;">
+	<el-image class="logo" src="data/attachment/sitelogo/sitelogo.png?{VERHASH}" title="$_G['setting']['sitename']" fit="contain">
 		<template #error><div class="el-image__placeholder"></div></template>
 	</el-image>
-	<el-text class="sitename" tag="b" size="large" style="color:var(--el-text-color-primary);white-space: nowrap;">{$_G[setting][sitename]}</el-text>
+	<el-text class="sitename" tag="b" size="large" style="color:var(--el-text-color-primary);white-space: nowrap;">{$_G['setting']['sitename']}</el-text>
 </a>
 <div class="h-center" style="overflow: hidden;padding: 0;">
 		<el-menu
 			class="dzz-menu"
 			:default-active="bannerData.active"
 			mode="horizontal"
+			:collapse-transition="false"
 			style="border:0;height: 100%;max-width: 100%;">
 			<template v-for="item in bannerData.data.top">
 				<template v-if="item.children && item.children.length">
@@ -18,9 +19,13 @@
 						<template #title>
 							<el-image v-if="item.icon" class="icon" :src="item.icon" fit="cover">
 								<template #error><div class="el-image__placeholder"></div></template>
-							</el-image>
-							{{item.bannername}}
-							<div class="title-text" @click.stop="parseInt(item.btype) != 5 && handleSelect(item)"></div>
+							</el-image>{{item.bannername}}
+							<template  v-if="parseInt(item.btype) != 5">
+								<el-link class="title-text" :href="item.url" :underline="false" @click.stop="parseInt(item.btype) != 5 && handleSelect(item)"  ></el-link>
+							</template>
+							<template v-else>
+								<div class="title-text"></div>
+							</template>
 						</template>
 						<menuitem 
 							:datalist="item.children" 
@@ -35,7 +40,13 @@
 								<template #error><div class="el-image__placeholder"></div></template>
 							</el-image>
 							{{item.bannername}}
-							<div class="title-text" @click.stop="parseInt(item.btype) != 5 && handleSelect(item)"></div>
+							<template  v-if="parseInt(item.btype) != 5">
+								<el-link class="title-text" :href="item.url" :underline="false" @click.stop="parseInt(item.btype) != 5 && handleSelect(item)"  ></el-link>
+							</template>
+							<template v-else>
+								<div class="title-text"></div>
+							</template>
+
 						</template>
 					</el-menu-item>
 					
@@ -49,7 +60,7 @@
 		<el-autocomplete
 			ref="headerkeyword"
 			class="headerkeyword"
-			style="width: 450px;padding-right: 20px;z-index: 1000;"
+			style="width: 250px;padding-right: 20px;z-index: 100;"
 			v-model="fheaderkeyword"
 			:fetch-suggestions="querySearch"
 			@keydown.enter="headerkeywordInput"
@@ -132,7 +143,7 @@
 
 		</el-autocomplete>
 	</template>
-	<!--{if PICHOME_LIENCE == 2}-->
+	<!--{if defined('PICHOME_VERSION') && PICHOME_VERSION=='Enterprise'}-->
 	<el-dropdown v-if="(tabarr && tabarr.length) || (collectlisarr && collectlisarr.length)" @command="handleCollectCommand" style="margin-left: 12px;" max-height="300">
 		<el-button 
 			text 
@@ -202,16 +213,16 @@
 	</template>
 	<international current="$_G['language']"></international>
 	<comavatar
-		:level="parseInt($_G[pichomelevel])"
-		iscollect="<!--{if defined('PICHOME_LIENCE') && (!$_G[config][pichomeclosecollect] || $_G[adminid])}--><!--{/if}-->"
-		:adminid="parseInt($_G[adminid])"
-		PICHOME_LIENCE="PICHOME_LIENCE"
-		:uid="parseInt($_G[uid])"
+		:level="parseInt($_G['pichomelevel'])"
+		iscollect="<!--{if defined('PICHOME_LIENCE') && (!$_G['config']['pichomeclosecollect'] || $_G['adminid'])}--><!--{/if}-->"
+		:adminid="parseInt($_G['adminid'])"
+		PICHOME_LIENCE="license"
+		:uid="parseInt($_G['uid'])"
 		upgrade="<!--{if $_G['setting']['upgrade']}--><!--{/if}-->"
-		version="$_G[setting][version]"
+		version="$_G['setting']['version']"
 		formhash="{FORMHASH}">
 		<el-avatar size="40">
-			{eval echo avatar_block($_G[uid]);}
+			{eval echo avatar_block($_G['uid']);}
 		</el-avatar>
 	</comavatar>
 	<el-dialog 
@@ -271,10 +282,20 @@
 					loading:false,
 					img:'',
 				},
-				CropBase:''
+				CropBase:'',
+				searchImagePropover:false
 			}
 		},
 		methods:{
+			SearchUploadPopoverShow(){
+				let self = this;
+				self.$refs.headerkeyword.blur();//失去焦点
+				self.searchImagePropover = true;
+			},
+			SearchUploadPopoverHide(){
+				let self = this;
+				self.searchImagePropover = false;
+			},
 			querySearch(queryString, cb) {
 				// const results = queryString
 				// 	? restaurants.value.filter(createFilter(queryString))
@@ -416,8 +437,8 @@
 				self.$refs.tabheadermessage.handTabVal(data,flag,index);
 			},
 			SearchUploadChange(response,uploadFile){
-				
 				let self = this;
+				if(self.searchdata.loading)return;
 				self.searchdata.loading = true;
 				self.$refs.cameraPopover.hide();
 				let img = new Image();

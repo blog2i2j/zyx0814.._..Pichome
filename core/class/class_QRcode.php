@@ -1375,7 +1375,7 @@
             $buf = array($size, $index, $parity);
             
             try {
-                $entry = new QRinputItem(QR_MODE_STRUCTURE, 3, buf);
+                $entry = new QRinputItem(QR_MODE_STRUCTURE, 3, 'buf');
                 array_unshift($this->items, $entry);
                 return 0;
             } catch (Exception $e) {
@@ -2124,7 +2124,7 @@
             if($ret < 0)
                 return -1;
 
-            return $run;
+            return $ret;
         }
 
         //----------------------------------------------------------------------
@@ -2196,7 +2196,7 @@
                     case QR_MODE_NUM: $length = $this->eatNum(); break;
                     case QR_MODE_AN:  $length = $this->eatAn(); break;
                     case QR_MODE_KANJI:
-                        if ($hint == QR_MODE_KANJI)
+                        if ($this->modeHint == QR_MODE_KANJI)
                                 $length = $this->eatKanji();
                         else    $length = $this->eat8();
                         break;
@@ -2938,7 +2938,7 @@
         //----------------------------------------------------------------------
         public function getCode()
         {
-            $ret;
+            $ret=null;
 
             if($this->count < $this->dataLength) {
                 $row = $this->count % $this->blocks;
@@ -3052,7 +3052,7 @@
         //----------------------------------------------------------------------
         public function encodeString8bit($string, $version, $level)
         {
-            if(string == NULL) {
+            if($string == NULL) {
                 throw new Exception('empty string!');
                 return NULL;
             }

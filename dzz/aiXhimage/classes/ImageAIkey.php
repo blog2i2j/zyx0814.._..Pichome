@@ -33,24 +33,26 @@ class ImageAIkey
                 $this->getAiKey($data,$type,$appdata);
             }
             if ($type == 'file') {
-                $data['Aichat'] = [
+                $data['Aichat'][] = [
                     'url' => getglobal('siteurl') . 'index.php?mod=aiXhimage&op=chat',
                     'recordurl' => getglobal('siteurl') . 'index.php?mod=aiXhimage&op=chat&do=getHistory',
                     'delhistoryurl' => getglobal('siteurl') . 'index.php?mod=aiXhimage&op=chat&do=clearchat',
                     'type' => 'image',
-                    'params' => 'rid'
+                    'params' => 'rid',
+                    'name'=>lang('appname',array(),'','dzz/aiXhimage'),
+                    'key'=>'aiXhimage::chatImage'
                 ];
             }
-            return false;
+
         }
         elseif($type == 'folder'){
             if(empty($data['fid'])) return true;
             $this->getAiKey($data,$type,$appdata);
-            return false;
+
         }elseif($type == 'vapp'){
             if(empty($data['appid'])) return true;
             $this->getAiKey($data,$type,$appdata);
-            return false;
+
         }
     }
 
@@ -82,9 +84,9 @@ class ImageAIkey
             'vapp'=>'appid'
         ];
         if(!empty($filedkey)){
-            $data['Aikey'] = [
+            $data['Aikey'][]= [
                 'key' => 'aiXh::chatImage',
-                'name' => lang('xh_iamge_parse'),
+                'name' => lang('appname',array(),'','dzz/aiXhimage'),
                 'params' => $params[$type],
                 'type'=>$type,
                 'filedkey' =>$filedkey

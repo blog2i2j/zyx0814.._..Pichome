@@ -1,0 +1,61 @@
+
+<style>
+    .file-list{
+        padding:20px 0;
+    }
+    .file-list .file-item{
+        margin-bottom: 10px;
+        position: relative;
+        display: flex;
+        border:1px solid #e1e1e1;
+        border-radius: 5px;
+
+    }
+    .file-list .file-item .file-item-thumb{
+        text-align: center;
+        width:150px;
+        max-height:200px;
+        min-width:150px;
+        background-color: #FBFBFB;
+
+        border-radius: 5px 0 0 5px;
+    }
+    .file-list .file-item .file-item-info{
+        padding: 10px 20px;
+    }
+    .file-list .file-item .file-item-info div{
+        margin-bottom: 10px;
+    }
+    .more{
+        text-align: center;
+        margin-bottom: 10px;
+        margin-top: 10px;
+    }
+</style>
+<div class="file-list">
+
+    <!--{loop $tdata['datas'] $file}-->
+    <div class="file-item">
+        <div class="file-item-thumb">
+            <a href="index.php?mod=details&path=$file['dpath']" target="_blank">
+                <img src="$file['icondata']">
+            </a>
+        </div>
+        <div class="file-item-info">
+            <div class="file-item-title" title="{lang filename}"><a href="index.php?mod=details&path=$file['dpath']" target="_blank">{eval echo !empty($file['ext'])?$file['name'].'.'.$file['ext']:$file['name']}</a></div>
+            <!--{if $file['desc']}-->
+            <div class="file-item-desc" title="{lang description}">$file['desc']</div>
+            <!--{/if}-->
+            <div class="file-item-time" title="{lang create_time}">$file['dateline']</div>
+            <!--{if !empty($file['tags'])}-->
+            <div class="file-item-tags" title="{lang label}">{eval echo implode(',',$file['tags'])}</div>
+            <!--{/if}-->
+        </div>
+    </div>
+    <!--{/loop}-->
+    <!--{if $tdata['tdata'][0]['url']}-->
+    <div class="more">
+        <a href="$tdata['tdata'][0]['url']">{lang more}</a>
+    </div>
+    <!--{/if}-->
+</div>

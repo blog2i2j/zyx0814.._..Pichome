@@ -230,7 +230,7 @@ class table_pichome_folder extends dzz_table
         $haspasswordfids = [];
         foreach($fids as $val){
             //查找当前目录及其上级中任意一层包含密码，则视为该目录包含密码
-            if(DB::result_first("select fid from %t where pathkey regexp %s and password != '' ",array($this->_table,'.*'.$val.'$'))){
+            if(DB::result_first("select fid from %t where pathkey LIKE %s and password != '' ",array($this->_table,'%'.$val))){
                 $haspasswordfids[$val] = 1;
             }else{
                 $haspasswordfids[$val] = 0;
@@ -252,7 +252,7 @@ class table_pichome_folder extends dzz_table
     //根据fid判断当前目录及其上机是否有密码，如果当前目录不存在则返回2，存在密码返回1
     public function check_password_byfid($fid){
         if($data = parent::fetch($fid)){
-            return  DB::result_first("select fid from %t where pathkey regexp %s and password != '' ",array($this->_table,'.*'.$fid.'$')) ? 1:0;
+            return  DB::result_first("select fid from %t where pathkey LIKE %s and password != '' ",array($this->_table,'%'.$fid)) ? 1:0;
         }else{
             return 2;
         }
@@ -275,21 +275,36 @@ class table_pichome_folder extends dzz_table
     }
 
 
-    public function fetch_folder_by_appid_pfid($appid,$pfid=[]){
+    public function fetch_folder_by_appid_pfid($appid,$pfid=[],$hasfile=0){
 
         $folderdata = [];
 
         if(!empty($pfid)){
             foreach(DB::fetch_all("select fid,fname,pathkey,appid,pfid,filenum as nosubfilenum,level as perm from %t where appid = %s and pfid in(%n) order by disp asc",array($this->_table,$appid,$pfid)) as $v){
-                $v['filenum'] = 0;
-                $v['leaf'] = DB::result_first("select count(*) from %t where pfid = %s",array($this->_table,$v['fid'])) ? false:true;
+                if($hasfile){
+                    $v['filenum'] = DB::result_first("select count(DISTINCT rid) from %t where appid=%s and fid = %s",array('pichome_folderresources',$appid,$v['fid']));
+                }else{
+                    $v['filenum'] = 0;
+                }
+                if( $v['filenum']){
+                    $v['leaf']=false;
+                }else{
+                    $v['leaf'] = DB::result_first("select count(*) from %t where pfid = %s",array($this->_table,$v['fid'])) ? false:true;
+                }
                 $folderdata[] = $v;
-
             }
         }else{
             foreach(DB::fetch_all("select fid,fname,pathkey,appid,pfid,filenum as nosubfilenum,level as perm from %t where appid = %s and pfid = '' order by disp asc",array($this->_table,$appid)) as $v){
-                $v['filenum'] = 0;
-                $v['leaf'] = DB::result_first("select count(*) from %t where pfid = %s",array($this->_table,$v['fid'])) ? false:true;
+                if($hasfile){
+                    $v['filenum'] = DB::result_first("select count(DISTINCT rid) from %t where appid=%s and fid = %s",array('pichome_folderresources',$appid,$v['fid']));
+                }else{
+                    $v['filenum'] = 0;
+                }
+                if( $v['filenum']){
+                    $v['leaf']=false;
+                }else{
+                    $v['leaf'] = DB::result_first("select count(*) from %t where pfid = %s",array($this->_table,$v['fid'])) ? false:true;
+                }
                 $folderdata[] = $v;
             }
 
@@ -302,9 +317,15 @@ class table_pichome_folder extends dzz_table
         if(!is_array($pathkey))$pathkey = (array)$pathkey;
         $returndata = [];
         foreach($pathkey as $v){
-            $filenum =  DB::result_first("SELECT count(DISTINCT fr.rid) FROM %t fr
+            $cachekey='filenum_'.$v;
+            if(memory('check') && ($filenum = memory('get',$cachekey))){
+
+            }else {
+                $filenum = DB::result_first("SELECT count(DISTINCT fr.rid) FROM %t fr
                      left join %t r on r.rid=fr.rid
-                    where fr.appid = %s and fr.pathkey  like %s and r.isdelete = 0 ",array('pichome_folderresources','pichome_resources',$appid,$v.'%'));
+                    where fr.appid = %s and fr.pathkey  like %s and r.isdelete = 0 ", array('pichome_folderresources', 'pichome_resources', $appid, $v . '%'));
+                memory('check') && memory('set',$cachekey,$filenum,60*60*5);
+            }
             $returndata[] = ['pathkey'=>$v,'filenum'=>$filenum];
         }
 
@@ -315,20 +336,22 @@ class table_pichome_folder extends dzz_table
     public function search_by_fname($keyword,$appid=''){
         $folderdata = [];
         $params = array($this->_table);
-        $lang = '';
-        Hook::listen('lang_parse',$lang,['checklang']);
         $leftsql = '';
-        if($lang){
-            $leftsql .= 'left join %t lang on lang.idvalue = f.fid and lang.filed= %s';
-            $params[] = 'lang_'.$lang;
-            $params[] = 'fname';
-            $wheresql = ' (f.fname like %s  or lang.svalue like %s)';
-            $params[] = '%'.$keyword.'%';
-            $params[] = '%'.$keyword.'%';
+        if($keyword) {
+            $lang = '';
+            Hook::listen('lang_parse',$lang,['checklang']);
+            if ($lang) {
+                $leftsql .= 'left join %t lang on lang.idvalue = f.fid and lang.filed= %s';
+                $params[] = 'lang_' . $lang;
+                $params[] = 'fname';
+                $wheresql = ' (f.fname like %s  or lang.svalue like %s)';
+                $params[] = '%' . $keyword . '%';
+                $params[] = '%' . $keyword . '%';
 
-        }else{
-            $wheresql = ' f.fname like %s  ';
-            $params[] = '%'.$keyword.'%';
+            } else {
+                $wheresql = ' f.fname like %s  ';
+                $params[] = '%' . $keyword . '%';
+            }
         }
 
 
@@ -336,15 +359,19 @@ class table_pichome_folder extends dzz_table
             $wheresql .= ' and f.appid = %s ';
             $params[] = $appid;
         }
-        $appids =[];
-        foreach(DB::fetch_all("select appid,view from %t where isdelete = 0 order by disp ",array('pichome_vapp')) as $v){
-            if (!C::t('pichome_vapp')->getpermbypermdata($v['view'],$v['appid'])) {
-                continue;
-            }
-           $appids[] = $v['appid'];
+        if(empty($appid)) {
+            $appids =['0'];
+             foreach(DB::fetch_all("select appid,view from %t where isdelete = 0 order by disp ",array('pichome_vapp')) as $v){
+                if (!C::t('pichome_vapp')->getpermbypermdata($v['view'],$v['appid'])) {
+                    continue;
+                }
+                $appids[] = $v['appid'];
+             }
+             if($appids) {
+                 $wheresql .= " and f.appid in(%n) ";
+                 $params[] = $appids;
+             }
         }
-        $wheresql .= " and f.appid in(%n) ";
-        $params[] = $appids;
         foreach(DB::fetch_all("select f.fname,f.fid,f.pathkey,f.appid,f.pfid from %t f $leftsql where  $wheresql",$params)as $v ){
             $folderdata[$v['fid']] = $v;
         }

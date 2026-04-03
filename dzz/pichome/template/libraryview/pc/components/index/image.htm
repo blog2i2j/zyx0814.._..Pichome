@@ -22,6 +22,7 @@
 	:scrollref="scrollref"
 	:isborder="false"
 	:screenshow="Screenshow"
+	:islikeness="true"
 	:hassub="hassub">
 	<template v-slot:operation="{ data }">
 		<template v-if="data.share || data.down">
@@ -50,6 +51,13 @@
 									:command="ImageOperationVal('collect',data)">
 									<el-icon><Collection /></el-icon>
 									{lang collect}
+								</el-dropdown-item>
+								<el-dropdown-item
+										v-if="parseInt(data.allowImageSearch)"
+										:command="ImageOperationVal('search',data)"
+										@click.stop>
+									<el-icon><Search /></el-icon>
+									{lang search_picture}
 								</el-dropdown-item>
 							</el-dropdown-menu>
 						</template>
@@ -107,7 +115,8 @@
 	                    shift:false,//是否开启shift选中
 	                    contextmenu:false,//是否开启右键
 	                    drap:false,//是否开启拖动选中
-						checked:false
+						checked:false,
+						allowImageSearch:false
 					}
 				},
 				ImageParam:{
@@ -133,10 +142,60 @@
                     self.$refs.RefImageLayout.ImageQuickChangeCollect(data.val.rid)
 				}else if(data.type == 'share'){
 					self.shareDialog.visible=true;
-					self.shareDialog.id=data.val.rid;
+					self.shareDialog.filepaths=[data.val.rid];
 					self.shareDialog.stype=0;
+					self.shareDialog.sperm=data.val.perm;
 					self.shareDialog.title=data.val.name;
+				}else if(data.type == 'search'){
 
+
+					self.$nextTick(() => {
+						self.CommonGetImageData();
+					})
+					let img = new Image();
+					// 设置图片的源（URL）
+
+					img.src = data.val.icondata;
+					// 当图片加载完成时，获取其宽度和高度
+					img.onload = function() {
+						// 创建 canvas 并将图片绘制到 canvas 上
+						const canvas = document.createElement('canvas');
+						const ctx = canvas.getContext('2d');
+
+						// // 设置 canvas 的宽高为图片的宽高
+						canvas.width = img.width;
+						canvas.height = img.height;
+						// // 将图片绘制到 canvas 上
+						ctx.drawImage(img, 0, 0);
+						// 将 canvas 内容转换为 JPG 格式的 Base64
+						const jpgBase64 = canvas.toDataURL('image/jpeg', 0.8); // 0.8 是图片质量
+
+						if(self.CropBase){
+							self.CropBase();
+						}
+						let CancelToken = axios.CancelToken;
+						axios.post('index.php?mod=io&op=getAidByBase64', {
+							base64:jpgBase64
+						},{
+							cancelToken: new CancelToken(function executor(c) {
+								self.CropBase = c;
+							})
+						}).then(function (res) {
+							if(res.data.success){
+								self.searchdata.aid = res.data.aid;
+								self.searchdata.loading = false;
+								self.searchdata.img = res.data.img;
+								sessionStorage.setItem('cropimg'+self.DocumentAppid,res.data.img);
+								self.$nextTick(() => {
+									self.CommonGetImageData();
+								})
+							}else{
+								self.$message.error(res.data.msg || __lang.upload_failed);
+							}
+						}).catch(function (error) {
+							// console.log(error);
+						});
+					};
 				}
 			},
 			Imagereturnparam(data){//列表加载完成返回得参数

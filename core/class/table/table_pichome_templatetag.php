@@ -79,7 +79,7 @@ class table_pichome_templatetag extends dzz_table
     public function delete_by_tid($tid)
     {
         if (!$tagdata = parent::fetch($tid)) return true;
-        C::t('pichome_templatetagtheme')->delete_by_tid($tid);
+       // C::t('pichome_templatetagtheme')->delete_by_tid($tid);
         C::t('pichome_templatetagdata')->delete_by_tid($tid);
         $this->setDispBytid($tid, $tagdata['disp'], 0);
         if(parent::delete($tid)){
@@ -93,13 +93,14 @@ class table_pichome_templatetag extends dzz_table
         global $_G;
         $themeid = isset($_G['setting']['pichometheme']) ? intval($_G['setting']['pichometheme']) : 1;
         $tagdatas = [];
-        foreach (DB::fetch_all("select t.tagtype,t.tagname,t.tid,t.disp,t.dateline,th.style from %t t 
+        foreach (DB::fetch_all("select t.tagtype,t.tagname,t.showtitle,t.tid,t.disp,t.dateline,th.style from %t t 
 left join %t th on t.tid = th.tid and th.themeid = %d where t.pageid = %d order by t.disp,t.tid asc", [$this->_table, 'pichome_templatetagtheme', $themeid, $pageid]) as $v) {
             Hook::listen('lang_parse',$v,['getAlonepagetagLangData']);
             Hook::listen('lang_parse',$v,['getAlonepagetagLangKey']);
             $v['type'] = $v['tagtype'];
             unset($v['tagtype']);
             $v['title'] = $v['tagname'];
+            $v['showtitle'] = intval($v['showtitle']);
             unset($v['tagname']);
             if (!$v['style']) $v['style'] = '';
             else $v['style'] = unserialize($v['style']);
@@ -124,7 +125,7 @@ left join %t th on t.tid = th.tid and th.themeid = %d where t.pageid = %d order 
             } elseif ($v['tagtype'] == 'recommend') {
                 $tmpval = unserialize($v['tagval']);
                 foreach ($tmpval as $tv) {
-                    $val[] = [name => $tv['name'], data => $tv['dataval']];
+                    $val[] = ['name' => $tv['name'], 'data' => $tv['dataval']];
                 }
             } elseif ($v['tagtype'] == 'case') {
                 $tmpval = unserialize($v['tagval']);
@@ -154,11 +155,15 @@ left join %t th on t.tid = th.tid and th.themeid = %d where t.pageid = %d order 
     {
         $themeid = isset($_G['setting']['pichometheme']) ? intval($_G['setting']['pichometheme']) : 1;
         $tagdata = [];
-        foreach (DB::fetch_all("select t.tagtype,t.tagname,t.tid,t.disp,t.dateline,th.style from %t t 
+        foreach (DB::fetch_all("select t.tagtype,t.tagname,t.showtitle,t.tid,t.disp,t.dateline,th.style from %t t 
 left join %t th on t.tid = th.tid and th.themeid = %d where t.pageid = %d order by t.disp asc,t.tid asc", [$this->_table, 'pichome_templatetagtheme', $themeid, $pageid]) as $v) {
             Hook::listen('lang_parse',$v,['getAlonepagetagLangData']);
             if (!$v['style']) $v['style'] = '';
             else $v['style'] = unserialize($v['style']);
+            if(!$v['showtitle']){
+                $v['tagname']='';
+            }
+
             $v['data'] = C::t('pichome_templatetagdata')->fetch_data_by_tidandtagtype($v['tid'], $v['tagtype']);
             $tagdata[] = $v;
         }

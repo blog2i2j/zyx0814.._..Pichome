@@ -1,0 +1,555 @@
+
+	<div 
+	class="page-content" 
+	v-loading="HtmlLoading" 
+	v-if="!!LeftTree.Currentkey"
+	style="display: flex;flex-direction: column;height: 100%;overflow: hidden;">
+		<div class="details-top" v-if="!rightguide" style="padding:0;">
+			<div class="details-maincontainer">
+				<div class="floating-layer clearfix"  v-cloak>
+					<div class="picture-box el-container is-vertical">
+						<div class="imgoperation" v-if="!imagesData.iniframe&&!HtmlLoading" v-cloak>
+							<el-tooltip effect="dark" content="{lang image_rowGrid}" placement="bottom">
+								<span class="text" @click="headerImgOperation(2)">
+									<el-icon class="icon"><Crop /></el-icon>
+								</span>
+							</el-tooltip>
+			
+			
+							<el-tooltip effect="dark" content="{lang rotation}" placement="bottom">
+								<span class="text" @click="headerImgOperation(3)">
+									<el-icon class="icon"><Refresh-Right /></el-icon>
+								</span>
+							</el-tooltip>
+			
+							<el-tooltip effect="dark" content="{lang left_mirror}" placement="bottom">
+								<span class="text" @click="headerImgOperation(4)">
+									<i class="iconfont icon-zuoyoufanzhuan_huaban1 icon" style="font-size: 21px;font-weight: 500;"></i>
+								</span>
+							</el-tooltip>
+							<el-tooltip effect="dark" content="{lang top_mirror}" placement="bottom">
+								<span class="text">
+									<i class="iconfont icon-chuizhifanzhuan_huaban1 icon" @click="headerImgOperation(5)" style="font-size: 21px;font-weight: 500;"></i>
+								</span>
+							</el-tooltip>
+							
+						</div>
+	
+	
+						<template v-if="imagesData.iniframe">
+							<div style="padding: 0 10px;height: 100%;overflow: hidden;">
+								<template v-if="DocumentThemeColor == 'dark'">
+									<iframe 
+										style="border: 0px;"
+										:src="imagesData.iniframe+'&theme=dark'" 
+										width="100%" 
+										height="100%"></iframe>
+								</template>
+								<template v-else>
+									<iframe 
+										style="border: 0px;"
+										:src="imagesData.iniframe" 
+										width="100%" 
+										height="100%"></iframe>
+								</template>
+							</div>
+							
+						</template>
+						<template v-else>
+							<div class="el-carousel" style="position: relative;flex: 1;overflow: hidden;">
+								<imagezoom
+									:largesrc="imagesData.originalimg"
+									:placeholdersrc="imagesData.icondata"
+									>
+								</imagezoom>
+								
+									
+								<template v-if="previews.data.length">
+									<el-button 
+										v-if="previews.active > 0"
+										style="left: 0;"
+										class="el-carousel__arrow" 
+										@click="previewClick(previews.active - 1 )" 
+										icon="ArrowLeftBold"></el-button>
+									<el-button 
+										v-if="previews.active + 1 < previews.data.length"
+										class="el-carousel__arrow" 
+										style="right: 0;"
+										@click="previewClick(previews.active + 1)" 
+										icon="ArrowRightBold"></el-button>
+								</template>
+							</div>
+						</template>
+						<div class="album-box" v-if="previews.data.length">
+							<el-button 
+								v-if="previews.size"
+								class="slider-btn slider-btn-prev" 
+								@click="previewSwitch('left')" 
+								text 
+								icon="ArrowLeftBold"></el-button>
+							<div class="album-imgs" ref="previewBox">
+								<ul 
+									class="album-imglist" 
+									ref="previewChild"
+									:style="{transform: 'translate('+previews.transform+'px, 0px)'}">
+									<li 
+										v-for="(item,index) in previews.data" 
+										:key="index" 
+										:ref="'previewImage'+index"
+										@click="previewClick(index)">
+										<div class="album-img" :class="{'active':index==previews.active}" >
+											<el-image  :src="item.spath?item.spath:'dzz/images/extimg/'+imagesData.filetype+'.png'" fit="contain" ><template #error><div class="el-image__placeholder"></div></template></el-image>
+										</div>
+									</li>
+								</ul>
+							</div>
+							<el-button 
+								v-if="previews.size" 
+								class="slider-btn slider-btn-next" 
+								@click="previewSwitch('right')" 
+								text 
+								icon="ArrowRightBold"></el-button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+<script>
+	const MainMixins = {
+		data(){
+			return {
+                imagesData:{},
+                previews:{
+					data:[],
+					transform:0,
+					active:0,
+					size:false
+				},
+                ImgParam:{
+					slider:0,
+					proportion:0,
+					fproportion:0,
+					index:0,
+					LoadFirst:false,
+					scaleX:0,
+					scaleY:0,
+					rotate:0,
+					total:0,
+					iswait:false
+				},
+				imagesSize:{
+					width:0,
+					height:0,
+					show:false
+				},
+				rightguide:0
+			}
+		},
+        watch: {
+			'ImgParam.proportion':function(val){
+				
+			},
+
+
+
+
+
+		},
+		created(){
+			var self = this;
+
+		},
+		methods:{
+            async GetImgData(){
+				let self = this;
+				self.HtmlLoading = true;
+				if(self.PostParam){
+					self.PostParam();
+				}
+				let CancelToken = axios.CancelToken;
+
+				let node = self.$refs.LeftTreeRef.getCurrentNode(self.LeftTree.Currentkey);
+				if(!node){
+					self.HtmlLoading = false;
+					self.rightguide=1;
+
+					return false;
+				}
+				if(node && node.iniframe){
+					self.rightguide=0;
+					self.imagesData = node;
+					self.HtmlLoading = false;
+					return false;
+				}
+				
+				axios.post('index.php?mod=publish&op=ajax&do=getfiledetails',{
+					pid:'$id',
+					path:node.dpath,
+				},{
+					cancelToken: new CancelToken(function executor(c) {
+					    self.PostParam = c;
+					})
+				}).then(function (res) {
+					if(res == 'intercept'){
+						return false;
+					}
+					let json = res.data;
+					let item = json.resourcesdata;
+
+					self.previews.data = item.preview || [];
+					
+					item['level'] = parseInt(item.level);
+					let foldernames = [];
+					if(item.foldernames){
+						for(let f in item.foldernames){
+							let fstr = {
+								key:f,
+								val:item.foldernames[f]
+							};
+							foldernames.push(fstr);
+						}
+					}
+					item.foldernames = foldernames;
+					self.imagesData = item;
+					self.HtmlLoading = false;
+					self.rightguide=0;
+					self.PostParam = null;	
+					self.$nextTick(function () {
+						self.previewSize()
+					});
+				}).catch(function (error) {
+				    console.log(error);
+				});
+			},
+            imageSize(proportion){
+				var self = this;
+				// if(self.ImgParam.LoadFirst){
+				// 	self.ImgParam.LoadFirst = false;
+				// 	return false;
+				// }
+				var ImgScroll = document.getElementById('ImgScroll');
+				var img = document.querySelector('.image-viewer__img');
+				var canva = document.querySelector('#ImgScroll');
+				if(this.imagesData.opentype == 'other'){
+					var width = parseFloat(this.imagesData.iconwidth);
+					var height = parseFloat(this.imagesData.iconheight);
+				}else{
+					var width = parseFloat(this.imagesSize.width);
+					var height = parseFloat(this.imagesSize.height);
+				}
+				var fwidth = width*proportion;
+				var fheight = height*proportion;
+			
+				var owidth = fwidth-img.clientWidth;
+				var oheight = fheight-img.clientHeight;
+				var pwidth = ImgScroll.clientWidth-(ImgScroll.clientWidth/5);
+				var pheight = ImgScroll.clientHeight-(ImgScroll.clientHeight/5);
+				
+				canva.style.lineHeight = ImgScroll.clientHeight+'px';
+				if(fwidth>ImgScroll.clientWidth){
+					img.style.cssText = 'max-width: "";width:'+fwidth+'px';
+					
+				}else{
+					img.style.cssText = 'max-width: "";width:'+fwidth+'px';
+				}
+				if(fheight>ImgScroll.clientHeight){
+					img.style.cssText = 'max-height: "";height:'+fheight+'px';
+				}else{
+					img.style.cssText = 'max-height: "";height:'+fheight+'px';
+				}
+				if(fheight>ImgScroll.clientHeight || fwidth>ImgScroll.clientWidth){
+					
+					ImgScroll.classList.add = 'move';
+				}else{
+					ImgScroll.classList.remove('move');
+				}
+				img.classList.remove('max');
+				if(self.$refs.scrollImg){
+					self.$refs.scrollImg.update();
+				}
+			},
+			imageproportion(){
+				var self = this;
+				var val = self.ImgParam.proportion;
+				this.ImgParam.fproportion = Math.round(val*100);
+				self.$nextTick(function(){
+					self.imageSize(val);
+				});
+			},
+			imageload(){
+				let self = this;
+				if(document.querySelector('.image-viewer__img.thumbnail')){
+					document.querySelector('.image-viewer__img.thumbnail').remove();
+				}
+				if(document.querySelector('.image-viewer__img.max')){
+					document.querySelector('.image-viewer__img.max').classList.remove('opacity');
+				}
+				self.$nextTick(() =>{
+					self.imageTouch();
+				})
+			},
+			imageTouch(){
+				let self = this;
+				// 1. 获取DOM元素
+				const img = document.getElementById('myImage');
+					
+					// 2. 定义缩放相关变量
+					let currentScale = 1; // 当前缩放比例
+					let initialDistance = 0; // 两指初始距离
+					let initialScale = 1; // 触摸开始时的缩放比例
+					const MIN_SCALE = 0.8; // 最小缩放比例
+					const MAX_SCALE = 3; // 最大缩放比例
+
+					// 3. 计算两指之间的距离
+					function getFingerDistance(touches) {
+					const x = touches[0].clientX - touches[1].clientX;
+					const y = touches[0].clientY - touches[1].clientY;
+					return Math.sqrt(x * x + y * y);
+					}
+
+					// 4. 计算两指的中点坐标（作为缩放中心，更贴合用户操作）
+					function getFingerCenter(touches) {
+					const x = (touches[0].clientX + touches[1].clientX) / 2;
+					const y = (touches[0].clientY + touches[1].clientY) / 2;
+					// 转换为相对于图片的坐标（设置transform-origin）
+					const rect = img.getBoundingClientRect();
+					const originX = ((x - rect.left) / rect.width) * 100 + '%';
+					const originY = ((y - rect.top) / rect.height) * 100 + '%';
+					return `${originX} ${originY}`;
+					}
+
+					// 5. 触摸开始事件：记录初始状态
+					function handleTouchStart(e) {
+					// 只有两指触摸时才处理缩放
+					if (e.touches.length === 2) {
+						e.preventDefault(); // 阻止默认行为（如页面滚动）
+						
+						// 记录初始距离、初始缩放比例
+						initialDistance = getFingerDistance(e.touches);
+						initialScale = currentScale;
+						
+						// 设置缩放中心为两指中点（核心优化，体验更好）
+						img.style.transformOrigin = getFingerCenter(e.touches);
+					}
+					}
+
+					// 6. 触摸移动事件：核心缩放逻辑
+					function handleTouchMove(e) {
+					// 非两指触摸，直接返回
+					if (e.touches.length !== 2) return;
+					e.preventDefault();
+
+					// 计算当前两指距离
+					const currentDistance = getFingerDistance(e.touches);
+					// 计算距离变化比例
+					const distanceRatio = currentDistance / initialDistance;
+					// 计算新的缩放比例
+					let newScale = initialScale * distanceRatio;
+
+					// 限制缩放范围（核心：最大/最小比例控制）
+					newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
+
+					// 应用缩放效果
+					img.style.transform = `scale(${newScale})`;
+					// 更新当前缩放比例
+					currentScale = newScale;
+					}
+
+					// 7. 触摸结束事件：重置部分状态（可选）
+					function handleTouchEnd() {
+					// 触摸结束后，恢复缩放中心为图片中心（也可保留最后一次的中心）
+					// img.style.transformOrigin = 'center center';
+					}
+					// 8. 绑定事件监听
+					img.addEventListener('touchstart', handleTouchStart);
+					img.addEventListener('touchmove', handleTouchMove);
+					img.addEventListener('touchend', handleTouchEnd);
+			},
+			async getImageSizeByUrl(callback){
+				let image = new Image();
+				image.src = this.imagesData.originalimg;
+				image.onload = await function () {
+					callback({
+						width: image.width,
+						height: image.height
+					});
+				};
+				image.onerror = await function () {
+					callback({
+						width: 0,
+						height: 0
+					});
+				};
+				
+			},
+			imageSet(){
+				var self = this;
+				let imagewidth = 0;
+				let imageheight = 0;
+				this.getImageSizeByUrl( function(param){
+					let imageswidth = param.width;
+					let imagesheight = param.height;
+					if(imageswidth == 0 && imagesheight == 0){
+						imageswidth = self.imagesData.width;
+						imagesheight = self.imagesData.height;
+					}
+					self.imagesSize.width = imageswidth;
+					self.imagesSize.height = imagesheight;
+					var Bw = document.getElementById('ImgScroll').clientWidth;
+					var Bh = document.getElementById('ImgScroll').clientHeight;
+					// var slider = document.querySelector('.el-slider').clientWidth;
+					var Lw = 0;
+					var Lh = 0;
+					var proportion = 0;
+					if(self.imagesData.opentype == 'other'){
+						var Lw = parseFloat(self.imagesData.iconwidth);
+						var Lh = parseFloat(self.imagesData.iconheight);
+					}else{
+						var Lw = parseFloat(self.imagesSize.width);
+						var Lh = parseFloat(self.imagesSize.height);
+					}
+					if(Bw < Lw || Bh < Lh){
+						var rateW =  Bw/Lw;
+						var rateH = Bh/Lh;
+						if(rateW>rateH){
+							num = rateH;
+						}else{
+							num = rateW;
+						}
+						proportion = num;
+					}else{
+						proportion = 1;
+					}
+					self.ImgParam.proportion = proportion;
+					var fproportion = Math.round(proportion*100);
+					// self.ImgParam.slider = (slider/2)*(fproportion/100);
+					self.imagesSize.show = true;
+					self.imageproportion();
+				});
+				
+			},
+			previewClick(index){
+				let self = this;
+				if(this.previews.active == index || this.previews.data.length <= index || index <= -1)return false;
+				this.previews.active = index;
+				this.imagesData.originalimg = this.previews.data[index].lpath;
+				
+			},
+			previewPosition(){
+				let self = this;
+				if(!self.previews.size)return false;
+				let index = this.previews.active;
+				let WBox = self.$refs.previewBox.offsetWidth;
+				let fWBox = self.$refs.previewBox.offsetWidth / 2;
+				let WChild = self.$refs.previewChild.offsetWidth;
+				let offsetLeft = self.$refs['previewImage'+index][0].offsetLeft - 34;
+				if(offsetLeft < fWBox){
+					self.previews.transform = 0;
+				}else if(offsetLeft > (WChild - WBox)){
+					self.previews.transform = -(WChild - WBox);
+				}else{
+					self.previews.transform = -(offsetLeft - fWBox);
+				}
+			},
+			previewSwitch(type){
+				let self = this;
+				let WBox = self.$refs.previewBox.offsetWidth;
+				let WChild = self.$refs.previewChild.offsetWidth;
+				if(type == 'left'){
+					if(self.previews.transform == 0){
+						return;
+					}else{
+						let fw = this.previews.transform + WBox;
+						if(fw > 0){
+							self.previews.transform = 0;
+						}else{
+							this.previews.transform = fw;
+						}
+					}	
+				}else{
+					let fw = self.previews.transform - WBox;
+					if(fw < -(WChild - WBox)){
+						self.previews.transform = -(WChild - WBox);
+					}else{
+						self.previews.transform = fw;
+					}
+				}
+				
+			},
+			previewSize(){
+				let self = this;
+				if(!self.$refs.previewBox || !self.$refs.previewChild)return false;
+				let WBox = self.$refs.previewBox.offsetWidth;
+				let WChild = self.$refs.previewChild.offsetWidth;
+				if(WChild > WBox){
+					self.previews.size = true;
+				}else{
+					self.previews.size = false;
+				}
+			},
+            headerImgScale(type){//比例选择
+				var self = this;
+				if(type == 'size'){
+					this.headerImgOperation(1);
+				}else if(type == 'adaption'){
+					this.headerImgOperation(2);
+				}else{
+					var num = parseInt(type)/100;
+					this.ImgParam.scale = num;
+					var proportion = parseInt(type);
+					self.ImgParam.proportion = proportion/100;
+					// var img = $('.image-viewer__img');
+					// var slider = document.querySelector('.el-slider');
+					// var fslider = 0;
+					// if(proportion>100){
+					// 	fslider = ((slider.clientWidth/2)/7)*(proportion/100)+(slider.clientWidth/2)-12;
+					// }else{
+					// 	fslider = (slider.clientWidth/2)*(proportion/100);
+					// }
+					// this.ImgParam.slider = fslider;
+					this.imageproportion();
+				}
+			},
+			headerImgOperation(type){//图片快捷点击
+				var type = parseInt(type);
+				var self = this;
+				if(type==1){
+					var proportion = 1;
+					self.ImgParam.proportion = proportion;
+					
+					// var img = $('.image-viewer__img');
+					// var slider = document.querySelector('.el-slider');
+					// this.ImgParam.slider = (slider.clientWidth/2)*proportion;
+					this.imageproportion();
+				}else if(type==2){
+					this.imageSet();
+				}else if(type==3){
+					var num = this.ImgParam.rotate + 90;
+					if(num>=360){
+						num=0;
+					}
+					this.ImgParam.rotate = num;
+				}else if(type==4){
+					var scaleX = this.ImgParam.scaleX;
+					if(scaleX == 0){
+						this.ImgParam.scaleX = -1;
+					}else{
+						this.ImgParam.scaleX = 0;
+					}
+				}else if(type==5){
+					var scaleY = this.ImgParam.scaleY;
+					if(scaleY == 0){
+						this.ImgParam.scaleY = -1;
+					}else{
+						this.ImgParam.scaleY = 0;
+					}
+				}
+				
+			},
+        },
+		mounted(){
+		}
+	}
+</script>

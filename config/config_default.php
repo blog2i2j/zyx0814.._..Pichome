@@ -21,10 +21,10 @@ $_config = array();
 $_config['db'][1]['dbhost']  		= 'localhost';//支持三种直接加端口如：127.0.0.1:3306或使用UNix socket 如：/tmp/mysql.sock
 $_config['db'][1]['dbuser']  		= 'root';
 $_config['db'][1]['dbpw'] 	 		= 'root';
-$_config['db'][1]['dbcharset'] 		= 'utf8';
+$_config['db'][1]['dbcharset'] 		= 'utf8mb4';
 $_config['db'][1]['pconnect'] 		= 0;
-$_config['db'][1]['dbname']  		= 'pichome';
-$_config['db'][1]['tablepre'] 		= 'pichome_';
+$_config['db'][1]['dbname']  		= 'filepress';
+$_config['db'][1]['tablepre'] 		= 'fp_';
 $_config['db'][1]['port'] = '3306';//mysql端口
 $_config['db'][1]['unix_socket'] = '';//使用此方式连接时 dbhost设置为localhost
 
@@ -34,7 +34,7 @@ $_config['db'][1]['unix_socket'] = '';//使用此方式连接时 dbhost设置为
  * $_config['db']['1']['slave']['1']['dbhost'] = 'localhost';
  * $_config['db']['1']['slave']['1']['dbuser'] = 'root';
  * $_config['db']['1']['slave']['1']['dbpw'] = 'root';
- * $_config['db']['1']['slave']['1']['dbcharset'] = 'gbk';
+ * $_config['db']['1']['slave']['1']['dbcharset'] = 'utf8mb4';
  * $_config['db']['1']['slave']['1']['pconnect'] = '0';
  * $_config['db']['1']['slave']['1']['dbname'] = 'x1';
  * $_config['db']['1']['slave']['1']['tablepre'] = 'pre_';
@@ -83,7 +83,7 @@ $_config['db']['common']['slave_except_table'] = '';
  */
 
 //内存变量前缀, 可更改,避免同服务器中的程序引用错乱
-$_config['memory']['prefix'] = 'oaooa_';
+$_config['memory']['prefix'] = 'fp_';
 
 /* reids设置, 需要PHP扩展组件支持, timeout参数的作用没有查证 */
 $_config['memory']['redis']['server'] = '';
@@ -186,7 +186,7 @@ $_config['imageickallowextlimit'] = 'aai,art,arw,avs,bpg,bmp,bmp2,bmp3,brf,cals,
 $_config['pichomespecialimgext'] = 'aai,art,arw,avs,bpg,bmp,bmp2,bmp3,brf,cals,cals,cgm,cin,cip,cmyk,cmyka,cr2,crw,cube,cur,cut,dcm,dcr,dcx,dds,dib,djvu,dng,dot,dpx,emf,epdf,epi,eps,eps2,eps3,epsf,epsi,ept,exr,fax,fig,fits,fpx,gplt,gray,graya,hdr,heic,hpgl,hrz,ico,info,isobrl,isobrl6,jbig,jng,jp2,jpt,j2c,j2k,jxr,json,man,mat,miff,mono,mng,m2v,mpc,mpr,mrwmmsl,mtv,mvg,nef,orf,otb,p7,palm,pam,clipboard,pbm,pcd,pcds,pcl,pcx,pdb,pef,pes,pfa,pfb,pfm,pgm,picon,pict,pix,png8,png00,png24,png32,png48,png64,pnm,ppm,ps,ps2,ps3,psb,psd,ptif,pwp,rad,raf,rgb,rgb565,rgba,rgf,rla,rle,sfw,sgi,shtml,sid,mrsid,sum,text,tga,tif,tiff,tim,ttf,ubrl,ubrl6,uil,uyvy,vicar,viff,wbmp,wpg,wmf,wpg,x,xbm,xcf,xpm,xwd,x3f,YCbCr,YCbCrA,yuv,sr2,srf,srw,rw2,nrw,mrw,kdc,erf,canvas,caption,clip,clipboard,fractal,gradient,hald,histogram,inline,map,mask,matte,null,pango,plasma,preview,print,scan,radial_gradient,scanx,screenshot,stegano,tile,unique,vid,win,xc,granite,logo,netscpe,rose,wizard,bricks,checkerboard,circles,crosshatch,crosshatch30,crosshatch45,fishscales,gray0,gray5,gray10,gray15,gray20,gray25,gray30,gray35,gray40,gray45,gray50,gray55,gray60,gray65,gray70,gray75,gray80,gray85,gray90,gray95,gray100,hexagons,horizontal,horizontal2,horizontal3,horizontalsaw,hs_bdiagonal,hs_cross,hs_diagcross,hs_fdiagonal,hs_vertical,left30,left45,leftshingle,octagons,right30,right45,rightshingle,smallfishcales,vertical,vertical2,vertical3,verticalfishingle,vericalrightshingle,verticalleftshingle,verticalsaw,fff,3fr,ai,iiq,cdr'; //gd颜色后缀
 $_config['pichomecommimageext'] = 'jpg,png,jpeg,gif,svg,webp';//pichome直接预览图片后缀
 //本地文档支持格式
-$_config['onlyofficeviewextlimit'] = 'pdf,doc,docx,rtf,odt,htm,html,mht,txt,ppt,pptx,pps,ppsx,odp,xls,xlsx,ods,csv';
+$_config['onlyofficeviewextlimit'] = 'pdf,wps,doc,docx,rtf,odt,htm,html,mht,txt,ppt,pptx,pps,ppsx,ppsm,dps,dpt,odp,xls,xlsx,et,ots,ods,csv,md,vsdm,vsdx,vssm,vssx,vstm,vstx,epub';
 
 //腾讯云格式支持
 $_config['qcosmedia']='3gp,avi,flv,mp4,m3u8,mpg,asf,wmv,mkv,mov,ts,webm,mxf';
@@ -254,4 +254,6 @@ $_config['audiothumetime'] = 5;//视频获取缩略图位置，默认5秒的位�
 $_config['filterFileByTabPerm'] = 0;//是否过滤tab控制文件显示
 
 $_config['notallowDirectoryEditFilename'] = 1;//不允许编辑普通目录文件名
+
+$_config['seo'] = 1;//开启SEO优化页面，搜索引擎访问时会定位到专门的页面，提高页面收录
 return $_config;

@@ -95,8 +95,12 @@ const Tmpcontact = {
         function handleUploadSucess(response, file, fileList){//上传成功
             if(response.files && response.files.length){
                 let files = response.files[0];
-                props.model.data[0].data[curRowIndex.value].aid = files.data.aid;
-                props.model.data[0].data[curRowIndex.value].img = files.data.img;
+                if(files.error){
+                    ElementPlus.ElMessage({message:files.error,type:'error'});
+                }else if( files.data) {
+                    props.model.data[0].data[curRowIndex.value].aid = files.data.aid;
+                    props.model.data[0].data[curRowIndex.value].img = files.data.img;
+                }
             }
 
         };

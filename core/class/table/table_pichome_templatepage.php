@@ -30,17 +30,50 @@ class table_pichome_templatepage extends dzz_table
         }
     }
     public function delete_by_id($id){
-        if(!$id) return true;
-        if(C::t('pichome_templatetag')->delete_by_pageid($id)){
-            C::t('pichome_route')->delete_by_abid($id,0);
-            if(parent::delete($id)){
-                HOOK::listen('lang_parse',$id,['delAlonepageLangData']);
-                return  true;
+
+        if(!$data=parent::fetch($id)) return true;
+        if($data['isdelete']>0) {
+            if (C::t('pichome_templatetag')->delete_by_pageid($id)) {
+                C::t('pichome_route')->delete_by_abid($id, 0);
+                if (parent::delete($id)) {
+                    HOOK::listen('lang_parse', $id, ['delAlonepageLangData']);
+                    $hookdata = ['id' => $id, 'delusid' => getglobal('uid'),'delusername'=>getglobal('username')];
+                    Hook::listen('alonepagedeleteafter', $hookdata);
+                    return true;
+                }
+            } else {
+                return false;
             }
         }else{
-            return false;
+            $setarr=array(
+                'isdelete'=>1,
+                'delinfo'=>json_encode(array(
+                    'uid'=>getglobal('uid'),
+                    'username'=>getglobal('username'),
+                    'deltime'=>TIMESTAMP,
+                )),
+            );
+            if(parent::update($id,$setarr)){
+                return true;
+            }else{
+                return false;
+            }
         }
-
+    }
+    public function restore_by_id($id){
+        if(!$data=parent::fetch($id)) return true;
+        if($data['isdelete']>0) {
+            $setarr=array(
+                'isdelete'=>0,
+            );
+            if(parent::update($id,$setarr)){
+                return true;
+            }else{
+                return false;
+            }
+        }else{
+            return true;
+        }
     }
 
     public function fetch_data_by_id($id){

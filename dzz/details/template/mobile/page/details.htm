@@ -135,7 +135,7 @@
 		el: '#dzzoffice',
 		data: function() {
 			return {
-				DocumentAdminId:'$_G[adminid]',
+				DocumentAdminId:'$_G['adminid']',
 				paths:[],
 				path:'',
 				ridIndex:0,
@@ -395,7 +395,7 @@
 					return false;
 				}
 				
-				document.title = item.name+'-$_G[setting][sitename]';
+				document.title = item.name+'-$_G['setting']['sitename']';
 				// self.ParamImages.operation.rids = [item.rid];
 				var colors = [];
 				

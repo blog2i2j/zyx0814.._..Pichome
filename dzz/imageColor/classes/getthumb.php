@@ -57,7 +57,7 @@ class getthumb{
             //$icc_rgb = file_get_contents(DZZ_ROOT.'./dzz/imagick/icc/sRGB_v4_ICC_preference.icc');
             //$im->profileImage('icc', $icc_rgb);
             unset($icc_rgb);
-
+            $this->autoRotateImage($im);
             $im->setIteratorIndex(0);
             $owidth=$im->getImageWidth();
             $oheight=$im->getImageHeight();
@@ -78,9 +78,9 @@ class getthumb{
                     $height=ceil($width*$oheight/$owidth);
                 }
             }
-            $a = $im->scaleImage($width, $height, false);
+            $im->scaleImage($width, $height, false);
             $im->stripImage(); //去除图片信息
-            $im->setImageCompressionQuality(100); //图片质量
+            $im->setImageCompressionQuality(80); //图片质量
 
             $im->writeImage(($prefix?$prefix.':':'').$jpg);
 
@@ -93,14 +93,15 @@ class getthumb{
                         $filepath = IO::moveThumbFile($cloudpath, $jpg);
                         if (!isset($filepath['error'])) {
                             @unlink($jpg);
+                            return $cloudpath;
                         } else {
                             runlog('imagick', 'uneable move  file to target:' . $jpg . $cloudpath);
                             return '';
                         }
                     }
-                    return $target;
+                    return 'dzz::'.$target;
                 }else{
-                    return $target;
+                    return 'dzz::'.$target;
                 }
             }else{
                 runlog('imagick','uneable get size  file:'.$jpg);
@@ -113,7 +114,7 @@ class getthumb{
         };
         return '';
     }
-    public function getPath($dir = 'imagick')
+    public static function getPath($dir = 'imagick')
     {
         global $_G;
         $target1 = $dir . '/index.html';
@@ -122,7 +123,7 @@ class getthumb{
         dmkdir($targetpath);
         return $dir;
     }
-    function scaleImage($width,$height,$owidth,$oheight) {
+    public static function scaleImage($width,$height,$owidth,$oheight) {
         if($owidth>$width && $oheight>$height){
             $or=$owidth/$oheight;
             $r=$width/$height;
@@ -151,7 +152,7 @@ class getthumb{
         return array($width,$height);
     }
 
-    public function getthumbpath($dir = 'pichomethumb'){
+    public static function getthumbpath($dir = 'pichomethumb'){
         $subdir = $subdir1 = $subdir2 = '';
         $subdir1 = date('Ym');
         $subdir2 = date('d');
@@ -159,5 +160,45 @@ class getthumb{
         // $target1 = $dir . '/' . $subdir . 'index.html';
         $target = $dir . '/' . $subdir;
         return $target;
+    }
+    public static function autoRotateImage($imgick) {
+        $orientation = $imgick->getImageOrientation();
+        switch ($orientation) {
+            case \imagick::ORIENTATION_TOPRIGHT:
+                // 水平翻转
+                $imgick->flopImage();
+                break;
+            case \imagick::ORIENTATION_BOTTOMRIGHT:
+                // 旋转180度
+                $imgick->rotateImage(new ImagickPixel(), 180);
+                break;
+            case \imagick::ORIENTATION_BOTTOMLEFT:
+                // 垂直翻转
+                $imgick->flipImage();
+                break;
+            case \imagick::ORIENTATION_LEFTTOP:
+                // 旋转90度并水平翻转
+                $imgick->rotateImage(new ImagickPixel(), 90);
+                $imgick->flopImage();
+                break;
+            case \imagick::ORIENTATION_RIGHTTOP:
+                // 旋转90度
+                $imgick->rotateImage(new ImagickPixel(), 90);
+                break;
+            case \imagick::ORIENTATION_RIGHTBOTTOM:
+                // 旋转270度并水平翻转
+                $imgick->rotateImage(new ImagickPixel(), 270);
+                $imgick->flopImage();
+                break;
+            case \imagick::ORIENTATION_LEFTBOTTOM:
+                // 旋转270度
+                $imgick->rotateImage(new ImagickPixel(), 270);
+                break;
+            case \imagick::ORIENTATION_TOPLEFT:
+                break;
+        }
+
+        // Now that it's auto-rotated, make sure the EXIF data is correct in case the EXIF gets saved with the image!
+        $imgick->setImageOrientation(\imagick::ORIENTATION_TOPLEFT);
     }
 }

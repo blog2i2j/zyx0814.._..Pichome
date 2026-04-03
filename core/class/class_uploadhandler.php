@@ -1073,6 +1073,9 @@ class UploadHandler
             if ($uploaded_file && is_uploaded_file($uploaded_file)) {
                 // multipart/formdata uploads (POST method uploads)
                 if ($append_file) {
+                    if($content_range[1]<1){
+                        file_put_contents($file_path,'');
+                    }
                     file_put_contents(
                         $file_path,
                         fopen($uploaded_file, 'r'),
@@ -1083,6 +1086,9 @@ class UploadHandler
                 }
             } else {
                 // Non-multipart uploads (PUT method support)
+                if($append_file && is_array($content_range) && $content_range[1]<1){
+                    file_put_contents($file_path,'');
+                }
                 file_put_contents(
                     $file_path,
                     fopen($this->options['input_stream'], 'r'),
@@ -1097,11 +1103,16 @@ class UploadHandler
                     $this->handle_image_file($file_path, $file);
                 }
 				$file->oname=$file->name;
-				if(filesize($file_path)!=$file->size) $file->error=lang('wrong_upload');
+				if(filesize($file_path)!=$file->size) {
+                    $file->error=lang('wrong_upload');
+                    @unlink($file_path);
+                }
 				else{
 					if($re = $this->save($file_path,$file->name)){
 						$file->data=$re;
-					}
+					}else{
+                        @unlink($file_path);
+                    }
 				}
             } else {
                 $file->size = $file_size;
@@ -1142,9 +1153,10 @@ class UploadHandler
 			$pathinfo = pathinfo($filename);
 			$ext = $pathinfo['extension']?$pathinfo['extension']:'';
 			$attach['filetype']=$ext;
+            $attach['dpath']=dzzencode('attach::'.$attach['aid']);
 			if(in_array(strtolower($attach['filetype']),array('png','jpeg','jpg','gif','bmp'))){
                 //$attach['img']=C::t('attachment')->getThumbByAid($attach['aid'],$this->options['thumbnail']['max-width'],$this->options['thumbnail']['max-height']);
-				$attach['img']=getglobal('siteurl').'index.php?mod=io&op=getfileStream&path='.dzzencode('attach::'.$attach['aid']);
+				$attach['img']=getglobal('siteurl').'index.php?mod=io&op=getfileStream&path='.$attach['dpath'];
 
 				$attach['isimage']=1;
 			}else{
@@ -1152,7 +1164,7 @@ class UploadHandler
 				$attach['isimage']=0;
 			}
 			$attach['ffilesize']=formatsize($attach['filesize']);
-			$attach['dpath']=dzzencode('attach::'.$attach['aid']);
+
             //$attach['imgsrc'] =
 			@unlink($file_path);
 			return $attach;
@@ -1194,16 +1206,17 @@ class UploadHandler
 			if($attach['aid']=C::t('attachment')->insert($attach,1)){
 				C::t('local_storage')->update_usesize_by_remoteid($attach['remote'],$attach['filesize']);
 				if($this->options['tospace']) dfsockopen($_G['localurl'].'misc.php?mod=movetospace&aid='.$attach['aid'].'&remoteid=0',0, '', '', FALSE, '',1);
+                $attach['dpath']=dzzencode('attach::'.$attach['aid']);
 				if(in_array(strtolower($attach['filetype']),array('png','jpeg','jpg','gif','bmp'))){
 					//$attach['img']=C::t('attachment')->getThumbByAid($attach['aid'],$this->options['thumbnail']['max-width'],$this->options['thumbnail']['max-height']);
-                    $attach['img'] = getglobal('siteurl').'index.php?mod=io&op=getfileStream&path='.dzzencode('attach::'.$attach['aid']);
+                    $attach['img'] = getglobal('siteurl').'index.php?mod=io&op=getfileStream&path='.$attach['dpath'];
                     $attach['isimage']=1;
 				}else{
 					$attach['img']=geticonfromext($ext);
 					$attach['isimage']=0;
 				}
 				$attach['ffilesize']=formatsize($attach['filesize']);
-				$attach['dpath']=dzzencode('attach::'.$attach['aid']);
+
 				return $attach;
 			}else{
 				return false;
@@ -1428,6 +1441,7 @@ class UploadHandler
         $content_range_header = $this->get_server_var('HTTP_CONTENT_RANGE');
         $content_range = $content_range_header ?
             preg_split('/[^0-9]+/', $content_range_header) : null;
+
         $size =  $content_range ? $content_range[3] : null;
         $files = array();
         if ($upload) {

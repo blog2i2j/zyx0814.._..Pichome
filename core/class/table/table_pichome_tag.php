@@ -13,7 +13,7 @@
             $this->_cache_ttl = 3600;
             parent::__construct();
         }
-        public function insert($tagname,$nohots = 0){
+        public function insert($tagname,$nohots = 0,  $replace = false, $silent = false){
             $setarr =[];
             if($data = DB::fetch_first("select tid,hots,initial from %t where tagname = %s",array($this->_table,$tagname))){
                 if(!$data['initial']){

@@ -7,7 +7,7 @@
 <!--{template common/container/pc/header_end}-->
 <div id="dzzoffice">
 	<el-container class="page-main">
-		<!--{template common/container/pc/ad_pic_header}-->
+		<!--{template common/container/pc/header_return}-->
         <el-main style="padding: 0px;overflow: hidden;position: relative;" v-loading="treeLoading">
             <el-scrollbar>
                 <div class="page-container">
@@ -39,7 +39,7 @@
             }
         },
 		created() {
-            this.HeaderMenu.active = 'banner';
+
             //主题颜色
 			let theme = localStorage.getItem('theme');
 			if(theme){
@@ -58,7 +58,7 @@
 				// immediate:true
 			}
 		},
-		mixins:[HeaderMixin,OperationMixi],
+		mixins:[OperationMixi],
 		methods: {
             //树拖动
             async TreeDrop(before,after,inner){

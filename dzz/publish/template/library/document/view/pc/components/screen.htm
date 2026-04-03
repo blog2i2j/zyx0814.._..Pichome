@@ -1,0 +1,26 @@
+<script type="text/javascript">
+	var ScreenMixin = {
+		data(){
+			return {
+				Screenshow:false,
+				ScreenData:[],
+				ScreenParam:{
+					appid:'',
+					pfids:'',
+					fids:''
+				},
+				ScreenProps:{
+					optionload:'index.php?mod=publish&op=ajax&do=getscreen&pid=$id',
+					contentload:'index.php?mod=publish&op=ajax&do=searchmenu_num&pid=$id',
+					classifyload:'index.php?mod=publish&op=ajax&do=getfolderdata&pid=$id',//分类url
+					tagload:'index.php?mod=publish&op=ajax&do=search_menu&pid=$id',
+					isclassify:false,//分类是否显示
+				}
+			}
+		},
+		methods:{
+		}
+	};
+
+
+</script>

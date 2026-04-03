@@ -56,7 +56,7 @@ if ($datas) {
             continue;
         }
         //更新当前数据获取缩略图执行次数和时间
-        C::t('pichome_resources_attr')->update($v['rid'],array('getdonum'=>intval($v['getdonum'])+1,'getinfotime'=>TIMESTAMP));
+       // C::t('pichome_resources_attr')->update($v['rid'],array('getdonum'=>intval($v['getdonum'])+1,'getinfotime'=>TIMESTAMP));
         $resourcesdata = C::t('pichome_resources')->fetch_data_by_rid($v['rid']);
         Hook::listen('pichomegetfileinfo', $resourcesdata);
         dzz_process::unlock($processname1);

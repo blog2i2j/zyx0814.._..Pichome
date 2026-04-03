@@ -33,6 +33,7 @@ if($do == 'addpage'){//新建单页
             $shorturl = C::t('pichome_route')->update_path_by_url($url,$address);
             if($setting['pathinfo'] && $shorturl) $setarr['url']=$shorturl;
             else $setarr['url']=$url;
+            $setarr['dateline']=dgmdate(TIMESTAMP, 'Y-m-d H:i:s');
 
         }
 
@@ -43,7 +44,7 @@ if($do == 'addpage'){//新建单页
         Hook::listen('lang_parse',$pagedata,['getAlonepageLangData']);
         Hook::listen('lang_parse',$pagedata,['getAlonepageLangKey']);
         $url = 'index.php?mod=alonepage&op=view&id='.$id.'#id='.$id;
-        if($setting['pathinfo']) $path = C::t('pichome_route')->feth_path_by_url($url);
+        if($setting['pathinfo']) $path = C::t('pichome_route')->fetch_path_by_url($url);
         else $path = '';
         if($path){
             $pagedata['url'] = $path;
@@ -52,9 +53,20 @@ if($do == 'addpage'){//新建单页
         }
         exit(json_encode(['success'=>true,'data'=>$pagedata]));
     }
-}elseif($do == 'delpage'){//删除单页
+
+}elseif($do == 'pageRename'){//单页改名
+    $newname= isset($_GET['newname']) ? getstr($_GET['newname'],255):'';
+    $id = isset($_GET['id']) ? intval($_GET['id']):0;
+    if(!$newname) exit(json_encode(['success'=>false,'msg'=>lang('name_cannot_empty')]));
+    C::t('pichome_templatepage')->update($id,['pagename'=>$newname]);
+    exit(json_encode(['success'=>true,'newname'=>$newname]));
+}elseif($do == 'pageDelete'){//删除单页
     $id = isset($_GET['id']) ? intval($_GET['id']):0;
     C::t('pichome_templatepage')->delete_by_id($id);
+    exit(json_encode(['success'=>true]));
+}elseif($do == 'pageRestore'){//删除单页
+    $id = isset($_GET['id']) ? intval($_GET['id']):0;
+    C::t('pichome_templatepage')->restore_by_id($id);
     exit(json_encode(['success'=>true]));
 }elseif($do == 'deltag'){//删除标签位
     $tid = isset($_GET['tid']) ? intval($_GET['tid']):0;
@@ -65,26 +77,39 @@ if($do == 'addpage'){//新建单页
     C::t('pichome_templatetagdata')->delete_by_id($tdid);
     exit(json_encode(['success'=>true]));
 }elseif($do == 'pagelist'){//单页列表
+    $page= isset($_GET['page']) ? intval($_GET['page']):1;
+    $perpage= isset($_GET['perpage']) ? intval($_GET['perpage']):20;
+    $keyword = isset($_GET['keyword']) ? trim($_GET['keyword']):'';
+    $start = ($page-1)*$perpage;
     $data = [];
-    foreach(DB::fetch_all("select * from %t where 1 order by disp asc,dateline asc ",['pichome_templatepage']) as $v){
-        $v['dateline'] = dgmdate($v['dateline'],'Y-m-d H:i:s');
-        $url = 'index.php?mod=alonepage&op=view&id='.$v['id'].'#id='.$v['id'];
-        if($setting['pathinfo']) $path = C::t('pichome_route')->feth_path_by_url($url);
-        else $path = '';
-        if($path){
-            $v['url'] = $_G['siteurl'].$path;
-        }else{
-            $v['url'] = $_G['siteurl'].$url;
+    $total=0;
+    $isdelete = isset($_GET['isdelete']) ? intval($_GET['isdelete']):0;
+    $sql=" isdelete=%d";
+    $params=array('pichome_templatepage',$isdelete);
+    if($keyword){
+        $sql.=" and pagename like %s";
+        $params[]='%'.$keyword.'%';
+    }
+    if($total=DB::result_first("select count(*) from %t where $sql",$params)) {
+        foreach (DB::fetch_all("select * from %t where $sql order by dateline DESC limit $start,$perpage", $params) as $v) {
+            $v['dateline'] = dgmdate($v['dateline'], 'Y-m-d H:i:s');
+            $url = 'index.php?mod=alonepage&op=view&id=' . $v['id'] . '#id=' . $v['id'];
+            $path = C::t('pichome_route')->update_path_by_url($url);
+
+            if ($path) {
+                $v['url'] = $_G['siteurl'] . $path;
+            } else {
+                $v['url'] = $_G['siteurl'] . $url;
+            }
+            $data[] = $v;
         }
-        $data[] = $v;
     }
     Hook::listen('lang_parse',$data,['getAlonepageLangData',1]);
-    exit(json_encode(['success'=>true,'data'=>$data]));
+    exit(json_encode(['success'=>true,'data'=>$data,'total'=>$total]));
 }elseif($do == 'geturlqrcode'){//获取链接二维码
     $id = isset($_GET['id']) ? intval($_GET['id']) : '';
     $url = 'index.php?mod=alonepage&op=view&id='.$id.'#id='.$id;
-    $sid = 'a_'.$id;
-    $qrcode = C::t('pichome_route')->getQRcodeBySid($url,$sid);
+    $qrcode = C::t('pichome_route')->getQRcodeByUrl($url);
     exit(json_encode(['success'=>true,'qrcode'=>$qrcode]));
 }elseif($do == 'sortpage'){//单页排序
     $ids = isset($_GET['ids']) ? trim($_GET['ids']):'';
@@ -112,6 +137,7 @@ if($do == 'addpage'){//新建单页
         'tagname'=>$pagedata['title'] ? getstr($pagedata['title']):'',
         'dateline'=>TIMESTAMP,
         'disp'=>isset($pagedata['disp']) ? intval($pagedata['disp']):0,
+        'showtitle'=>isset($pagedata['showtitle']) ? intval($pagedata['showtitle']):0,
         'pageid'=>$id,
     ];
     $pagedata['tid'] = C::t('pichome_templatetag')->insertdata($pagetag);
@@ -131,7 +157,7 @@ if($do == 'addpage'){//新建单页
                 'tdata'=>$v['data'],
                 'type'=>$pagedata['type'],
                 'tdataname'=>$v['name'] ? getstr($v['name']):$pagetag['tagname'],
-                'cachetime'=>intval($v['data'][0]['time']),
+                'cachetime'=>isset($v['data'][0]['time'])?intval($v['data'][0]['time']):0,
                 'disp'=>$k
             ];
 
@@ -276,4 +302,91 @@ if($do == 'addpage'){//新建单页
     $id = isset($_GET['id']) ? intval($_GET['id']):0;
     $pagedata = C::t('pichome_templatepage')->fetch_data_by_id($id);
     exit(json_encode(['success'=>true,'data'=>$pagedata]));
+}elseif($do == 'getCollectList'){
+    $limit=20;
+    $q = isset($_GET['q']) ? trim($_GET['q']) : '';
+    $ids= isset($_GET['ids']) ? dintval($_GET['ids'],true) : [];
+    $data = [];
+    $sql = "pstatus=1 and ptype=6 ";
+    $params = array('publish_list');
+    if ($q) {
+        $sql .= " and pname like %s";
+        $params[] = "%" . $q . "%";
+    }
+    foreach (DB::fetch_all("select * from %t where $sql limit $limit", $params) as $v) {
+        $data[$v['id']] = array('id' => $v['id'], 'ptype' => $v['ptype'], 'name' => $v['pname']);
+    }
+    if($ids){
+        foreach(DB::fetch_all("select * from %t where id IN(%n)",array('publish_list',$ids) ) as $v){
+            $data[$v['id']]=array('id'=>$v['id'],'ptype'=>$v['ptype'],'name'=>$v['pname']);
+        }
+    }
+    exit(json_encode(['success' => true, 'data' => array_values($data)]));
+}elseif($do == 'getSearchList'){ //获取所有栏目中支持搜索的栏目列表，目前支持搜索的栏目有：库，智能数据，合集，发布库，发布智能数据
+    $limit=20;
+    if (!isset($_G['pathinfo'])) $pathinfo = C::t('setting')->fetch('pathinfo');
+    else $pathinfo = $_G['pathinfo'];
+    $q = isset($_GET['q']) ? trim($_GET['q']) : '';
+    $ids= isset($_GET['ids']) ? dintval($_GET['ids'],true) : [];
+    $sql = "select b.bannername,b.id,b.btype,b.bdata,p.ptype,p.pname as pid from %t b LEFT JOIN %t p on b.bdata=p.id and p.pstatus='1' and (p.ptype='3' OR p.ptype='5' OR p.ptype='6')";
+    $params = array('pichome_banner','publish_list');
+    $data = [];
+
+    $wheresql="b.btype='0' OR b.btype='1' OR (b.btype='6' and !isnull(p.id))";
+
+    if($ids){
+        $wheresql .= " OR b.id IN(%n)";
+        $params[] = $ids;
+    }
+
+    if ($q) {
+        $wheresql = "(".$wheresql.") and b.bannername like %s";
+        $params[] = "%" . $q . "%";
+    }
+
+    foreach (DB::fetch_all("$sql where $wheresql limit $limit", $params) as $v) {
+        if ($v['btype'] == 3) {
+            $url = $v['bdata'];
+        } elseif ($v['btype'] == 1) {
+            $url = 'index.php?mod=intelligent&tid=' .$v['bdata'];
+        } elseif ($v['btype'] == 6) {
+            $url = 'index.php?mod=publish&id=' .$v['bdata'];
+        } elseif ($v['btype'] == 4) {
+            $url = 'index.php?mod=banner&op=index&id=tb_' . $v['bdata'] . '#id=tb_' . $v['bdata'];
+        } else {
+            $url = 'index.php?mod=banner&op=index&id=' . $v['bdata'] . '#id=' . $v['bdata'];
+        }
+
+        if ($pathinfo) $path = C::t('pichome_route')->fetch_path_by_url($url);
+        else $path = '';
+        if ($path) {
+            $searchurl = $path;
+        } else {
+            $searchurl = $url;
+        }
+        $data[$v['id']] = array('id' => $v['id'], 'bdata'=>$v['bdata'],'btype' => $v['btype'], 'ptype'=>$v['ptype'],'name' => $v['bannername'],'url'=>$searchurl);
+    }
+
+    exit(json_encode(['success' => true, 'data' => array_values($data)]));
+}elseif($do == 'getPublishList'){
+    $limit=200;
+    $q = isset($_GET['q']) ? trim($_GET['q']) : '';
+    $ids= isset($_GET['ids']) ? dintval($_GET['ids'],true) : [];
+    $data = [];
+    $sql = "pstatus=1 ";
+    $params = array('publish_list');
+    if ($q) {
+        $sql .= " and pname like %s";
+        $params[] = "%" . $q . "%";
+    }
+    foreach (DB::fetch_all("select * from %t where $sql limit $limit", $params) as $v) {
+
+        $data[$v['id']] = array('id' => $v['id'], 'ptype' => $v['ptype'], 'name' => $v['pname']);
+    }
+    if($ids){
+        foreach(DB::fetch_all("select * from %t where id IN(%n)",array('publish_list',$ids) ) as $v){
+            $data[$v['id']]=array('id'=>$v['id'],'ptype'=>$v['ptype'],'name'=>$v['pname']);
+        }
+    }
+    exit(json_encode(['success' => true, 'data' => array_values($data)]));
 }

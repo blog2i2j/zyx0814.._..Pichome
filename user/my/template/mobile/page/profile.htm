@@ -118,14 +118,14 @@
 				percentage:0,
 				ispercentage:false,
 				btnloading:false,
-				avatarstatus:'$userdata[avatarstatus]',
+				avatarstatus:'$userdata['avatarstatus']',
 				ruleForm: {
 					imgpath:'',
-					email:'$userdata[email]',
-					nickname:'$userdata[nickname]',
-					username:'$userdata[username]',
-					phone:'$userdata[phone]',
-					weixinid:'$userdata[weixinid]',
+					email:'$userdata['email']',
+					nickname:'$userdata['nickname']',
+					username:'$userdata['username']',
+					phone:'$userdata['phone']',
+					weixinid:'$userdata['weixinid']',
 					password0:'',
 					password:'',
 					password2:'',
@@ -246,7 +246,7 @@
 						const {data: res} = await axios.post('user.php?mod=my&op=profile&do=personal',params);
 						if(res.success){
 							 self.$message({
-							 	message: '{lang}',
+							 	message: '{lang do_success}',
 							 	type: 'success'
 							 });
 							//window.location.reload();

@@ -1,0 +1,99 @@
+<!--{template common/container/pc/header_start}-->
+<link rel="stylesheet" href="static/scss/default/index.css?{VERHASH}">
+<link rel="stylesheet" href="{MOD_PATH}/css/pc/index.css?{VERHASH}">
+<script type="text/javascript" src="static/js/sortable.min.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/vue_components/HeaderSort/index.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/vue_components/locale/index.js?{VERHASH}"></script>
+<!--{template common/container/pc/header_end}-->
+<div id="dzzoffice">
+	<el-container class="page-main">
+		<!--{template pc/components/index/header}-->
+        <el-main>
+            <el-scrollbar>
+                <div class="favorites-box">
+					<!--{template pc/components/index/list}-->
+				</div>
+            </el-scrollbar>		
+        </el-main>
+               
+
+	</el-container>
+</div>
+<script type="text/javascript">
+	const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch } = Vue;
+	const dzzoffice = createApp({
+		data() {
+			return {
+				HeaderMenuIndex:'manage',
+                DocumentThemeColor:''
+            }
+        },
+		created() {
+            //主题颜色
+			let theme = localStorage.getItem('theme');
+			if(theme){
+				this.DocumentThemeColor=theme;
+			}else{
+				this.DocumentThemeColor = 'light'
+			}
+		},
+		mixins:[HeaderMixin,FileGathermixin],
+        watch:{
+			DocumentThemeColor:{
+				handler(newval){
+					document.querySelector('html').className = newval
+				},
+				deep:true,
+				// immediate:true
+			}
+		},
+		methods: {
+			CommonHighlight(text,words){
+				// 默认的标签，如果没有指定，使用span
+				var i, len = words.length,
+				re;
+				//匹配每一个特殊字符 ，进行转义
+				var specialStr = ["*", ".", "?", "+", "$", "^", "[", "]", "{", "}", "|", "\\", "(", ")", "/", "%"]; 
+				$.each(specialStr, function(i, item) {
+					if(words.indexOf(item) != -1) {
+						words = words.replace(new RegExp("\\" + item, 'g'), "\\" + item);
+					}
+				});
+				//匹配整个关键词
+				re = new RegExp(words, 'g');
+				if(re.test(text)) {
+					text = text.replace(re, '<span class="highlight">$&</span>');
+				}
+				return text;
+			},
+			DocumentThemeChange(){
+				if(this.DocumentThemeColor=='light'){
+					this.DocumentThemeColor='dark';
+					localStorage.setItem('theme','dark');
+				}else{
+					this.DocumentThemeColor='light';
+					localStorage.setItem('theme','light');
+				}
+				
+			}
+		},
+		mounted() {
+            const self = this;
+
+        }
+	});
+	dzzoffice.use(ElementPlus, {
+		locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+	});
+	for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+		dzzoffice.component(key, component)
+	}
+	dzzoffice.component('language', language);
+	dzzoffice.component('comavatar', comavatar);
+	dzzoffice.component('international',international);
+	// 屏蔽警告信息
+	dzzoffice.config.warnHandler = function(){return null};
+	dzzoffice.mount('#dzzoffice');
+</script>
+
+<!--{template common/container/pc/footer}-->

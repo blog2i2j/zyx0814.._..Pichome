@@ -11,7 +11,7 @@
 	:screenshow="Screenshow"
 	:ischecked="false"
 	:hassub="ImageDataIsExpanded"
-	:islikeness="islikeness">
+	:islikeness="true">
 	<template v-slot:operation="{ data }">
 		<template v-if="data.share || data.down">
 			<template v-if="ImageProps.layout=='rowGrid' || ImageProps.layout=='imageList' || ImageProps.layout=='waterFall'">
@@ -130,10 +130,21 @@
 					// 当图片加载完成时，获取其宽度和高度
 					img.onload = function() {
 						let ImageSize= self.resizeImage(img);
+						sessionStorage.setItem('cropimg',data.val.icondata);
 						self.searchData.width = parseInt(ImageSize.width);
 						self.searchData.height = parseInt(ImageSize.height);
 						self.searchData.boxW = parseInt(ImageSize.width);
 						self.searchData.boxH = parseInt(ImageSize.height);
+						self.searchData.autoCropX = 0;
+						self.searchData.autoCropY = 0;
+						sessionStorage.setItem('CropData',{
+							x1: 0 ,
+							y1: 0,
+							x2: ImageSize.width,
+							y2: ImageSize.height,
+							w: ImageSize.width,
+							h: ImageSize.height
+						});
 						self.$nextTick(() => {
 							self.searchData.img = img.src;
 							self.screenvisible(false);
@@ -141,8 +152,9 @@
 					};
 				}else if(data.type == 'share'){
 					self.shareDialog.visible=true;
-					self.shareDialog.id=data.val.rid;
+					self.shareDialog.filepaths=[data.val.rid];
 					self.shareDialog.stype=0;
+					self.shareDialog.sperm=data.val.perm;
 					self.shareDialog.title=data.val.name;
 				}
 			},

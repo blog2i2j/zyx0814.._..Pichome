@@ -14,6 +14,11 @@ const Tmpdb_text = {
             required:true,
             type: Object,
             default:{},
+        },
+        licenseversion:{
+            required:true,
+            type: Number,
+            default:0
         }
     },
     template:`
@@ -72,6 +77,8 @@ const Tmpdb_text = {
                             <el-option :label="Lang.text17" value="1"></el-option>
                             <el-option :label="Lang.text18" value="2"></el-option>
                             <el-option :label="Lang.text19" value="3"></el-option>
+                            <el-option v-if="licenseversion>1" :label="Lang.text22" value="4"></el-option>
+                            <el-option :label="Lang.text23" value="5"></el-option>
                         </el-select>
                         <template v-if="parseInt(model[0].link) == 0">
                             <el-input v-model="model[0].linkval"></el-input>
@@ -86,7 +93,7 @@ const Tmpdb_text = {
                                 <el-option v-for="item in typecollection.alonepage" :label="item.pagename" :value="item.id" :key="item.id"></el-option>
                             </el-select>
                         </template>
-                        <template v-else-if="parseInt(model[0].link) == 4">
+                        <template v-else-if="licenseversion>1 && parseInt(model[0].link) == 4">
                             <el-select v-model="model[0].linkval" style="width: 100%">
                                 <el-option v-for="item in typecollection.tab" :label="item.name" :value="item.gid" :key="item.gid"></el-option>
                             </el-select>
@@ -101,6 +108,17 @@ const Tmpdb_text = {
                                 :props="{value:'id',label:'bannername',checkStrictly:true}" 
                                 clearable></el-cascader>
                         </template>
+                        <template v-else-if="parseInt(model[0].link) == 5">
+                            <el-select 
+                                v-model="model[0].linkval" 
+                                filterable
+                                remote
+                                :remote-method="getPublishList"
+                                :loading="DataLoading"
+                                style="width: 100%">
+                                <el-option v-for="item in DataList1" :label="item.name" :value="item.id" :key="item.id"></el-option>
+                            </el-select>
+                         </template>
                     </div>
                     <el-text size="small" tag="p" type="info">{{Lang.text21}}</el-text>
                 </div>
@@ -127,6 +145,8 @@ const Tmpdb_text = {
             text18:__lang.page,
             text19:__lang.column,
             text21:__lang.tip4,
+            text22:__lang.album,
+            text23:__lang.publish
         };
         //记录库数据来源数据
         let KuDataList = [];
@@ -134,7 +154,22 @@ const Tmpdb_text = {
         let AutoDataList = [];
         //数据来源数据
         let DataList = ref([]);
+        let DataList1 = ref([]);
+        let DataLoading = ref(false);
         GetData();
+        async function getPublishList(query){
+            DataLoading.loading = true;
+            const {data: res} = await axios.post(BasicUrl+'getPublishList',{q: query,ids:[props.model[0].linkval]});
+            if(res.success){
+                DataList1.value = res.data;
+            }else{
+                ElementPlus.ElMessage.error(res.msg || __lang.get_data_fail);
+            }
+            DataLoading.loading = false;
+        }
+
+        getPublishList();
+
         //数据来源请求方法
         async function GetData(){
             DataList.value = [];
@@ -166,10 +201,13 @@ const Tmpdb_text = {
         return {
             Lang,
             handlechange,
-            DataList
-        }
+            DataList,
+            DataList1,
+            DataLoading,
+            getPublishList
+        };
     }
-}
+};
 
 const Tmpdb_ids = {
     props:{

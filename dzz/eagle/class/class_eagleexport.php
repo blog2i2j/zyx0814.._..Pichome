@@ -40,6 +40,7 @@ class eagleexport
         0x80cbc4, 0x8c9eff, 0xffeb3b, 0xffe57f, 0xfff59d, 0xff7043,
         0x1976d2, 0x5c6bc0, 0x64dd17, 0xffd600
     ];
+    private $oldtime=0;
 
     public function __construct($data = array())
     {
@@ -70,6 +71,7 @@ class eagleexport
         $this->filenum = $data['filenum'];
         $this->lastid = $data['lastid'];
         $this->defaultperm = isset($data['perm']) ? intval($data['perm']) : 0;
+        $this->oldtime=microtime(true);
     }
 
     public function getpathdata($folderdata, $appid, $pathdata = array())
@@ -97,17 +99,19 @@ class eagleexport
         //目录数据
         $folderdata = $appdatas['folders'];
         $efids = C::t('#eagle#eagle_folderrecord')->insert_folderdata_by_appid($this->appid, $folderdata, $this->defaultperm);
-
+        unset($folderdata);
         $delids = [];
         foreach (DB::fetch_all("select id from %t where efid not in(%n) and appid = %s", array('eagle_folderrecord', $efids, $this->appid)) as $delid) {
             $delids[] = $delid['id'];
         }
+        unset($efids);
         //删除多余目录
         foreach (DB::fetch_all("select  f.fid from %t f left join %t ef  on f.fid=ef.fid where f.appid = %s and ISNULL(ef.id)", array('pichome_folder', 'eagle_folderrecord', $this->appid)) as $dv) {
             C::t('pichome_folder')->delete_by_fids($dv);
         }
         //对比目录数据
         if ($delids) C::t('#eagle#eagle_folderrecord')->delete_by_ids($delids);
+        unset($delids);
         //标签数据
         $tagdata = $appdatas['tagsGroups'];
         $currentcids = [];
@@ -144,6 +148,7 @@ class eagleexport
         $ocids = C::t('pichome_taggroup')->fetch_cid_by_appid($this->appid);
         $delcids = array_diff($ocids, $currentcids);
         C::t('pichome_taggroup')->delete_by_cids($delcids);
+        unset($appdatas);unset($tagdata);
         return true;
 
     }
@@ -293,7 +298,14 @@ class eagleexport
         }
         return $idstr;
     }
-
+    public function timeoutput($title){
+       
+        $newtime=microtime(true);
+        if($newtime>$this->oldtime){
+            echo $title.' 执行时间:'.($newtime-$this->oldtime).'s'.PHP_EOL;
+            $this->oldtime=$newtime;
+        }
+   }
     public function execExport($force = false)
     {
         if ($this->iscloud) {
@@ -312,12 +324,14 @@ class eagleexport
             } else $start = 0;
             $spl_object = new SplFileObject($readtxt, 'rb');
             $spl_object->seek($start);
-            if ($this->lastid < $this->filenum && $this->exportstatus == 2) {
+            if ( $this->exportstatus == 2) {
                 $i = 0;
                 while (is_file($readtxt) && !$spl_object->eof()) {
                     if (dzz_process::getlocked($this->processname)) exit('vapp isdeleted');
                     $i++;
+                    $this->lastid++;
                     if ($i > $this->onceexportnum) {
+                        C::t('pichome_vapp')->update($this->appid, array('lastid' => $this->lastid));
                         break;
 
                     }
@@ -535,7 +549,7 @@ class eagleexport
                                 $realfids = array_keys($realfolderdata);
                                 if (!empty($realfids)) {
                                     //如果目录含有密码则不导入数据直接跳过
-                                    $haspassword = C::t('pichome_folder')->check_haspasswrod($realfids, $this->appid);
+                                    $haspassword = false;// C::t('pichome_folder')->check_haspasswrod($realfids, $this->appid);
                                 } else {
                                     $haspassword = false;
                                 }
@@ -560,8 +574,10 @@ class eagleexport
                                     $filemetadata['btime'] = $filemetadata['btime'] ? $filemetadata['btime'] : $filemetadata['modificationTime'];
                                     $filemetadata['dateline'] = $filemetadata['lastModified'];
                                     $filemetadata['lastdate'] = $flastdate;
-
+                                    unset($realfids);
+                                 
                                     $this->exportfile($id, $filemetadata);
+                                 
                                     unset($filemetadata);
                                 }
                             }
@@ -574,10 +590,10 @@ class eagleexport
 
 
                     $this->donum += 1;
-                    $percent = floor(($this->donum / $this->filenum) * 100);
+                    $percent = floor(($this->lastid / $this->filenum) * 100);
                     //防止因获取文件总个数不准确百分比溢出
                     $percent = ($percent > 100) ? 100 : $percent;
-                    $state = ($percent >= 100) ? 3 : 2;
+                   /* $state = ($percent >= 100) ? 3 : 2;
                     if ($state == 3) {
                         $spl_object = false;
                         @unlink($this->readtxt . 'eagleexport' . md5($this->path) . '.txt');
@@ -585,14 +601,20 @@ class eagleexport
                         $percent = 0;
                         $this->donum = 0;
                     } else {
-                        $lastid = $this->donum;
+                        $lastid = $this->lastid;
                     }
+                   */
+                    $lastid = $this->lastid;
                     //记录导入起始位置，以备中断后从此处,更改导入状态为正在导入
-                    C::t('pichome_vapp')->update($this->appid, array('lastid' => $lastid, 'percent' => $percent, 'donum' => $this->donum, 'state' => $state, 'filenum' => $this->filenum));
+                    C::t('pichome_vapp')->update($this->appid, array('lastid' => $lastid, 'percent' => $percent, 'donum' => $this->donum,  'filenum' => $this->filenum));
                     if ($spl_object) $spl_object->next();
 
                 }
-
+                if($spl_object->eof()){
+                    //txt完成，进入state=3状态
+                    @unlink($readtxt);
+                    C::t('pichome_vapp')->update($this->appid, array('lastid' => 0,'percent' => 0, 'state' => 3, 'donum' => $this->donum));
+                }
 
             }
 
@@ -874,7 +896,7 @@ class eagleexport
                         }
                     } else {
                         //如果已有数据删除，否则不做处理
-                        if ($rid) C::t('pichome_resources')->delete_by_rid($rid);
+                        if (!$rid) C::t('pichome_resources')->delete_by_rid($rid);
                     }
 
 
@@ -1013,8 +1035,6 @@ class eagleexport
         unset($type);
         //插入文件表数据
         if (C::t('#eagle#eagle_record')->insert_data($id, $resourcesarr)) {
-            $indexdata = ['rid'=>$rid,'appid'=>$this->appid,'dateline'=>$resourcesarr['mtime'],'ext'=>$resourcesarr['ext'],'apptype'=>0];
-            Hook::listen('addfileafter',$indexdata);
             /*  $thumbrecorddata = [
                   'rid'=>$rid,
                   'ext'=>$filemetadata['ext']

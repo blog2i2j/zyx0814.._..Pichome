@@ -1,0 +1,214 @@
+#nv_dzzphp,html,body{
+	overflow: auto;!important;
+    font-family: 'Helvetica Neue',Helvetica,'PingFang SC','Hiragino Sans GB','Microsoft YaHei','微软雅黑',Arial,sans-serif;
+	font-size:15px;
+
+}
+.page-header{
+	background-color: var(--el-bg-color);
+	border-bottom: 1px solid var(--el-border-color);
+}
+
+/* robot 菜单css */
+/* 菜单容器 */
+.menu-container {
+
+}
+
+/* 主菜单列表 */
+.menu-container  .main-menu {
+	display: flex;
+	list-style: none;
+	position: relative;
+	justify-content: center;
+	margin:0;
+
+}
+
+/* 主菜单项 */
+.menu-container .main-menu > li {
+	position: relative;
+	padding: 16px 20px;
+	transition: background-color 0.3s ease;
+}
+
+.menu-container .main-menu > li:hover {
+	background-color: var(--el-bg-color-page);
+}
+
+/* 菜单项链接 */
+.menu-container .main-menu a {
+	text-decoration: none;
+	color: #333;
+	font-size: 15px;
+	display: block;
+	transition: color 0.3s ease;
+}
+.menu-container>.main-menu>li>a {
+
+}
+.footer>.menu-container>.main-menu>li>a {
+
+}
+
+.menu-container .main-menu li:hover > a {
+	color: var(--el-color-primary);
+}
+
+/* 子菜单通用样式 */
+.menu-container .submenu {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	list-style: none;
+	background-color: var(--el-bg-color);
+	border-radius: 4px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	min-width: 200px;
+	opacity: 0;
+	visibility: hidden;
+	transform: translateY(10px);
+	transition: all 0.3s ease;
+	z-index: 999;
+	padding-left:0;
+}
+
+/* 三级菜单定位 */
+.menu-container .submenu .submenu {
+	top: 0;
+	left: 100%;
+}
+
+/* 悬停显示子菜单 */
+.menu-container .main-menu li:hover > .submenu {
+	opacity: 1;
+	visibility: visible;
+	transform: translateY(0);
+}
+
+/* 子菜单项样式 */
+.menu-container .submenu li {
+	padding: 12px 16px;
+	position: relative;
+	white-space: nowrap;
+	transition: background-color 0.2s ease;
+}
+
+.menu-container .submenu li:hover {
+	background-color: var(--el-bg-color-page);
+}
+
+/* 有子菜单的菜单项添加箭头 */
+.menu-container .has-submenu > a::after {
+	content: "▼";
+	font-size: 10px;
+	margin-left: 8px;
+	vertical-align: middle;
+	transition: transform 0.3s ease;
+}
+
+.menu-container .submenu .has-submenu > a::after {
+	content: "▶";
+	margin-left: 8px;
+}
+
+.menu-container .main-menu li:hover > .has-submenu > a::after {
+	transform: rotate(180deg);
+}
+
+.menu-container .submenu li:hover > .has-submenu > a::after {
+	transform: rotate(90deg);
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+	.menu-container .main-menu {
+		flex-direction: column;
+	}
+
+	.menu-container .submenu {
+		position: static;
+		opacity: 1;
+		visibility: visible;
+		transform: translateY(0);
+		box-shadow: none;
+		display: none;
+		margin-left: 20px;
+	}
+
+	.menu-container .main-menu li:hover > .submenu {
+		display: block;
+	}
+
+	.menu-container .main-menu > li {
+		border-bottom: 1px solid var(--border-color);
+	}
+}
+.text-center{
+	text-align: center;
+}
+p{
+	margin-bottom:10px;
+}
+h3{
+	font-weight:700 ;
+	margin:20px 0 10px
+}
+.footer{
+	margin:20px 0;
+}
+
+/* 分页 */
+.pagination{
+	display: flex;
+}
+.pagination:after {
+	content: "";
+}
+
+.pagination>li>a, .pagination>li>span {
+	position: relative;
+	float: left;
+	padding: 6px 12px;
+	margin-left: -1px;
+	line-height: 1.42857143;
+	color: var(--el-color-primary);
+	text-decoration: none;
+	background-color: var(--el-bg-color);
+	border: 1px solid var(--el-border-color);;
+}
+.pagination li>a {
+	padding: 8px 15px;
+}
+.pagination li>a, .pagination li>span {
+	font-size: 14px;
+	color: var(--el-color-primary);
+	background-color: transparent;
+	border: 1px solid var(--el-border-color);
+	-webkit-transition: background .2s ease-out, border-color 0s ease-out, color .2s ease-out;
+	-o-transition: background .2s ease-out,border-color 0s ease-out,color .2s ease-out;
+	transition: background .2s ease-out, border-color 0s ease-out, color .2s ease-out;
+}
+
+.pagination>.active>a, .pagination>.active>a:focus, .pagination>.active>a:hover, .pagination>.active>span, .pagination>.active>span:focus, .pagination>.active>span:hover {
+	z-index: 3;
+	cursor: default;
+	background-color: var(--el-button-active-bg-color);
+	border-color: var(--el-button-active-text-color);
+}
+.pagination>li:first-child>a, .pagination>li:first-child>span {
+	margin-left: 0;
+	border-top-left-radius: 4px;
+	border-bottom-left-radius: 4px;
+}
+.pagination li input {
+	width: 45px;
+	padding:3px 2px 2px 2px;
+}
+.dzz-chevron-left:before {
+	content: "<";
+}
+.dzz-chevron-right:before {
+	content: ">";
+}
+

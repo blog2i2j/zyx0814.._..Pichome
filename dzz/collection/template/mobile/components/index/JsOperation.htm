@@ -1,0 +1,94 @@
+<van-popup v-model="Operation.PopupVisible" class="my-popup page-popup"  position="right">
+	<van-nav-bar 
+		:title="Operation.id?'{lang edit_collect}':'{lang add_collect}'" 
+		left-arrow @click-left="OperationNavbarLeftClick">
+			<template #right>
+			    <van-button 
+					@click="OperationNavbarRightClick" 
+					size="small" 
+					type="primary" 
+					:disabled="Operation.name?false:true">{lang confirms}</van-button>
+			</template>
+		</van-nav-bar>
+	<div class="scroll-box">
+		<van-cell-group>
+			<van-cell title="{lang collect_name}:">
+				<template #label>
+				    <van-field v-model.trim="Operation.name" maxlength="100" placeholder="{lang Please_input_name}" />
+				</template>
+			</van-cell>
+		</van-cell-group>
+	</div>
+</van-popup>
+<script type="text/javascript">
+	var OperationMixin = {
+		data(){
+			return{
+				Operation:{
+					PopupVisible:false,
+					name:'',
+					id:''
+				}
+			}
+		},
+		methods:{
+			OperationNavbarLeftClick(){
+				this.Operation.PopupVisible = false;
+			},
+			async OperationNavbarRightClick(){
+				var self = this;
+				self.$toast.loading({
+					message: '{lang In_the_save}',
+					className:'conter-toast',
+					duration: 0,
+					forbidClick: true,
+					loadingType: 'spinner',
+				});
+				if(self.Operation.id){
+					var param = {
+						clid:self.Operation.id,
+						name:self.Operation.name
+					}
+				}else{
+					var param = {
+						name:self.Operation.name
+					}
+				}
+				var res = await axios.post(MOD_URL+'&op=collect&do=addcollect',param);
+				if(res == 'intercept'){
+					return false;
+				}
+				var json = res.data;
+				if(json.success){
+					if(self.Operation.id){
+						for(var i in self.FileGatherDataList){
+							if(parseInt(self.Operation.id) == parseInt(self.FileGatherDataList[i].clid)){
+								if(self.FileGatherDataStoreList[i]){
+									self.FileGatherDataStoreList[i].name = param.name;
+								}
+								self.FileGatherDataList[i].name = param.name;
+							}
+						}
+					}else{
+						var str = {
+							filenum:0,
+							name:json.success.name,
+							covert:'',
+							covert1:'',
+							covert2:'',
+							clid:json.success.clid,
+						}
+						self.FileGatherDataList.unshift(str);
+						self.FileGatherDataStoreList.unshift(str);
+						
+					}
+					self.$notify({ type: 'success', message: '{lang save_success}' });
+					self.$toast.clear();
+				}else{
+					self.$notify({ type: 'danger', message: '{lang save_unsuccess}' });
+				}
+				self.OperationNavbarLeftClick();
+			}
+		}
+	};
+</script>

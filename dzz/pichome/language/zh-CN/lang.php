@@ -95,7 +95,7 @@ $lang = array(
     'file_server_address' => '文件服务器地址',
     'file_server_address_msg' => '文件服务器地址，如:http://oaooa.com/,根据你的pichome服务器地址填写,留空使用当前地址。<br>tips:设置内网地址可以提高文件传输速度',
     'office_thumb_exts' => '缩略图后缀列表',
-    'office_thumb_exts_msg' => '支持生成缩略图的后缀列表，用小写字母。多个用英文逗号隔开，如：pdf,doc,docx,ppt,pptx,xls,xlsx',
+    'office_thumb_exts_msg' => '支持生成缩略图的后缀列表，用小写字母。多个用英文逗号隔开，如：pdf,wps,doc,docx,rtf,odt,htm,html,mht,txt,ppt,pptx,pps,ppsx,ppsm,dps,dpt,odp,xls,xlsx,et,ots,ods,csv,md,vsdm,vsdx,vssm,vssx,vstm,vstx,epub',
     'set_success' => '设置成功',
     'set_failer' => '设置失败',
     'params_error_and_reloading' => '参数错误，请刷新后重试',
@@ -144,8 +144,6 @@ $lang = array(
     'every_30_minutes' => '每30分钟',
     'every_hour' => '每1小时',
     'every_hourday' => '每24小时',
-    'defalut_layout' => '默认布局',
-    'default_show_info' => '默认显示信息',
     'update' => '更新',
     'validation_updates' => '校验更新',
     'sort_error' => '排序失败',
@@ -190,4 +188,14 @@ $lang = array(
     'del_all_tag_tip'=>'确定删除当前所有标签？此操作无法恢复！',
 
     'imagesearch_stats'=>'以图搜图任务',
+
+    'importednum'=>'导入数',
+    'library_state'=>'库状态',
+    'library_state_0'=>'未导入',
+    'library_state_1'=>'准备中',
+    'library_state_2'=>'导入中',
+    'library_state_3'=>'校验中',
+    'library_state_4'=>'已完成',
+    'library_state_-1'=>'更新失败',
+
 );

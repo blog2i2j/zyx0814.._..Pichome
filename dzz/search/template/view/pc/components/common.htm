@@ -49,12 +49,9 @@
 				if(self.DocumentAppid){
 					Params['sid'] = self.DocumentAppid;
 				}
-				if(parseFloat(self.searchData.aid)){
+				 if(parseFloat(self.searchData.aid)){
 					Params['aid'] = parseFloat(self.searchData.aid);
-					this.islikeness = true;
-				}else{
-					this.islikeness = false;
-				}
+				 }
 				if(self.headerkeyword){
 					Params['keyword'] = self.headerkeyword;
 				}
@@ -145,27 +142,41 @@
 				this.HeaderRightBtnShow.order = getpagesetting && getpagesetting.sort || 'btime';
 
 				let aid = this.CommonGetHashParam('aid');
-				if(aid){
+				if(this.ispc && aid){
 					let cropData = JSON.parse(sessionStorage.getItem('cropsize'));
 					let cropImg = sessionStorage.getItem('cropimg');
-					self.searchData = {
-						visible:false,
-						aid:aid,
-						percentage:0,
-						img:cropImg,
-						width:cropData.w,
-						height:cropData.h,
-						loading:true,
-						boxW:cropData.bw,
-						boxH:cropData.bh,
-						submit:false,
-					};
-					self.$nextTick(function(){
-						self.$refs.vuecropper.cropX = cropData.x1;
-						self.$refs.vuecropper.cropOffsertX = cropData.x1;
-						self.$refs.vuecropper.cropY = cropData.y1;
-						self.$refs.vuecropper.cropOffsertY = cropData.y1;
-					})
+                    if(cropImg) {
+                        let img = new Image();
+                        // 设置图片的源（URL）
+                        img.src = cropImg;
+                        // 当图片加载完成时，获取其宽度和高度
+                        self.searchData = {
+                            visible: false,
+                            aid: aid,
+                            percentage: 0,
+                            loading: true,
+                            submit: false,
+                        };
+                        img.onload = function () {
+
+                            let ImageSize = self.resizeImage(img);
+
+                            self.searchData.boxW = parseInt(ImageSize.width);
+                            self.searchData.boxH = parseInt(ImageSize.height);
+                            let cropData = JSON.parse(sessionStorage.getItem('cropsize'));
+                            self.searchData.width = parseInt(cropData.w);
+                            self.searchData.height = parseInt(cropData.h);
+                            self.searchData.autoCropX = parseInt(cropData.x1);
+                            self.searchData.autoCropY = parseInt(cropData.y1);
+                            self.$nextTick(() => {
+                                self.searchData.img = img.src;
+                            })
+
+
+                        };
+                    }
+
+					
 					
 				}else{
 					self.$nextTick(function(){

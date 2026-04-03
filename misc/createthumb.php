@@ -93,13 +93,13 @@ foreach ($needcreate as $v) {
     //如果是本地存储位置文件
     if ($metadata['bz'] == 'dzz::') {
         //判断是否符合本地存储生成规则后缀
-        if (!$status[$dzztype][$metadata['bz']]) {
+        if (!isset($status[$dzztype][$metadata['bz']]) || !$status[$dzztype][$metadata['bz']]) {
             dzz_process::unlock($processname1);
             continue;
         }
     } else {
         $type = getQcosExt($ext);
-        if (!$status[$type][$metadata['bz']] && !$status[$dzztype]['dzz::']) {
+        if (!(isset($status[$dzztype][$metadata['bz']]) && $status[$type][$metadata['bz']]) && !$status[$dzztype]['dzz::']) {
             dzz_process::unlock($processname1);
             continue;
         }
@@ -122,7 +122,7 @@ function getDzzExt($ext){
     }else{
         $imageext = $gdlimitext;
     }
-    $mediaext = explode(',',$_G['config']['pichomeffmpeggetthumbext']);
+    $mediaext = explode(',',$_G['config']['pichomeconvertext']);
     if(in_array($ext,$docext)){
         $type = 'docstatus';
     }elseif(in_array($ext,$imageext)){

@@ -1,0 +1,177 @@
+<script type="text/javascript">
+	Vue.component('classify-all', {
+		template: `<van-collapse v-model="parammodel.active" :border="false">
+						<van-collapse-item v-for="item in paramdata" :key="item.cid" :name="item.cid"  :class="{'active':parammodel.checkedvalue.indexOf(item.cid)>-1}" :ref="'collapse_'+item.cid">
+							<template #title>
+								<div @click.stop="select(item)">
+									{{item.catname}}
+								</div>
+							</template>
+							<template #right-icon>
+								<template v-if="!item.leaf">
+									<i @click.stop="toggle(item)" class="van-icon van-icon-arrow van-cell__right-icon"></i>
+								</template>
+								<template v-else>
+									<div style="width: 20px;"></div>
+								</template>
+							</template>
+							<div class="van-cell" v-if="item.loading">
+								<van-loading type="spinner" size="24px" />
+							</div>
+							<template v-if="item.children && item.children.length">
+								<classify-all 
+								:parammodel="parammodel" 
+								:paramdata="item.children" 
+								@select="select" 
+								:expandedkeys="expandedkeys" 
+								:clid="clid" :keyword="keyword" 
+								@append="append"  
+								@expandedkeyschange="expandedkeyschange" 
+								:issearch="issearch" 
+								:shareid="shareid"
+								:level="parseInt(level)+1"></classify-all>
+							</template>
+						</van-collapse-item>
+					</van-collapse>`,
+		props:['paramdata','parammodel','expandedkeys','clid','ischeckedchild','keyword','issearch','level','shareid'],
+		data: function() {
+			return {
+				getnum:0
+			}
+		},
+		watch:{
+
+		},
+		created() {
+			if(this.level == 0){
+				this.getdata();
+			}else{
+				this.openChild(this.paramdata);
+			}
+		},
+		methods:{
+			select(data){
+				var self = this;
+				self.$emit('select',data);
+			},
+			append(data){
+				var self = this;
+				self.$emit('append',data);
+			},
+			expandedkeyschange(id){
+				var self = this;
+				self.$emit('expandedkeyschange',id);
+			},
+			toggle(item){
+				var self = this;
+				var cid = item.cid;
+				if(self.$refs['collapse_'+cid] && self.$refs['collapse_'+cid].length){
+					var expanded = self.$refs['collapse_'+cid][0].expanded;
+					if(!item.loaded){
+						self.getdata(item);
+					}
+					self.$nextTick(function(){
+						setTimeout(function(){
+							self.$refs['collapse_'+cid][0].toggle(!expanded);
+						},200)
+					});
+					
+				}
+			},
+			async getdata(data){
+				var self = this;
+				var param = {};
+				if(self.shareid){
+					param['shareid'] = self.shareid;
+				}else{
+					param['clid'] = self.clid;
+				}
+				if(data){
+					data.loading = true;
+					// param['clid'] = self.clid;
+					param['pcid'] = data.cid;
+				}
+				var res = await axios.post(MOD_URL+'&op=ajax&operation=getcollectcat',param);
+				if(res == 'intercept'){
+					return false;
+				}
+				var json = res.data;
+				var arr = [];
+				for(var i in json.success){
+					var item = json.success[i];
+					item['loaded'] = false;
+					item['loading'] = false;
+					item['children'] = [];
+					if(self.ischeckedchild && self.parammodel.checkedvalue.indexOf(item.pcid)>-1 && self.parammodel.checkedvalue.indexOf(item.cid)==-1){
+						self.parammodel.checkedvalue.push(item.cid)
+					}
+					
+					if(self.issearch){
+						// if(self.expandedkeys.indexOf(parseInt(item.cid))<0 && item.catname.indexOf(self.keyword) > -1){
+						// 	self.expandedkeyschange(item.cid)
+						// }
+						if(self.expandedkeys.indexOf(parseInt(item.cid))>-1){
+							// item['leaf'] = false;
+							arr.push(item);
+						}
+						
+					}else{
+						arr.push(item);
+					}
+				}
+				if(data){
+
+					if(arr.length){
+						self.append({
+							data:data,
+							val:arr
+						});
+						// data['leaf'] = false;
+					}else{
+						// data['leaf'] = true;
+					}
+					data.loading = false;
+					data.loaded = true;
+				}else{
+					if(self.ischeckedchild){
+						arr.unshift({
+								cid:'all',
+								catname:'{lang collect_all}',
+								leaf:true,
+								clid:0,
+							},
+							{
+								cid:'not',
+								catname:'{lang unclassify}',
+								leaf:true,
+								clid:0,
+							})
+					}
+					self.append({
+						type:'parent',
+						val:arr
+					});
+					if(self.getnum == 0){
+						self.$nextTick(function(){
+							self.getnum = 1;
+							self.openChild(arr);
+						});
+					}
+				}
+			},
+			openChild(data){
+				if(this.expandedkeys.length){
+					for(var i in this.paramdata){
+						var item = this.paramdata[i];
+						if(this.expandedkeys.indexOf(parseInt(item.cid))>-1){
+							this.getdata(item);
+						}
+					}
+				}
+			},
+		},
+		mounted() {
+			var self = this;
+		},
+	});
+</script>

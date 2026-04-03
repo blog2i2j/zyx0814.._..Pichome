@@ -1,0 +1,180 @@
+<!--{template common/container/pc/header_start}-->
+<link rel="stylesheet" href="static/scss/default/index.css?{VERHASH}">
+<link rel="stylesheet" type="text/css" href="{MOD_PATH}/template/choose/assets/css/index.css?{VERHASH}"/>
+<script type="text/javascript" src="{MOD_PATH}/template/choose/assets/js/template/ScrollableTabs.js?{VERHASH}"></script>
+<!--{template common/container/pc/header_end}-->
+<div id="dzzoffice">
+    <el-container class="page-main">
+        <el-header style="padding: 0;">
+            <!--{template choose/componets/template/header}-->
+        </el-header>
+
+        <el-container>
+            <el-header  height="auto" v-if="labels">
+                <div class="tabs-container">
+                    <el-button plain icon="ArrowLeft" class="scroll-btn prev-btn"></el-button>
+                    <div class="tabs-wrapper">
+                        <el-button
+                                v-for="item in labels"
+                                class="tab-item"
+                        >{{ item }}</el-button>
+                    </div>
+                    <el-button plain icon="ArrowRight" class="scroll-btn next-btn"></el-button>
+                </div>
+            </el-header>
+            <el-main style="padding: 20px;">
+                <el-scrollbar ref="scrollbar" >
+                    <div style="width: 100%;overflow: hidden;">
+                        <el-row :gutter="20" class="content-card">
+                            <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="4" v-for="item in temData">
+                                <el-card style="width: 100%;"  shadow="hover" >
+
+                                    <div class="img">
+                                        <el-image  :src="item.cover"
+                                                   :zoom-rate="1.2"
+                                                   :max-scale="7"
+                                                   :min-scale="0.2"
+                                                   :initial-index="0"
+                                                   :preview-src-list="[item.cover]"
+                                                   lazy="true"
+                                                   :hide-on-click-modal="true"
+                                                   class="scroll-image"
+                                                   @load="imageLoaded"
+                                        ></el-image>
+                                        <el-button class="content-button"  size="large" type="primary" @click="addnew(item)">{lang select_the_template}</el-button>
+                                    </div>
+
+                                   <div class="card-footer">
+                                        <el-text tag="h3" truncated style="color: var(--el-text-color-primary);">{{item.tname}}</el-text>
+                                        <el-text tag="p" class="footer-txt">{{item.tdesc}}</el-text>
+                                   </div>
+
+                                </el-card>
+                            </el-col>
+                        </el-row>
+                    </div>
+                </el-scrollbar>
+            </el-main>
+        </el-container>
+        
+    </el-container>
+</div>
+<script type="text/javascript">
+    const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch , onUnmounted } = Vue;
+    const dzzoffice = createApp({
+        data() {
+            return {
+                labels:[],
+                DocumentThemeColor:'',
+                keyword:'',
+                active:0,
+                temData:[],
+            }
+        },
+        mixins:[],
+        watch:{
+            DocumentThemeColor:{
+                handler(newval){
+                    document.querySelector('html').className = newval
+                },
+                deep:true,
+                // immediate:true
+            }
+        },
+        created() {
+            let tdata = $tdata;
+            for (const key in tdata) {
+                const element = tdata[key];
+                this.temData.push(element);
+            }
+            //主题颜色
+            let theme = localStorage.getItem('theme');
+            if(theme){
+                this.DocumentThemeColor=theme;
+            }else{
+                this.DocumentThemeColor = 'light'
+            }
+        },
+        methods: {
+            async addnew(data){
+                let self = this;
+                let ptype = $ptype;
+                let value = '$value';
+                let pdata = this.temData.find(item=>parseInt(item.id)==parseInt(data.id));
+
+                let {data: res} = await axios.post('{MOD_URL}&op=admin&operation=basic',{
+                    formhash:'{FORMHASH}',
+                    submit:true,
+                    pname:ptype==6?pdata.tname:"{$navtitle}",
+                    flag:{$flag},
+                    ptype:ptype,
+                    pval:value,
+                    tid:data.id,
+                });
+
+                if(parseInt(res.code)){
+                    window.location.href = '{MOD_URL}&op=mould&id='+res.id;
+                }else{
+                    self.$message.error(res.msg || __lang.creation_unsuccess)
+                }
+            },
+
+            DocumentThemeChange(){
+                if(this.DocumentThemeColor=='light'){
+                    this.DocumentThemeColor='dark';
+                    localStorage.setItem('theme','dark');
+                }else{
+                    this.DocumentThemeColor='light';
+                    localStorage.setItem('theme','light');
+                }
+                let self=this;
+            },
+            imageLoaded(e){
+                const img=e.target;
+                const container = img.closest('.img');
+                const moveDistance = img.offsetHeight - container.offsetHeight;
+                // 鼠标移入事件：图片上移至底部对齐
+                container.addEventListener('mouseenter', () => {
+                    img.style.top ='-'+moveDistance+'px';
+                });
+
+                // 鼠标移出事件：图片恢复初始位置（可选）
+                container.addEventListener('mouseleave', () => {
+                    img.style.top = '0px';
+                });
+            }
+
+        },
+        mounted() {
+            dzzoffice.WindowThis = this;
+            // 获取元素
+            const container = document.querySelector('.tabs-container');
+            const tabsWrapper = container.querySelector('.tabs-wrapper');
+            const prevBtn = container.querySelector('.prev-btn');
+            const nextBtn = container.querySelector('.next-btn');
+
+            // 初始化控制器
+            const tabScroller = new TabScrollController({
+            container: container,
+            tabsWrapper: tabsWrapper,
+            prevButton: prevBtn,
+            nextButton: nextBtn,
+            disabledClass: 'disabled',
+            scrollOffset: 200
+            });
+        }
+    });
+    dzzoffice.use(ElementPlus, {
+        locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+    });
+    for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+        dzzoffice.component(key, component)
+    }
+    dzzoffice.component('comavatar', comavatar);
+    dzzoffice.component('international',international);
+    // 屏蔽警告信息
+    dzzoffice.config.warnHandler = function(){return null};
+    dzzoffice.mount('#dzzoffice');
+</script>
+
+<!--{template common/container/pc/footer}-->

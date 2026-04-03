@@ -1,5 +1,6 @@
 <?php
 $lang = array (
+    'appname'=>'Banner',
 	'top_menu'=>'Top navigation',
     'bottom_menu'=>'Bottom navigation',
     'data_source'=>'Data source',
@@ -13,6 +14,10 @@ $lang = array (
     'data_source_empty'=>'Data source cannot be empty',
     'data_source_error'=>'Data source data acquisition failed',
     'No_data_available' => 'No data',
-    'Show_subordinates' => 'Show subordinates'
+    'Show_subordinates' => 'Show subordinates',
+    'intelligent'=>'Intelligent',
+    'publish'=>'Publish',
+
+
 );
 ?>

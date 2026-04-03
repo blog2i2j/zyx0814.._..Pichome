@@ -6,6 +6,9 @@
  * @link        https://www.oaooa.com
  * @author      zyx(zyx@oaooa.com)
  */
+define('CURSCRIPT', 'dzz');
+define('BASESCRIPT', 'index.php');
+define('DZZSCRIPT', 'index.php');
 require __DIR__.'/core/coreBase.php';
 $dzz = C::app();
 $dzz->init_session = false;

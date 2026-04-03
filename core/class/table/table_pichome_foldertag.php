@@ -15,7 +15,7 @@ class table_pichome_foldertag extends dzz_table
         parent::__construct();
     }
 
-    public function insert($setarr)
+    public function insert($setarr,$return_insert_id = false, $replace = false, $silent = false)
     {
         if ($id = DB::result_first("select id from %t where tid = %d and fid = %s", array($this->_table, $setarr['tid'],$setarr['fid']))) {
             parent::update($id, $setarr);

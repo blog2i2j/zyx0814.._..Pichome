@@ -3,23 +3,29 @@ const Tmptab_rec = {
         model:{
             required:true,
             type: Object,
-            default:{},
+            default:{}
         },
         field:{
             required:true,
             type: Object,
-            default:{},
+            default:{}
         },
         ParenIndex:{
             required:true,
             type: Number,
-            default:0,
+            default:0
         },
         typecollection:{
             required:true,
             type: Object,
-            default:{},
+            default:{}
+        },
+        licenseversion: {
+            required: true,
+            type: Number,
+            default:0
         }
+
     },
     template:`
         <div ref="DomdragTab">
@@ -58,14 +64,15 @@ const Tmptab_rec = {
                                     <el-scrollbar height="260px">
                                         <div style="padding: var(--el-popover-padding);">
                                             <el-tree
+                                                :id="'tree_'+key"
                                                 :props="{label:'catname',children: 'children',isLeaf:'leaf'}"
-                                                :load="classifyloadNode"
+                                                :load="(data,resolve)=>classifyloadNode(data,resolve,key)"
                                                 lazy
                                                 node-key="cid"
                                                 check-strictly
                                                 :default-expanded-keys="item.data[0].classify.expandedkeys"
                                                 :default-checked-keys="item.data[0].classify.checked"
-                                                @check="classifyCheck"
+                                                @check="(data,checks)=>classifyCheck(data,checks,key)"
                                                 show-checkbox/>
                                         </div>
                                     </el-scrollbar>
@@ -129,6 +136,8 @@ const Tmptab_rec = {
                                         <el-option :label="Lang.text12" value="1"></el-option>
                                         <el-option :label="Lang.text13" value="2"></el-option>
                                         <el-option :label="Lang.text14" value="3"></el-option>
+                                        <el-option v-if="licenseversion>1" :label="Lang.text15" value="4"></el-option>
+                                        <el-option :label="Lang.text16" value="5"></el-option>
                                     </el-select>
                                     <template v-if="parseInt(item.data[0].link) == 0">
                                         <el-input v-model="item.data[0].linkval"></el-input>
@@ -143,7 +152,7 @@ const Tmptab_rec = {
                                             <el-option v-for="item in typecollection.alonepage" :label="item.pagename" :value="item.id" :key="item.id"></el-option>
                                         </el-select>
                                     </template>
-                                    <template v-else-if="parseInt(item.data[0].link) == 4">
+                                    <template v-else-if="licenseversion>1 && parseInt(item.data[0].link) == 4">
                                         <el-select v-model="item.data[0].linkval" style="width: 100%">
                                             <el-option v-for="item in typecollection.tab" :label="item.name" :value="item.gid" :key="item.gid"></el-option>
                                         </el-select>
@@ -158,8 +167,19 @@ const Tmptab_rec = {
                                             :props="{value:'id',label:'bannername',checkStrictly:true}" 
                                             clearable></el-cascader>
                                     </template>
+                                    <template v-else-if="parseInt(item.data[0].link) == 5">
+                                        <el-select 
+                                            v-model="item.data[0].linkval" 
+                                            filterable
+                                            remote
+                                            :remote-method="getPublishList"
+                                            :loading="DataLoading"
+                                            style="width: 100%">
+                                            <el-option v-for="item in DataList1" :label="item.name" :value="item.id" :key="item.id"></el-option>
+                                        </el-select>
+                                     </template>
                                 </div>
-                                <el-text size="small" tag="p" type="info">{{Lang.text16}}</el-text>
+                                <el-text size="small" tag="p" type="info">{{Lang.text17}}</el-text>
                             </div>
                         </el-form-item>
                     </el-form>
@@ -204,7 +224,9 @@ const Tmptab_rec = {
             text12:__lang.library,
             text13:__lang.page,
             text14:__lang.column,
-            text16:__lang.tip4,
+            text15:__lang.album,
+            text16:__lang.publish,
+            text17:__lang.tip4,
             
         };
         let Lang1 = {
@@ -225,6 +247,10 @@ const Tmptab_rec = {
         //记录自能数据数据来源数据
         let AutoDataList = [];
         let tabsvalue = ref(null);
+
+        let DataList1 = ref([]);
+        let DataLoading = ref(false);
+
         if(props.model.data && props.model.data.length){
             props.model.data.forEach((item,index) => {
                 let id = getId();
@@ -285,7 +311,7 @@ const Tmptab_rec = {
                     }
                 }).catch(() => {
 
-                })
+                });
             }else{
                 ElementPlus.ElMessageBox.confirm(
                     __lang.delete_tip,
@@ -322,12 +348,12 @@ const Tmptab_rec = {
                         
                     }).catch(() => {
 
-                    })
+                    });
             }
         }
         function tabchange(targetName){//tabs改变时触发
             tabsvalue.value = targetName;
-        };
+        }
         //数据来源数据
         let DataList = ref([]);
         foreachData();
@@ -371,18 +397,11 @@ const Tmptab_rec = {
         };
 
         //分类加载
-        async function classifyloadNode(node,resolve){
+        async function classifyloadNode(node,resolve,key){
             var level = node.level;
             let gid = 0;
-            if(props.model.data && props.model.data.length){
-                for (let index = 0; index < props.model.data.length; index++) {
-                    const item = props.model.data[index];
-                    if(item.key == tabsvalue.value){
-                        gid = item.data[0].id;
-                    }
-                }
-                
-            }
+            const item = props.model.data[key];
+            gid = item.data[0].id;
             var param = {
                 gid:gid
             };
@@ -391,18 +410,13 @@ const Tmptab_rec = {
             }
             let {data: res} = await axios.post('index.php?mod=tab&op=tabviewinterface&do=getcat&iswindow=1',param);
             resolve(res.data);
-        };
+        }
         //分类
-        function classifyCheck(data,checks){
+        function classifyCheck(data,checks,key){
             let curr = null;
-            if(props.model.data && props.model.data.length){
-                for (let index = 0; index < props.model.data.length; index++) {
-                    const item = props.model.data[index];
-                    if(item.key == tabsvalue.value){
-                        curr = item.data[0];
-                    }
-                }
-                
+            const item = props.model.data[key];
+            if(item.data[0]){
+                curr = item.data[0];
             }
             if(curr){
                 let pathkeys = [];
@@ -415,7 +429,7 @@ const Tmptab_rec = {
                             for (let findex = 0; findex < pathkey.length; findex++) {
                                 const key = pathkey[findex];
                                 if(pathkeys.indexOf(key+curr.id) < 0){
-                                    pathkeys.push(key+curr.id)
+                                    pathkeys.push(key+curr.id);
                                 }
                             }
                         }
@@ -427,7 +441,7 @@ const Tmptab_rec = {
                 curr.classify.text = JSON.parse(JSON.stringify(checks.checkedNodes));
                 curr.value = JSON.parse(JSON.stringify(checks.checkedKeys)).join(',');
             }
-        };
+        }
         function handleChangeId(id){
             let curr = null;
             if(props.model.data && props.model.data.length){
@@ -478,7 +492,24 @@ const Tmptab_rec = {
             if(Tindex > -1){
                 curr.classify.text.splice(Tindex,1);
             }
-        };
+        }
+        async function getPublishList(query){
+            DataLoading.loading = true;
+            let ids=[];
+            props.model.data.forEach(item => {
+                if(item.link==5) ids.push(item.linkval);
+            });
+            const {data: res} = await axios.post(BasicUrl+'getPublishList',{q: query,ids:ids});
+            if(res.success){
+                DataList1.value = res.data;
+            }else{
+                ElementPlus.ElMessage.error(res.msg || __lang.get_data_fail);
+            }
+            DataLoading.loading = false;
+        }
+
+        getPublishList();
+
         onMounted(()=>{
             dragTab();
           });
@@ -499,11 +530,11 @@ const Tmptab_rec = {
             if(!editDialog.name)return false;
             editDialog.data.name = editDialog.name;
             editDialog.visible = false;
-        };
+        }
         function changeTitle(val){
             editDialog.data.name = val;
             editDialog.name = val;
-        };
+        }
 
         return {
             Lang1,
@@ -520,8 +551,12 @@ const Tmptab_rec = {
             handleChangeId,
             classifyClose,
             EditTitleSubmit,
-            changeTitle
-        }
+            changeTitle,
+
+            DataList1,
+            DataLoading,
+            getPublishList
+        };
     }
-}
+};
 

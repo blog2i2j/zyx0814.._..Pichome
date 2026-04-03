@@ -336,7 +336,7 @@ $lang = array (
 	'crosswise_arrange'=>'横向排列',
 	'page_background'=>'页面背景',
 	'background'=>'背景',
-	
+	'backgroundcolor'=>'背景色',
 	'number'=>'数量',
 	'checked'=>'已选中',
 	'file_number_type'=>'个文件/文件夹',
@@ -931,7 +931,7 @@ $lang = array (
 </p>
 您只需在提交请求后的三天内，通过点击下面的链接重置您的密码：<br />
 
-<a href="{siteurl}user.php?mod=login&op=logging&action=getpasswd&amp;uid={uid}&amp;id={idstring}" target="_blank">{siteurl}user.php?mod=getpasswd&amp;uid={uid}&amp;id={idstring}</a>
+<a href="{siteurl}user.php?mod=login&op=logging&action=getpasswd&amp;uid={uid}&amp;id={idstring}" target="_blank">{siteurl}user.php?mod=login&op=logging&action=getpasswd&amp;uid={uid}&amp;id={idstring}</a>
 <br />
 (如果上面不是链接形式，请将该地址手工粘贴到浏览器地址栏再访问)</p>
 
@@ -1719,7 +1719,7 @@ $_G[siteurl]',
 	'creation'=>'创建',
 	'creation_success'=>'创建成功',
 	'creation_unsuccess'=>'创建失败',
-	'system_management'=>'系统管理',
+	'system_management'=>'管理中心',
 	'level'=>'密级',
 	'software_name'=>'软件名称',
 	'version_information'=>'版本信息',
@@ -2026,4 +2026,6 @@ $_G[siteurl]',
 	'similarity'=>'相似度',
 	'drop_the_image'=>'或拖拽图片 ，或截图后 Ctrl + V 上传图片',
 	'Image_format_support'=>'图片格式支持',
+    'deng'=>'等',
+	'text_color'=>'文字颜色',
 );

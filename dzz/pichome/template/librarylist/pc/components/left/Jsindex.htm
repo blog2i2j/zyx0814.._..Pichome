@@ -7,6 +7,7 @@
 				LeftWidth:260,
 				leftsearch:'',
 				LeftTreePathKeys:[],
+                foldenumTimer:null,
 				LeftTree:{
 					Visible:true,
 					loading:false,
@@ -68,7 +69,7 @@
 			var self = this;
 			
 			<!--{if $_GET['do'] == 'tags' ||  $_GET['do'] == 'member'}-->
-			this.LeftCurrenType = '$_GET[do]';
+			this.LeftCurrenType = '$_GET['do']';
 			<!--{else}-->
 			var type = this.CommonGetHashParam('type',1);
 			var fid = this.CommonGetHashParam('fid',1);
@@ -413,6 +414,9 @@
 			
 			async LeftTreeGetFolder(node,resolve){
 				var self = this;
+                if(self.foldenumTimer){
+                    window.clearTimeout(self.foldenumTimer);
+                }
 				var level = node.level;
 				var param = {
 					appid:this.DocumentAppid
@@ -446,14 +450,16 @@
 					if(folderVal < 0){
 						self.LeftTreePathKeys.push({
 							pathkey:item.pathkey,
-							fid:item.fid
+							fid:item.fid,
+                            filenum:0,
+                            isgetnum:0
 						})
 					}
 				}
 				resolve(arr);
 				
 				self.$nextTick(function(){
-					self.LeftTreeGetFolderNum();
+                    self.LeftTreeGetFolderNum();
 					for(var v in arr){
 						if(self.LeftTreePopover.renameFid && arr[v].fid == self.LeftTreePopover.renameFid){
 							var node = self.$refs.LeftTreeRef.getNode(arr[v].fid);
@@ -469,39 +475,50 @@
 							self.$refs.LeftTreeRef.setCurrentKey(arr[v].fid);
 						}
 					}
+
 					// self.LeftGetTreeDataSubstringFinish();
 				});
 			},
 			async LeftTreeGetFolderNum(){
 				let self = this;
-				if(!self.LeftTreePathKeys.length)return false;
-				let pathkeys = [];
-				self.LeftTreePathKeys.forEach(element => {
-					pathkeys.push(element.pathkey)
-				});		
-				let {data: res} = await axios.post(MOD_URL+'&op=library&do=ajax&operation=getsearchfoldernum',{
-					appid:this.DocumentAppid,
-					pathkeys:pathkeys.join(',')
-				});
-				if(res.data && res.data.length){
-					for (let index = 0; index < res.data.length; index++) {
-						const element = res.data[index];
-						let curr = self.LeftTreePathKeys.find(function(current){
-							return current.pathkey == element.pathkey;
-						});
-						let findex = self.LeftTreePathKeys.findIndex(function(current){
-							return current.pathkey == element.pathkey;
-						});
-						if(findex>-1){
-							self.LeftTreePathKeys.splice(findex,1);
-						}
-						if(!curr)continue;
-						let node = self.$refs.LeftTreeRef.getNode(curr.fid);
-						if(node){
-							node.data.filenum = element.filenum;
-						}
-					}
-				}
+                if (!self.LeftTreePathKeys.length) return false;
+                if(self.foldenumTimer){
+                    window.clearTimeout(self.foldenumTimer);
+                }
+                self.foldenumTimer=window.setTimeout(async function() {
+                    let pathkeys = [];
+                    self.LeftTreePathKeys.forEach(element => {
+                        if (element.isgetnum < 1) {
+                            pathkeys.push(element.pathkey);
+                        } else {
+                            let node = self.$refs.LeftTreeRef.getNode(element.fid);
+                            if (node) {
+                                node.data.filenum = element.filenum;
+                            }
+                        }
+                    });
+                    if (pathkeys.length < 1) return;
+                    let {data: res} = await axios.post(MOD_URL + '&op=library&do=ajax&operation=getsearchfoldernum', {
+                        appid: this.DocumentAppid,
+                        pathkeys: pathkeys.join(',')
+                    });
+                    if (res.data && res.data.length) {
+                        for (let index = 0; index < res.data.length; index++) {
+                            const element = res.data[index];
+                            let curr = self.LeftTreePathKeys.find(function (current) {
+                                return current.pathkey == element.pathkey;
+                            });
+                            curr.isgetnum = 1;
+                            curr.filenum = element.filenum;
+
+                            if (!curr) continue;
+                            let node = self.$refs.LeftTreeRef.getNode(curr.fid);
+                            if (node) {
+                                node.data.filenum = element.filenum;
+                            }
+                        }
+                    }
+                },1000);
 			},
 			LeftGetTreeDataSubstringFinish(){
 				var self = this;

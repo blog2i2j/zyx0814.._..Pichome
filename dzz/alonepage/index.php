@@ -13,6 +13,6 @@
     }
 Hook::listen('adminlogin');
 $navtitle=lang('page_manage');
+$total0=DB::result_first("SELECT COUNT(*) FROM %t where isdelete='0'",array('pichome_templatepage'));
+$total1=DB::result_first("SELECT COUNT(*) FROM %t where isdelete='1'",array('pichome_templatepage'));
 include template('page/index');
-    
-    

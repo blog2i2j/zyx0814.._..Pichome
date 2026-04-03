@@ -37,7 +37,7 @@ class table_organization_guser extends dzz_table
 		}
 		return $ret;
 	}
-	public function insert($guid, $orgid,$admintype = 0) {
+	public function insert($guid, $orgid=0,$admintype = 0,$silent = false) {
 		if(!$guid || !$orgid) return 0;
 		
 		if($id=DB::result_first('select id from %t where orgid=%d and guid=%d',array($this->_table,$orgid,$guid))){

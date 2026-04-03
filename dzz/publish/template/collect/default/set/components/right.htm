@@ -1,0 +1,375 @@
+<el-tabs 
+	v-model="RightactiveName" 
+	v-if="!DataLoading"
+	style="width: 100%;" 
+	@tab-click="handleClick">
+    <el-tab-pane label="{lang set_basic}" name="tool">
+        <el-scrollbar>
+            <el-form 
+                :model="RightformBasic" 
+                label-position="top" 
+                label-suffix=":"
+                style="width: 100%;">
+				<el-form-item label="{lang title}">
+					<el-input v-model="RightformBasic.pname"></el-input>
+				</el-form-item>
+				<el-form-item label="{lang pagelogo}">
+					<el-upload
+							class="avatar-uploader"
+							action="{MOD_URL}&op=admin&operation=uploadimg"
+							:show-file-list="false"
+							name="files"
+							accept="image/*"
+							:on-success="handleUploaLogodSuccess">
+						<template v-if="RightformLike._file_logo.src">
+							<img :src="RightformLike._file_logo.src" class="avatar" />
+							<el-icon class="close-img" @click.stop="handleCloseImg('logo')"><Close-Bold /></el-icon>
+						</template>
+						<template v-else>
+							<el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+						</template>
+					</el-upload>
+				</el-form-item>
+				<el-form-item label="{lang metakeywords}">
+					<el-input v-model="RightformBasic.metakeywords" :autosize="{ minRows: 2, maxRows: 4 }"  type="textarea"></el-input>
+				</el-form-item>
+				<el-form-item label="{lang metadescription}">
+					<el-input v-model="RightformBasic.metadescription"  :autosize="{ minRows: 2, maxRows: 4 }"  type="textarea"></el-input>
+				</el-form-item>
+				<el-form-item label="{lang link}">
+					<div style="display: flex;width: 100%;">
+						<el-input v-model="RightformBasic.address" style="flex: 1;"></el-input>
+						<!-- <el-button style="margin-left: 6px;" icon="CopyDocument"></el-button> -->
+					</div>
+				</el-form-item>
+				<el-form-item label="{lang perm_view}">
+					<orguser-select 
+						defaulttype="view" 
+						@change="SettingUserChange" 
+						:defaultheckeds="SettingFormvisit.checked" 
+						:defaultexpanded="SettingFormvisit.expanded" 
+						:defaultdata="SettingFormvisit.data"></orguser-select>
+				</el-form-item>
+			</el-form>
+        </el-scrollbar>
+        
+    </el-tab-pane>
+	<el-tab-pane label="{lang set_custom}" name="like">
+        <el-scrollbar>
+            <el-form 
+                :model="RightformLike" 
+                label-position="top" 
+                label-suffix=":"
+                style="width: 100%;">
+
+				<el-form-item label="{lang background_image}">
+					<el-upload
+						class="avatar-uploader cover"
+						action="{MOD_URL}&op=admin&operation=uploadimg"
+						:show-file-list="false"
+						name="files"
+						accept="image/*"
+						:on-success="handleUploadBackSuccess">
+						<template v-if="RightformLike._file_background.aid">
+							<img :src="RightformLike._file_background.src" class="avatar" />
+							<el-icon class="close-img" title="{lang delete}" @click.stop="handleCloseImg()"><Close-Bold /></el-icon>
+						</template>
+						<template v-else>
+							<el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+						</template>
+					</el-upload>
+					<el-text tag="p" type="info" size="small" truncated>{lang background_size_tip}</el-text>
+				</el-form-item>
+				<el-form-item label="{lang main_title}">
+					<el-input v-model="RightformLike.title"></el-input>
+				</el-form-item>
+				<el-form-item label="{lang subtitle}">
+					<el-input 
+					v-model="RightformLike.subtitle"
+					:autosize="{ minRows: 2, maxRows: 4 }"
+    				type="textarea"></el-input>
+				</el-form-item>
+				<el-form-item label="{lang open_win_type}">
+					<el-radio-group v-model="RightformLike.opentype"  style="width: 100%;">
+						<el-radio border style="margin-bottom: 6px;width: 40%;" label="current">{lang current_window}</el-radio>
+						<el-radio border style="margin-bottom: 6px;width: 40%;" label="new">{lang new_window}</el-radio>
+					</el-radio-group>
+				</el-form-item>
+				<el-form-item label="{lang layout}">
+					<el-radio-group v-model="RightformLike.style"  style="width: 100%;">
+						<el-radio border style="margin-bottom: 6px;width: 40%;" label="details">{lang image_details}</el-radio>
+						<el-radio border style="margin-bottom: 6px;width: 40%;" label="imageList">{lang image_imageList}</el-radio>
+						<el-radio border style="margin-bottom: 6px;width: 40%;" label="tabodd">{lang image_tabodd}</el-radio>
+						<el-radio border style="margin-bottom: 6px;width: 40%;" label="tabeven">{lang image_tabeven}</el-radio>
+					</el-radio-group>
+				</el-form-item>
+				<el-form-item label="{lang search_function}">
+                    <el-radio-group v-model="RightformLike.issearch" style="width: 100%;">
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" :label="1">{lang enable}</el-radio>
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" :label="0">{lang close}</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+				<el-form-item label="{lang hot_recommendation}">
+					<el-input v-model="RightformLike.hottitle" placeholder="{lang 24_hour_hot}"></el-input>
+					<el-select v-model="RightformLike.hotoption" placeholder="{lang time_range}" style="margin-top: 12px;width: 100%;">
+						<el-option
+						  v-for="item in hotoptions"
+						  :key="item.value"
+						  :label="item.text"
+						  :value="item.value"
+						/>
+					  </el-select>
+				</el-form-item>
+				<el-form-item label="{lang pagination_count}">
+
+					<el-input v-model="RightformLike.pagination" type="number" placeholder="{lang enter_pagination_count}"></el-input>
+
+				</el-form-item>
+				<el-form-item label="{lang topNavigation}" >
+					<el-radio-group v-model="RightformLike.topNavigation" style="width: 100%;">
+						<el-radio border style="margin-bottom: 6px;width: 40%;" :label="1">{lang enable}</el-radio>
+						<el-radio border style="margin-bottom: 6px;width: 40%;" :label="0">{lang close}</el-radio>
+					</el-radio-group>
+				</el-form-item>
+				<el-form-item label="{lang bottomEnable}">
+					<el-radio-group v-model="RightformLike.bottomEnable" style="width: 100%;">
+						<el-radio border style="margin-bottom: 6px;width: 40%;" :label="1">{lang enable}</el-radio>
+						<el-radio border style="margin-bottom: 6px;width: 40%;" :label="0">{lang close}</el-radio>
+					</el-radio-group>
+				</el-form-item>
+
+				<el-form-item label="{lang bottomNavigation}" v-if="RightformLike.bottomEnable">
+					<el-radio-group v-model="RightformLike.bottomNavigation" style="width: 100%;">
+						<el-radio border style="margin-bottom: 6px;width: 40%;" :label="1">{lang enable}</el-radio>
+						<el-radio border style="margin-bottom: 6px;width: 40%;" :label="0">{lang close}</el-radio>
+					</el-radio-group>
+				</el-form-item>
+				<el-form-item label="{lang bottomTitle}" v-if="RightformLike.bottomEnable">
+					<el-input
+							v-model="RightformLike._textarea_bottomtitle"
+							:autosize="{ minRows: 2, maxRows: 4 }"
+							type="textarea"></el-input>
+				</el-form-item>
+				<el-form-item label="{lang beian}" v-if="RightformLike.bottomEnable">
+					<el-input v-model="RightformLike.beian"></el-input>
+				</el-form-item>
+				<el-form-item label="{lang beianmps}" v-if="RightformLike.bottomEnable">
+					<el-input v-model="RightformLike.beianmps"></el-input>
+				</el-form-item>
+
+			</el-form>
+        </el-scrollbar>
+        
+    </el-tab-pane>
+	<el-tab-pane v-if="isSmart" label="{lang set_condition}" name="condition">
+		<el-scrollbar>
+			<el-form
+					:model="RightformLike"
+					label-position="top"
+					label-suffix=":"
+					style="width: 100%;">
+
+
+				<el-form-item label="{lang condition_keyword}">
+					<el-input v-model="RightformLike.condition.keyword"></el-input>
+					<el-text tag="p" type="info" size="small" truncated>{lang condition_keyword_tips}</el-text>
+				</el-form-item>
+
+				<el-form-item label="{lang condition_ptype}">
+					<el-checkbox-group v-model="RightformLike.condition.ptype"  style="width: 100%;">
+
+						<el-checkbox name="ptype" border style="margin-bottom: 6px;width: 40%;" label="1" value="1">{lang ptype_1}</el-checkbox>
+						<el-checkbox  name="ptype" border style="margin-bottom: 6px;width: 40%;" label="2" value="2">{lang ptype_2}</el-checkbox>
+						<el-checkbox name="ptype" border style="margin-bottom: 6px;width: 40%;" label="3" value="3">{lang ptype_3}</el-checkbox>
+						<el-checkbox name="ptype" border style="margin-bottom: 6px;width: 40%;" label="4" value="4">{lang ptype_4}</el-checkbox>
+						<el-checkbox name="ptype" border style="margin-bottom: 6px;width: 40%;" label="5" value="5">{lang ptype_5}</el-checkbox>
+
+					</el-checkbox-group>
+					<el-text tag="p" type="info" size="small" truncated>{lang condition_ptype_tips}</el-text>
+				</el-form-item>
+				<el-form-item label="{lang condition_starttime}">
+					<el-date-picker
+							v-model="RightformLike.condition.starttime"
+							type="date"
+							placeholder="{lang condition_starttime_placeholder}"
+							style="width: 100%"
+					/>
+				</el-form-item>
+				<el-form-item label="{lang condition_endtime}">
+					<el-date-picker
+							v-model="RightformLike.condition.endtime"
+							type="date"
+							placeholder="{lang condition_endtime_placeholder}"
+							style="width: 100%"
+					/>
+				</el-form-item>
+
+
+
+			</el-form>
+		</el-scrollbar>
+
+	</el-tab-pane>
+
+</el-tabs>
+<script type="text/javascript">
+	var RightMixin = {
+		data(){
+			return {
+				RightactiveName:'tool',
+				isSmart:parseInt({$data['ptype']})==6 && parseInt({$data['flag']})>0,
+                RightformBasic:{
+                    pname:'',
+                    metakeywords:'',
+					metadescription:'',
+                    address:'',
+                },
+				RightformLike:{
+					_file_logo:{src:'',aid:0},
+                    _file_background:{src:'',aid:0},
+					title:'',
+					subtitle:'',
+					issearch:0,
+					hottitle:'24小时热门',
+					hotoption:24,
+					pagination:20,
+					opentype:'new',
+					bottomEnable:0,
+					bottomNavigation:0,
+					topNavigation:0,
+					_textarea_bottomtitle:'',
+					beian:'',
+					beianmps:'',
+					style:'details',
+					condition:{
+						keyword:'',
+						ptype:[1,2,3,4,5],
+						starttime:0,
+						endtime:0
+					}
+
+                },
+				hotoptions:[
+					{value:24,text:'24小时'},
+					{value:48,text:'48小时'},
+					{value:720,text:'一个月'},
+					{value:8760,text:'一年'},
+				]
+                
+			}
+		},
+        watch:{
+
+		},
+		created() {
+        },
+		methods:{
+			handleCloseImg(type){
+				if(type == 'logo'){
+					this.RightformLike._file_logo = {src:'',aid:0};
+				}else{
+					this.RightformLike._file_background = {src:'',aid:0};
+				}
+			},
+            handleUploaLogodSuccess(data){
+				let self = this;
+				if(data.files && data.files.length && data.files[0].data){
+					this.RightformLike._file_logo = {src:data.files[0].data.img,aid:data.files[0].data.aid};
+				}else if(data.files && data.files.length && data.files[0].error){
+					self.$message.error(data.files[0].error);
+				}else{
+					self.$message.error('{lang upload_failed}');
+				}
+            },
+			handleUploadBackSuccess(data){
+				let self=this;
+				if(data.files && data.files.length && data.files[0].data){
+					this.RightformLike._file_background = {src:data.files[0].data.img,aid:data.files[0].data.aid};
+				}else if(data.files && data.files.length && data.files[0].error){
+					self.$message.error(data.files[0].error);
+				}else{
+					self.$message.error('{lang upload_failed111}');
+				}
+            },
+            async addPosition(type){
+                let self = this;
+                let visit = {};
+                if(parseFloat(self.SettingFormvisit.status)){
+					visit = 0;
+				}else if(self.SettingFormvisit.groups && self.SettingFormvisit.groups.length && self.SettingFormvisit.groups.indexOf('unlimit')>-1){
+					visit = 1;
+				}else{
+					if(self.SettingFormvisit.groups && self.SettingFormvisit.groups.length){
+						visit['groups'] = self.SettingFormvisit.groups;
+					}
+					if(self.SettingFormvisit.uids && self.SettingFormvisit.uids.length){
+						visit['uids'] = self.SettingFormvisit.uids;
+					}
+				}
+			
+
+				this.IsIframe = false;
+				let pageset = JSON.parse(JSON.stringify(this.RightformLike));
+				console.log(this.RightformLike);
+				pageset['_file_logo'] = parseFloat(this.RightformLike._file_logo.aid)?[this.RightformLike._file_logo.aid]:[];
+				pageset['_file_background'] = parseFloat(this.RightformLike._file_background.aid)?[this.RightformLike._file_background.aid]:[];
+                let param = {
+					formhash:'{FORMHASH}',
+					submit:true,
+                    id:this.documentid,
+					ptype:'{$data['ptype']}',
+					pval:'{$data['pval']}',
+                    pname:this.RightformBasic.pname,
+                    metakeywords:this.RightformBasic.metakeywords,
+                    metadescription:this.RightformBasic.metadescription,
+                    address:this.RightformBasic.address,
+                    view:visit,
+					pageset:pageset
+                };
+				if(type!=='save'){
+					param['pstatus'] = 1;
+				}
+				let {data: res} = await axios.post('{MOD_URL}&op=admin&operation=basic',param);
+				this.IsIframe = true;
+            },
+            SettingUserChange(data,type){
+				var str = {
+					groups:[],
+					uids:[],
+					data:[],
+					checked:[],
+					expanded:[],
+					status:0
+				}
+				if(data && data.length){
+					for(var i in data){
+						var item = data[i];
+						if(item.type == 'unlimit'){
+							str.groups.push('unlimit');
+							break;
+						}
+						if(item.type == 'user'){
+							str.uids.push(item.id);
+						}else{
+							str.groups.push(item.id);
+						}
+						str.data.push(item);
+					}
+				}else{
+					str.status = 1;
+				}
+                if(type == 'view'){
+                    this.SettingFormvisit = str;
+                }else if(type == 'down'){
+                    this.SettingFormdown = str;
+                }else if(type == 'share'){
+                    this.SettingFormshare = str;
+                }
+			},
+			handleEditor(){
+				let self = this;
+			}
+
+		}
+	};
+</script>

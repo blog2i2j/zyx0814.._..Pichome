@@ -12,8 +12,8 @@ $rid = isset($_GET['rid']) ? trim($_GET['rid']):'';
 if($rid){
     //记录缩略图数据
     $resourcedata = C::t('pichome_resources')->fetch_data_by_rid($rid);
-    $wp = $_G['setting']['IsWatermarkstatus'] ? $_G['setting']['watermarkstatus']:'';
-    $wt = $_G['setting']['IsWatermarkstatus'] ? $_G['setting']['watermarktype']:'';
+    $wp = $_G['setting']['IsWatermarkstatus'] ? $_G['setting']['watermarkstatus']:'0';
+    $wt = $_G['setting']['IsWatermarkstatus'] ? $_G['setting']['watermarktype']:'0';
     $wcontent = $_G['setting']['IsWatermarkstatus'] ? ($_G['setting']['watermarktype'] == 'png' ? $_G['setting']['waterimg']:''):'';
     //缩略图数据
     $thumbrecorddata = [

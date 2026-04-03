@@ -13,7 +13,7 @@ if(!in_array($type, array('list'))) {
 $checkLanguage = $_G['language']; 
 if(file_exists (DZZ_ROOT.'./admin/language/'.$checkLanguage.'/'.'lang.php')){							
 	include DZZ_ROOT.'./admin/language/'.$checkLanguage.'/'.'lang.php';	
-	$_G['lang']['template']=array_merge($_G['lang']['template'],$checkLanguage);
+	if(isset($lang) && is_array($lang)) $_G['lang']['template']=array_merge($_G['lang']['template'],$lang);
 }
  
 if($type=="list"){

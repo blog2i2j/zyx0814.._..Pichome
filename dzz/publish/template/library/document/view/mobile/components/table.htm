@@ -1,0 +1,218 @@
+<div style="background: var(--el-bg-color);">
+    <el-table 
+    :data="tableData" 
+    class="tableData" 
+    row-key="rid"
+    ref="multipleTableRef"
+    v-loading="tableLoading"
+    @selection-change="handleSelectionChange"
+    style="width: 100%">
+        <el-table-column type="selection" width="55"></el-table-column>
+        <el-table-column label="{lang filename}">
+            <template #default="scope">
+              <div class="songname">
+                <el-image  :src="scope.row.icondata" fit="cover" style="width: 50px;height: 50px;border-radius: 8px;"></el-image>
+                <el-link :underline="false" @click="ImageDetails(scope.row)">
+                  <el-text line-clamp="2" class="title">
+                    {{scope.row.name}}
+                    <template v-if="DataPageset.display">
+                      .{{scope.row.ext}}
+                    </template>
+                  </el-text>
+                </el-link>
+              </div>
+            </template>
+        </el-table-column>
+        <el-table-column label=""  width="90" align="center">
+            <template #default="scope">
+              <el-dropdown @command="ImageOperation">
+                <el-button icon="MoreFilled"></el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item 
+                      v-if="scope.row.share" 
+                      :command="ImageOperationVal('share',scope.row)">
+                      <el-icon><Share /></el-icon>
+                      {lang share}
+                    </el-dropdown-item>
+                    <el-dropdown-item v-if="scope.row.download" 
+                      :command="ImageOperationVal('down',scope.row)"
+                      class="circulars">
+                      <el-icon><Download /></el-icon>
+                      {lang download}
+                    </el-dropdown-item>
+                    <el-dropdown-item 
+                      v-if="parseInt(scope.row.collection)" 
+                      :command="ImageOperationVal('collect',scope.row)">
+                      <el-icon><Collection /></el-icon>
+                      {lang collect}
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+              </template>
+        </el-table-column>
+    </el-table>
+    <div class="pageContainer" style="padding:20px 0 10px 0;display:flex;justify-content: center;overflow: hidden;align-items: center;">
+      <el-pagination
+          class="el-pagination--small"
+          background
+          :disabled="tableLoading"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+          :current-page="currentPage"
+          :page-sizes="pageset.pagesizes"
+          :page-size="pageset.perpage"
+          layout="prev, pager, next"
+          :total="pageset.total">
+      </el-pagination>
+    </div>
+  </div>
+  
+  <script type="text/javascript">
+  let ImageMixin = {
+    data(){
+      return {
+        tableData:[],
+        tableLoading:false,
+        imgparam:{},
+        RableSelectrid:[],
+        ZipDownLoad:false,
+        fpercentage:{
+					status: 0,
+					progress: 0,
+					total: 0,
+					totalsize:0,
+					downloaded:0,
+					totalpage: 0,
+				},
+        targetContainer:'',
+        MusicPlays:{},
+        playrid:'',
+        pageset:{
+					page:1,
+					perpage:20,
+					total:0,
+					pagesizes:[20,50,80,100]
+				},
+        beforeScrollTop:0,
+				rollingdire:'up',
+      }
+    },
+    methods:{
+      handleSelectionChange(data){
+        this.RableSelectrid = data;
+      },
+      async ImageOperation(data){
+				let self = this;
+				if(data.type == 'down'){
+					window.open(SITEURL+MOD_URL+'&op=download&dpath='+data.resourcedata.dpath);
+				}else if(data.type == 'collect'){
+              // self.$refs.RefImageLayout.ImageQuickChangeCollect(data.resourcedata.rid)
+				}else if(data.type == 'publish'){
+					window.open('index.php?mod=publish&op=choose&ptype=1&value='+data.resourcedata.rid);
+				}else if(data.type == 'share'){
+					self.shareDialog.visible=true;
+					self.shareDialog.filepaths=[data.resourcedata.rid];
+					self.shareDialog.stype=0;
+					self.shareDialog.title=data.resourcedata.name;
+				}
+			},
+			ImageOperationVal(type,data){
+				return {
+					type:type,
+					resourcedata:data
+				};
+			},
+      async TableGetData(){
+          const self = this;
+          self.tableLoading = true;
+          self.tableData = [];
+          self.RableSelectrid = [];
+          const {data: res} = await axios.post('index.php?mod=publish&op=ajax&do=getappdatalist',self.imgparam);
+          let fdata = res.data.data;
+          if(fdata && fdata.length){
+            fdata.forEach(element => {
+              // if(element.type == 'audio'){
+                // element['play'] = false;
+                // element['finish'] = false;
+                // element['fduration'] = self.ImageAudioPlaySecondToDate(element['duration'],element['duration']);
+                
+                self.tableData.push(element);
+              // }
+            });
+          }
+          self.pageset.total = parseInt(res.data.param.total);
+          self.tableLoading = false;
+			},
+
+
+      handleSizeChange(perpage){
+				this.pageset.perpage = perpage;
+				this.CommonGetImageData();
+			},
+			handleCurrentChange(page){
+				this.pageset.page = page;
+				this.CommonGetImageData();
+			},
+      ImageDetails(item){//双击事件
+				const self = this;
+				let arr = [];
+				for(var i in this.tableData){
+					arr.push(this.tableData[i].dpath)
+				}
+				let curr = this.tableData.find(function(current){
+					return current.rid == item.rid;
+				});
+				let index = this.tableData.findIndex(function(current){
+					return current.dpath == item.rid;
+				});
+				if(this.OpenDetailType == 'new'){
+					this.ImageDataIframe = window.open('index.php?mod=details#path='+curr.dpath,'details');
+					this.ImageDataIframe.sessionStorage.setItem('imgs',arr.join(','));
+					this.ImageDataIframe.sessionStorage.setItem('selectindex',index);
+					this.ImageDataIframe.sessionStorage.setItem('fidname','classify');
+				}else{
+
+
+					sessionStorage.setItem('href','');
+					sessionStorage.setItem('selectindex', index);
+					sessionStorage.setItem('fidname','classify');
+					let div = document.createElement("div");
+					div.className = 'Details-Iframe';
+					let div1 = document.createElement("div");
+					div1.className = 'Details-Iframe-wrapper';
+					div.onclick=function(){
+						let div2 = document.querySelector('.Details-Iframe');
+						document.body.removeChild(div2);
+					}
+					div.append(div1);
+					document.body.appendChild(div);
+					let iframe = document.createElement("iframe");
+					iframe.style.opacity='0';
+					div1.append(iframe);
+					iframe.src =  'index.php?mod=details&opentype=current#path='+curr.dpath;
+
+				}
+				// window.removeEventListener('message', this.ImageDetailsMessage)
+				// window.addEventListener('message', this.ImageDetailsMessage)
+			},
+      HandleElScrollbar(){
+				let self = this;
+
+				let afterScrollTop = self.$refs.MainscrollbarRef.wrapRef.scrollTop;
+				let updown = afterScrollTop - self.beforeScrollTop;
+				if(afterScrollTop == 0){
+					self.rollingdire = 'up';
+					return false; 
+				}
+				if( updown === 0 ) {
+					return false;
+				}            
+				self.beforeScrollTop = afterScrollTop;
+				self.rollingdire = updown > 0 ? "down" : "up";  //判断往上还是往下
+			},
+
+    }
+  }
+  </script>

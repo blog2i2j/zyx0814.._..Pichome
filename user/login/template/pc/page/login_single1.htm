@@ -21,8 +21,8 @@
 	<div class="modal-content">
 		
 		 <div class="brand"> <img src="data/attachment/sitelogo/sitelogo.png?{VERHASH}" /> </div>
-		<div v-if="loginset.title" class="main-title">$_G[setting][loginset][title]</div>
-		<div v-if="loginset.subtitle" class="sub-title">$_G[setting][loginset][subtitle]</div>
+		<div v-if="loginset.title" class="main-title">$_G['setting']['loginset']['title']</div>
+		<div v-if="loginset.subtitle" class="sub-title">$_G['setting']['loginset']['subtitle']</div>
 		<el-text v-if="bbclosed" type="error" >{lang site_closed_please_admin}</el-text>
       	
 		<el-form :model="ruleForm" class="loginForm" :rules="rules" ref="ruleForm" label-width="0" @keydown.enter.prevent="handleSubmit()">
@@ -78,15 +78,15 @@
 			let self = this;
 			return {
 				DocumentThemeColor:'',
-				pwdsafety:parseInt("{$_G[setting]['pwdsafety']}"),
-				regstatus:parseInt("{$_G[setting]['regstatus']}"),
-				bbclosed:parseInt("{$_G[setting]['bbclosed']}"),
+				pwdsafety:parseInt("{$_G['setting']['pwdsafety']}"),
+				regstatus:parseInt("{$_G['setting']['regstatus']}"),
+				bbclosed:parseInt("{$_G['setting']['bbclosed']}"),
 				loginset:{
-					title:"{$_G[setting]['loginset']['title']}",
-					subtitle:"{$_G[setting]['loginset']['subtitle']}",
-					url:"{$_G[setting]['loginset']['url']}",
-					bcolor:"{$_G[setting]['loginset']['bcolor']}",
-					img:"{$_G[setting]['loginset']['img']}",
+					title:"{$_G['setting']['loginset']['title']}",
+					subtitle:"{$_G['setting']['loginset']['subtitle']}",
+					url:"{$_G['setting']['loginset']['url']}",
+					bcolor:"{$_G['setting']['loginset']['bcolor']}",
+					img:"{$_G['setting']['loginset']['img']}",
 				},
 				bgimg: {
 					width:0,

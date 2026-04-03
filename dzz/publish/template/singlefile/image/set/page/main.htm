@@ -1,0 +1,168 @@
+<!--{template common/container/pc/header_start}-->
+<link rel="stylesheet" href="static/scss/default/index.css?{VERHASH}">
+<link rel="stylesheet" type="text/css" href="{MOD_PATH}/template/singlefile/image/set/assets/css/index.css?{VERHASH}"/>
+<script type="text/javascript" src="static/vue_components/OrguserSelect/index.js?{VERHASH}"></script>
+<script src="static/wangeditor/index.js?{VERHASH}"></script>
+<link rel="stylesheet" href="static/wangeditor/style.css?{VERHASH}">
+<!--{template common/container/pc/header_end}-->
+<div id="dzzoffice">
+    <el-container class="page-main">
+        <!--{template singlefile/image/set/components/header}-->
+        <el-container>
+            <el-main style="padding: 0;overflow: hidden;" class="dzz-container">
+                <iframe v-if="IsIframe" src="{MOD_URL}&id=$id" frameborder="0" style="width: 100%;height: 100%;"></iframe>
+            </el-main>
+            <el-aside width="400px" class="page-left right-set" v-loading="DataLoading">
+                <!--{template singlefile/image/set/components/right}-->
+            </el-aside>
+        </el-container>
+    </el-container>
+</div>
+<script type="text/javascript">
+    const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch , onUnmounted } = Vue;
+    const dzzoffice = createApp({
+        data() {
+            return {
+                keyword:'',
+                active:0,
+                documentid:'$id',
+                scrollref:'',
+                menuData:{
+                    data:[],
+                    active:0
+                },
+                IsIframe:true,
+                DocumentThemeColor:'',//dark
+                DataLoading:true
+            }
+        },
+        mixins:[RightMixin],
+        watch:{
+			DocumentThemeColor:{
+				handler(newval){
+					document.querySelector('html').className = newval
+				},
+				deep:true,
+				// immediate:true
+			},
+		},
+        created() {
+            let theme = localStorage.getItem('theme');
+			if(theme){
+				this.DocumentThemeColor=theme;
+			}else{
+				this.DocumentThemeColor = 'light'
+			}
+            this.GetData();
+        },
+        methods: {
+            async GetData(){
+                let self = this;
+                let {data: res} = await axios.post('{MOD_URL}&op=mould&operation=basic',{
+                    id:'$id'
+                });
+                this.RightformBasic.pname = res.pname?res.pname:'';
+                this.RightformBasic.metadescription = res.metadescription?res.metadescription:'';
+                this.RightformBasic.metakeywords = res.metakeywords?res.metakeywords:'';
+                this.RightformBasic.address = res.address?res.address:'';
+                this.RightformBasic.collection = res.collection?res.collection:[];
+                this.RightformBasic.options = res.collection_options?res.collection_options:[];
+
+                this.RightformLike._html_desc = (res['pageset'] && res['pageset']['_html_desc'])?res['pageset']['_html_desc']:'';
+                this.RightformLike.name = (res['pageset'] && res['pageset']['name'])?res['pageset']['name']:'';
+                this.RightformLike.pageWidth = (res['pageset'] && res['pageset']['pageWidth'])?res['pageset']['pageWidth']:'w800';
+                this.RightformLike._file_cover = res['pageset']&&res['pageset']['_file_cover']&&res['pageset']['_file_cover'].length?{src:res['pageset']['_file_cover'][0]['src'],aid:res['pageset']['_file_cover'][0]['aid']}:{src:'',aid:0};
+                this.RightformLike.bottomEnable = res['pageset']&&res['pageset'].bottomEnable?parseInt(res['pageset'].bottomEnable):0;
+                this.RightformLike.bottomNavigation = res['pageset']&&res['pageset'].bottomNavigation?parseInt(res['pageset'].bottomNavigation):0;
+                this.RightformLike.topNavigation = res['pageset']&&res['pageset'].topNavigation?parseInt(res['pageset'].topNavigation):0;
+                this.RightformLike._textarea_bottomtitle = res['pageset']&&res['pageset']._textarea_bottomtitle?res['pageset']._textarea_bottomtitle:"{$_G['setting']['sitename']} All rights reserved.";
+                this.RightformLike.beian = (res['pageset']&&res['pageset'].beian)?res['pageset'].beian:"{$_G['setting']['sitebeian']}";
+                this.RightformLike.beianmps = res['pageset']&&res['pageset'].beianmps?res['pageset'].beianmps:"";
+
+                this.SettingFormvisit = this.handleUser(res.view);
+                this.SettingFormdown = this.handleUser(res.download);
+                this.SettingFormshare = this.handleUser(res.share);
+                this.DataLoading = false;
+            },
+            handleUser(data){
+                let returnData = {
+					groups:[],
+					uids:[],
+					data:[],
+					checked:[],
+					expanded:[],
+					status:0
+				};
+                if(parseFloat(data) == 1 || !data){
+                    returnData.groups.push('unlimit');
+                    returnData.checked.push('unlimit');
+                    returnData.data = [{
+                        id: "unlimit",
+                        text: "{lang everyone}",
+                        type: "unlimit"
+                    }];
+                }else{
+                    if(data.expanded){
+                        for(let v in data.expanded){
+                            returnData.expanded.push(parseFloat(data.expanded[v]));
+                        }
+                    }
+                    if(data.groups && data.groups.length){
+                        for (let index = 0; index < data.groups.length; index++) {
+                            const element = data.groups[index];
+                            returnData.data.push({
+                                id:element.orgid=='other'?'other':parseFloat(element.orgid),
+                                text:element.text,
+                                type: 'organization'
+                            });
+                            returnData.checked.push(element.orgid=='other'?'other':parseFloat(element.orgid));
+                            returnData.groups.push(parseFloat(element.orgid=='other'?'other':parseFloat(element.orgid)))
+                        }
+                    }
+                    if(data.uids && data.uids.length){
+                        for (let index = 0; index < data.uids.length; index++) {
+                            const element = data.uids[index];
+                            returnData.data.push({
+                                id:parseFloat(element.uid),
+                                text:element.text,
+                                type: "user"
+                            });
+                            returnData.uids.push(parseFloat(element.uid));
+                        }
+                    }
+                }
+                return returnData;
+            },
+            DocumentThemeChange(){
+				if(this.DocumentThemeColor=='light'){
+					this.DocumentThemeColor='dark';
+					localStorage.setItem('theme','dark');
+				}else{
+					this.DocumentThemeColor='light';
+					localStorage.setItem('theme','light');
+				}
+			},
+        },
+        mounted() {
+            let self = this;
+            dzzoffice.WindowThis = this;
+        },
+        components: {
+			'orguser-select':orguserselect,
+			
+		},
+    });
+    dzzoffice.use(ElementPlus, {
+        locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+    });
+    for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+        dzzoffice.component(key, component)
+    }
+    dzzoffice.component('comavatar', comavatar);
+    dzzoffice.component('international',international);
+    // 屏蔽警告信息
+    dzzoffice.config.warnHandler = function(){return null};
+    dzzoffice.mount('#dzzoffice');
+</script>
+
+<!--{template common/container/pc/footer}-->

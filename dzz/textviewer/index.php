@@ -22,9 +22,10 @@ $isadmin = $patharr['isadmin'];
 global $_G;
 if(strpos($rid, 'attach::') === 0){
     $resourcesdata = C::t('attachment')->fetch(intval(str_replace('attach::', '', $rid)));
-
+    $navtitle=$resourcesdata['filename'];
 }else{
     $resourcesdata = C::t('pichome_resources')->fetch_data_by_rid($rid);
+    $navtitle=$resourcesdata['name'];
 }
 if(!$resourcesdata['iswebsitefile'] && $resourcesdata['bz'] == 'dzz::'){
     $fileurl  = getglobal('siteurl') . 'index.php?mod=io&op=getStream&path=' . dzzencode($rid.'_3', '', 14400, 0);

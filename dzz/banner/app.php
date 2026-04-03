@@ -37,12 +37,22 @@ if ($do == 'filelist') {
     $imageRids = [];
     if(isset($_GET['aid'])){
         $aid = intval($_GET['aid']);
+        $searchparams= array(
+            'appids'=>$vappids,
+            'aid'=>$aid,
+            'keyword'=>$_GET['keyword'],
+            'limit'=>$perpage,
+            'offset'=>$start
+        );
 
-        Hook::listen('search_condition_filter',$imageRids,['aid'=>$aid,'limit'=>$perpage,'offset'=>$start]);
+        Hook::listen('search_condition_filter',$imageRids,$searchparams);
         if(!empty($imageRids['rids'])){
             $wheresql .= ' and r.rid in(%n)';
             $para[] = $imageRids['rids'];
+           
+            $limitsql='';
         }
+
     }
     $whererangesql = [];
     //库条件
@@ -56,7 +66,7 @@ if ($do == 'filelist') {
     if($whererangesql){
         $wheresql .= ' and ('.implode(' OR ',$whererangesql).') ';
     }
-    if(!$isrecycle)$wheresql .= " and r.isdelete = 0 and   r.level <= $ulevel ";
+    if(!$isrecycle) $wheresql .= " and r.isdelete = 0 and   r.level <= $ulevel ";
     else $wheresql .= " and r.isdelete = 1 and level <= $ulevel ";
     if (!isset($_GET['order'])) {
         //获取用户默认排序方式
@@ -639,17 +649,22 @@ if ($do == 'filelist') {
         if(!empty($imageRids)){
             $rdatas = [];
             foreach($rdata as $key=>$value){
+                if(isset($imageRids['distances'][$value['rid']]) && is_array($imageRids['distances'][$value['rid']])) {
+                    $value['distances']=$imageRids['distances'][$value['rid']];
+                }
                 $rdatas[$value['rid']] = $value;
             }
 
             foreach($imageRids['rids'] as $value){
                 if(isset($rdatas[$value])){
-                    if(isset($imageRids['distances'][$value]) && is_array($imageRids['distances'][$value])) {
-                        $rdatas[$value]['distances']=$imageRids['distances'][$value];
-                    }
                     $data[] = $rdatas[$value];
                 }
             }
+            //分页
+            if(count($data)>$start * ($page - 1)) {
+                $data = array_slice($data, $start * ($page - 1), $perpage);
+            }
+
         }else{
             foreach($rdata as $key=>$value){
                 // $value['dpath'] = Pencode(array('path'=>$value['rid'],'perm'=>0,'ishare'=>0,'isadmin'=>1),3600);
@@ -661,7 +676,14 @@ if ($do == 'filelist') {
             $data[$key] = $value;
         }*/
     }
-
+    if(!empty($_GET['keyword']) && !empty($_GET['appid'])){//增加搜索热度
+        $insertdata = [
+            'idtype'=>0,
+            'idval'=> trim($_GET['appid']),
+            'keyword'=>trim($_GET['keyword']),
+        ];
+        C::t('keyword_hots')->insert_data($insertdata);
+    }
     if (count($rids) >= $perpage) {
        $next = true;
     } else {

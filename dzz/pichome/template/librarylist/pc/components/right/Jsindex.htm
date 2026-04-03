@@ -29,10 +29,11 @@
 					folder:[],
 					langkey:null,
 					Aikey:{},
-					Aichat:false,
+					Aichat:[],
 					filetype:'',
 					filenamewirte:false,
 					allowedit:false,
+					username:'',
 				},
 				Rightallowcover:0,
 				RightNameaiload:false,
@@ -124,21 +125,25 @@
 					    self.RightPostParam = c;
 					})
 				}).then(function ({data :res}) {
+                    console.log(res);
 					self.RightPostParam = '';
-					if(res.Aichat){
-						self.RightData.Aichat = true;
-						self.answerParam = {
-							params:res.Aichat.params?res.Aichat.params:'',
-							recordurl:res.Aichat.recordurl?res.Aichat.recordurl:'',
-							type:res.Aichat.type?res.Aichat.type:'',
-							url:res.Aichat.url?res.Aichat.url:'',
-							delhistoryurl:res.Aichat.delhistoryurl?res.Aichat.delhistoryurl:''
-						}
+					if(res.Aichat && res.Aichat.length>0){
+						self.RightData.Aichat = res.Aichat;
+                        self.answerParam = {
+                            name:res.Aichat[0].name?res.Aichat[0].name:'',
+                            key:res.Aichat[0].key?res.Aichat[0].key:'',
+                            params:res.Aichat[0].params?res.Aichat[0].params:'',
+                            recordurl:res.Aichat[0].recordurl?res.Aichat[0].recordurl:'',
+                            type:res.Aichat[0].type?res.Aichat[0].type:'',
+                            url:res.Aichat[0].url?res.Aichat[0].url:'',
+                            delhistoryurl:res.Aichat[0].delhistoryurl?res.Aichat[0].delhistoryurl:''
+                        }
 					}else{
-						self.RightData.Aichat = false;
+						self.RightData.Aichat = [];
 					}
 					self.RightData.filenamewirte = res.filenamewirte?res.filenamewirte:false;
 					self.RightData.allowedit = res.allowedit?res.allowedit:false;
+					self.RightData.username = res.username?res.username:'';
 					self.Rightallowcover = parseFloat(res.allowcover)?res.allowcover:0;
 					self.RightData.filetype = res.filetype?res.filetype:'';
 					self.RightData.langkey = res.langkey?res.langkey:'';

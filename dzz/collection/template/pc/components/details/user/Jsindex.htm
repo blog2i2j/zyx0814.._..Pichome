@@ -1,0 +1,208 @@
+<script type="text/javascript">
+	var UserMixin = {
+		data(){
+			return {
+				Userloading:false,
+				UserKeyword:'',
+				UserDataList:[],
+				UserAddPopover:{
+					keyword:'',
+					perm:1,
+					visible:false,
+					loading:true,
+					data:[],
+					user:[],
+					btnloading:false
+				}
+			}
+		},
+		methods:{
+			UserCreate(){
+				this.UserGetdata();
+			},
+			UserKeywordInput:debounce(function(val){//输入
+				this.UserGetdata();
+			},800),
+			async UserOut(index,uid){
+				var self = this;
+				if(uid == 'login'){
+					uid = index.uid;
+					index = index.index;
+				}
+				var param = {
+					clid:self.Leftclid,
+					objuid:uid
+				};
+				self.UserDataList[index].loading = true;
+				
+				
+				self.LoginFunc = self.UserOut;
+				self.LoginParam = {
+					index:index,
+					uid:uid
+				};
+				var res = await axios.post(MOD_URL+'&op=collect&do=delusertocollect',param);
+				if(res == 'intercept'){
+					return false;
+				}
+				var json = res.data;
+				self.UserDataList[index].loading = false;
+				if(json.success){
+					self.UserDataList.splice(index,1);
+					if(self.$refs['lefttree']){
+						var node = self.$refs['lefttree'].getNode('user');
+						node.data.filenum = self.UserDataList.length;
+					}
+				}else{
+					self.$message.error(json.error);
+				}
+					
+			},
+			UserSetPermBefore(index,perm){
+				return {
+					index:index,
+					perm:perm
+				};
+			},
+			async UserSetPerm(data){
+				var self = this;
+				self.UserDataList[data.index].loading = true;
+				var param = {
+					clid:self.Leftclid,
+					objuid:self.UserDataList[data.index].uid,
+					perm:data.perm
+				};
+				
+				self.LoginFunc = self.UserSetPerm;
+				self.LoginParam = data;
+				var res = await axios.post(MOD_URL+'&op=collect&do=addusertocollect',param);
+				if(res == 'intercept'){
+					return false;
+				}
+				var json = res.data;
+				self.UserDataList[data.index].perm = data.perm;
+				self.$message({
+					type:'success',
+					message:'{lang set_success}'
+				});
+				self.UserDataList[data.index].loading = false;
+			},
+			async UserGetdata(){
+				var self = this;
+				self.Userloading = true;
+				var param = {
+					clid:self.Leftclid,
+					keyword:self.UserKeyword
+				};
+				self.UserDataList = [];
+				var res = await axios.post(MOD_URL+'&op=ajax&operation=getcollectuser',param);
+				var json = res.data;
+				for(var i in json.success){
+					var item = json.success[i];
+					item['loading'] = false;
+					self.UserDataList.push(item);
+				}
+				self.Userloading = false;
+			},
+			UserAddPopoverClick(){
+				this.UserAddPopover.visible = !this.UserAddPopover.visible;
+			},
+			UserAddPopoverInput:debounce(function(val){//输入
+				this.UserAddPopoverShow();
+			},800),
+			async UserAddPopoverSubmit(){
+				var self = this;
+				if(!self.UserAddPopover.user.length){
+					self.$message.error('{lang select_member}');
+				}
+				self.UserAddPopover.btnloading = true;
+				var param = {
+					clid:self.Leftclid,
+					objuid:self.UserAddPopover.user.join(','),
+					perm:self.UserAddPopover.perm
+				};
+				
+				self.LoginFunc = self.UserAddPopoverSubmit;
+				self.LoginParam = null;
+				var res = await axios.post(MOD_URL+'&op=collect&do=addusertocollect',param);
+				if(res == 'intercept'){
+					return false;
+				}
+				var json = res.data;
+				self.UserAddPopover.btnloading = false;
+				if(json.success){
+					var uids = [];
+					for(var i in self.UserAddPopover.data){
+						var item = self.UserAddPopover.data[i];
+						if(self.UserAddPopover.user.indexOf(item.uid)>-1){
+							uids.push(item)
+						}
+					}
+					for(var u in uids){
+						var item = uids[u];
+						var status = true;
+						for(var x in self.UserDataList){
+							var fitem = self.UserDataList[x];
+							if(parseInt(item.uid) == parseInt(fitem.uid)){
+								status = false;
+							}
+						}
+						if(status){
+							item['loading'] = false;
+							item['perm'] = self.UserAddPopover.perm;
+							self.UserDataList.push(item);
+						}
+					}
+					self.UserAddPopover.visible = false;
+					if(self.$refs['lefttree']){
+						var node = self.$refs['lefttree'].getNode('user');
+						node.data.filenum = self.UserDataList.length;
+					}
+					self.UserAddPopoverHide();
+					self.$message({
+						type:'success',
+						message:'{lang add_success}'
+					});
+				}else{
+					self.$message.error(json.error);
+				}
+					
+			},
+			async UserAddPopoverShow(){
+				var self = this;
+				self.UserAddPopover.loading = true;
+				var param = {
+					keyword:self.UserAddPopover.keyword
+				};
+				self.LoginFunc = self.UserAddPopoverShow;
+				self.LoginParam = null;
+				var res = await axios.post(MOD_URL+'&op=collect&do=getuser',param);
+				if(res == 'intercept'){
+					return false;
+				}
+				var json = res.data;
+				var uids = [];
+				var arr = [];
+				for(var i in self.UserDataList){
+					uids.push(parseInt(self.UserDataList[i].uid));
+				}
+				for(var u in json.success){
+					var item = json.success[u];
+					if(uids.indexOf(parseInt(item.uid))<0){
+						arr.push(item);
+					}
+				}
+				self.UserAddPopover.data = arr;
+				self.UserAddPopover.loading = false;
+			},
+			UserAddPopoverHide(){
+				var self = this;
+				self.$refs.AddPopoverUser.doClose();
+				self.UserAddPopover.loading = false;
+				self.UserAddPopover.btnloading = false;
+				self.UserAddPopover.data = [];
+				self.UserAddPopover.user = [];
+			}
+		}
+	};
+</script>

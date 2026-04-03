@@ -23,7 +23,7 @@ for ($i = 0; $i < $processnum; $i++) {
 $limit = 100;
 $start = $i * $limit;
 //dzz_process::unlock($processname);
-if ($locked) {
+if ($locked && empty($_GET['rid'])) {
     exit(json_encode(array('error' => '进程已被锁定请稍后再试')));
 }
 $imageCacheName = 'PICHOMETHUMBSTATUS';
@@ -80,17 +80,23 @@ if (empty($appids)) {
     dzz_process::unlock($processname);
     exit('success');
 }
-
-$datas = DB::fetch_all("select r.rid,r.appid,t.rid,t.sstatus,t.lstatus,t.ltimes,t.stimes,t.ltimes+t.stimes as mintimes
+$sql='';
+if($_GET['rid']){
+    dzz_process::unlock($processname);
+    $sql=" r.rid='".$_GET['rid']."'";
+    $datas = DB::fetch_all("select r.rid,r.appid,t.rid,t.sstatus,t.lstatus,t.ltimes,t.stimes,t.ltimes+t.stimes as mintimes from %t t left join %t r on t.rid = r.rid  where  $sql order by mintimes asc,r.dateline asc limit $start,$limit", array('thumb_record', 'pichome_resources'));
+}else {
+    $datas = DB::fetch_all("select r.rid,r.appid,t.rid,t.sstatus,t.lstatus,t.ltimes,t.stimes,t.ltimes+t.stimes as mintimes
 from %t t left join %t r on t.rid = r.rid   
 where (t.sstatus < 1 or t.lstatus < 1) and  ((t.ltimes+t.stimes) < %d)  and r.isdelete = 0 and r.appid in(%n) 
-order by mintimes asc,r.dateline asc limit $start,$limit", array('thumb_record', 'pichome_resources', 12, $appids));
+order by mintimes asc,r.dateline asc limit $start,$limit", array('thumb_record', 'pichome_resources', 6, $appids));
+}
 
 if ($datas) {
     foreach ($datas as $v) {
 
         $processname1 = 'PICHOMEGETTHUMB_' . $v['rid'];
-        dzz_process::unlock($processname1);
+        //dzz_process::unlock($processname1);
         //如果当前数据是锁定状态则跳过
         if (dzz_process::islocked($processname1, 60 * 5)) {
             continue;
@@ -101,13 +107,14 @@ if ($datas) {
         //如果是本地存储位置文件
         if ($metadata['bz'] == 'dzz::') {
             //判断是否符合本地存储生成规则后缀
-            if (!$thumbStatus[$dzztype][$metadata['bz']]) {
+            if (!isset($thumbStatus[$dzztype][$metadata['bz']]) || !$thumbStatus[$dzztype][$metadata['bz']]) {
                 dzz_process::unlock($processname1);
                 continue;
             }
         } else {
             $type = getQcosExt($ext);
-            if (!$status[$type][$metadata['bz']] && !$status[$dzztype]['dzz::']) {
+
+            if (empty($type) || !isset($status[$type]) || !isset($status[$type][$metadata['bz']]) || !$status[$dzztype]['dzz::']) {
                 dzz_process::unlock($processname1);
                 continue;
             }
@@ -115,17 +122,17 @@ if ($datas) {
         $thumbsign = '';
         //更新当前数据获取缩略图执行次数和时间
         if (!$v['sstatus']) {
-          //  C::t('thumb_record')->update($v['rid'], array('stimes' => intval($v['stimes']) + 1, 'sdateline' => TIMESTAMP));
+            C::t('thumb_record')->update($v['rid'], array('stimes' => intval($v['stimes']) + 1, 'sdateline' => TIMESTAMP));
             $thumbsign = 'small';
         } elseif (!$v['lstatus']) {
-            //C::t('thumb_record')->update($v['rid'], array('ltimes' => intval($v['ltimes']) + 1, 'ldateline' => TIMESTAMP));
+            C::t('thumb_record')->update($v['rid'], array('ltimes' => intval($v['ltimes']) + 1, 'ldateline' => TIMESTAMP));
             $thumbsign = 'large';
         } else {
             dzz_process::unlock($processname1);
             continue;
         }
-        try{
 
+        try{
             //调用系统获取缩略图
             $returnurl = IO::getThumb($v['rid'], $thumbsign, 0, 1, 1);
             dzz_process::unlock($processname1);
@@ -151,8 +158,9 @@ function getDzzExt($ext){
     global $_G;
     $type = '';
     $app = C::t('app_market')->fetch_by_identifier('onlyoffice_view', 'dzz');
-    $onlyofficedata = unserialize($app['extra']);
-    $docext = explode(',', $onlyofficedata['exts']);
+    if(isset($app['extra'])) $onlyofficedata = unserialize($app['extra']);
+    $docext=array();
+    if(isset($onlyofficedata) && $onlyofficedata['exts']) $docext = explode(',', $onlyofficedata['exts']);
     $gdlimitext = explode(',',$_G['config']['gdgetcolorextlimit']);
     $imgicklimitext = explode(',',$_G['config']['imageickallowextlimit']);
     if(getglobal('setting/imagelib')){

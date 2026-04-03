@@ -113,13 +113,13 @@ class table_pichome_collectuser extends dzz_table
             $collectname = DB::result_first("select name from %t where clid = %d", array('pichome_collect', $clid));
             $objusername = DB::result_first("select username from %t where uid = %d", array('user', $uid));
             //添加事件
-            $enventbodydata = ['username' => getglobal('username'), 'name' => $collectname, 'objusername' => $objusername, 'permtitle' => $permtitle[$setarr['perm']]];
+            $enventbodydata = ['username' => getglobal('username'), 'name' => $collectname, 'objusername' => $objusername, 'permtitle' => $permtitle[$data['perm']]];
             $enventdata = [
                 'eventbody' => 'delcollectuer',
                 'uid' => getglobal('uid'),
                 'username' => getglobal('username'),
                 'bodydata' => json_encode($enventbodydata),
-                'clid' => $setarr['clid'],
+                'clid' => $data['clid'],
                 'do' => 'del_collectuer',
                 'do_obj' => $collectname,
                 'dateline' => TIMESTAMP

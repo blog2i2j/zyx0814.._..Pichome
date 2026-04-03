@@ -31,12 +31,20 @@ if ($do == 'filelist') {
     $imageRids = [];
     if(isset($_GET['aid'])){
         $aid = intval($_GET['aid']);
+        $searchparams= array(
+            'aid'=>$aid,
+            'keyword'=>$_GET['keyword'],
+            'limit'=>$perpage,
+            'offset'=>$start
+        );
 
-        Hook::listen('search_condition_filter',$imageRids,['aid'=>$aid,'limit'=>$perpage,'offset'=>$start]);
+        Hook::listen('search_condition_filter',$imageRids,$searchparams);
         if(!empty($imageRids['rids'])){
             $wheresql .= ' and r.rid in(%n)';
             $para[] = $imageRids['rids'];
+            $limitsql='';
         }
+
     }
     //获取有权限访问的库
     $vappids = [];
@@ -73,8 +81,6 @@ if ($do == 'filelist') {
     if(!$isrecycle)$wheresql .= " and r.isdelete = 0 and r.level <= $ulevel ";
     else $wheresql .= " and r.isdelete = 1 and r.level <= $ulevel ";
 
-    $start = ($page - 1) * $perpage;
-    $limitsql = "limit $start," . $perpage;
     if (!isset($_GET['order'])) {
         //获取用户默认排序方式
         $sortdata = C::t('user_setting')->fetch_by_skey('pichomesortfileds');
@@ -588,16 +594,20 @@ if ($do == 'filelist') {
         if(!empty($imageRids)){
             $rdatas = [];
             foreach($rdata as $key=>$value){
+                if(isset($imageRids['distances'][$value['rid']]) && is_array($imageRids['distances'][$value['rid']])) {
+                    $value['distances']=$imageRids['distances'][$value['rid']];
+                }
                 $rdatas[$value['rid']] = $value;
             }
 
             foreach($imageRids['rids'] as $value){
                 if(isset($rdatas[$value])){
-                    if(isset($imageRids['distances'][$value]) && is_array($imageRids['distances'][$value])) {
-                        $rdatas[$value]['distances']=$imageRids['distances'][$value];
-                    }
                     $data[] = $rdatas[$value];
                 }
+            }
+            //分页
+            if(count($data)>$start * ($page - 1)) {
+                $data = array_slice($data, $start * ($page - 1), $perpage);
             }
         }else{
             foreach($rdata as $key=>$value){

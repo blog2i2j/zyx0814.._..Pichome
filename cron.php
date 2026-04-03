@@ -21,8 +21,17 @@ $dzz->init_session=false;
 $dzz->init_cron=false;
 $dzz->init_misc=true;
 $dzz->init();
-if($_GET['cronid']){
+
+if($_GET['cronid']) {
     dzz_cron::run(intval($_GET['cronid']));
+}elseif($_GET['do'] && preg_match("/^[:\w]+/i",$_GET['do'])){
+    $do=$_GET['do'];
+    if(strpos($do,':')=== false){
+        require (DZZ_ROOT.'./core/cron/'.$do.'.php');
+    }else{
+        $patharr=explode(':',$do);
+        require (DZZ_ROOT.'./dzz/'.$patharr[0].'/cron/'.$patharr[1].'.php');
+    }
 }else{
     dzz_cron::runcron();
 }

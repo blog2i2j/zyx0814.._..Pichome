@@ -5,7 +5,7 @@
  * Date: 2020/9/14
  * Time: 15:53
  */
-if (!defined('IN_OAOOA')) {
+if (!defined('IN_OAOOA') || !defined('PICHOME_LIENCE')) {
     exit('Access Denied');
 }
 Hook::listen('check_login');

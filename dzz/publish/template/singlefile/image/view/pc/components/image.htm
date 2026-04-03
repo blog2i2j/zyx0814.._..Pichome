@@ -1,0 +1,288 @@
+<div class="details-top"  style="padding:0;">
+
+    <div class="floating-layer clearfix"  v-cloak>
+        <div class="picture-box el-container is-vertical">
+
+            <template v-if="imagesData.iniframe">
+                <template v-if="DocumentThemeColor == 'dark'">
+                    <iframe
+                        style="border: 0px;"
+                        :src="imagesData.iniframe+'&theme=dark'"
+                        width="100%"
+                        height="100%"></iframe>
+                </template>
+                <template v-else>
+                    <iframe
+                        style="border: 0px;"
+                        :src="imagesData.iniframe"
+                        width="100%"
+                        height="100%"></iframe>
+                </template>
+
+            </template>
+            <template v-else>
+                <div class="el-carousel" >
+                    <div class="page-component__scroll" >
+                        <el-image
+                            style="display: block;"
+                            :src="previews.icondata"
+                            class="image-viewer_img thumbnail"
+                            fit="contain" ></el-image>
+
+                        <el-image
+                                :src="previews.originalimg"
+                                class="image-viewer_img max"
+                                :zoom-rate="1.2"
+                                :max-scale="7"
+                                :min-scale="0.2"
+                                :hide-on-click-modal="true"
+                                :preview-teleported="true"
+                                :preview-src-list="previews.originals"
+                                :initial-index="previews.active"
+                                fit="contain" ></el-image>
+                    </div>
+
+                    <template v-if="previews.data.length">
+                        <el-button
+                            v-if="previews.active > 0"
+                            style="left: 0;"
+                            class="el-carousel__arrow"
+                            @click="previewClick(previews.active - 1 )"
+                            icon="ArrowLeftBold"></el-button>
+                        <el-button
+                            v-if="previews.active + 1 < previews.data.length"
+                            class="el-carousel__arrow"
+                            style="right: 0;"
+                            @click="previewClick(previews.active + 1)"
+                            icon="ArrowRightBold"></el-button>
+                    </template>
+                </div>
+            </template>
+            <div class="album-box" v-if="previews.data.length">
+                <el-button
+                    v-if="previews.size"
+                    class="slider-btn slider-btn-prev"
+                    @click="previewSwitch('left')"
+                    text
+                    icon="ArrowLeftBold"></el-button>
+                <div class="album-imgs" ref="previewBox">
+                    <ul
+                        class="album-imglist"
+                        ref="previewChild"
+                        :style="{transform: 'translate('+previews.transform+'px, 0px)'}">
+                        <li
+                            v-for="(item,index) in previews.data"
+                            :key="index"
+                            :ref="'previewImage'+index"
+                            @click="previewClick(index)">
+                            <div class="album-img" :class="{'active':index==previews.active}" >
+                                <el-image  :src="item.spath?item.spath:'dzz/images/extimg/'+imagesData.filetype+'.png'" fit="cover" ><template #error><div class="el-image__placeholder"></div></template></el-image>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <el-button
+                    v-if="previews.size"
+                    class="slider-btn slider-btn-next"
+                    @click="previewSwitch('right')"
+                    text
+                    icon="ArrowRightBold"></el-button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<script>
+	const ImageViewMixin = {
+		data(){
+			return {
+                imagesData:{},
+                previews:{
+					data:[],
+                    originals:[],
+					transform:0,
+					active:0,
+                    icondata:'',
+                    orginalimg:'',
+					size:false
+				},
+                PostParam:null,
+                HtmlLoading:true
+			}
+		},
+
+		created(){
+
+		},
+		methods:{
+
+            async GetImgData(data){
+                if(!data) return ;
+				let self = this;
+				self.HtmlLoading = true;
+				if(self.PostParam){
+					self.PostParam();
+				}
+				let CancelToken = axios.CancelToken;
+
+				if(data && data.iniframe){
+					self.imagesData = data;
+					self.HtmlLoading = false;
+					return false;
+				}
+				
+				axios.post('{MOD_URL}&op=ajax&do=getfiledetails',{
+					pid:'$id',
+					path:data.dpath,
+				},{
+					cancelToken: new CancelToken(function executor(c) {
+					    self.PostParam = c;
+					})
+				}).then(function (res) {
+                    self.HtmlLoading = false;
+					if(res == 'intercept'){
+						return false;
+					}
+					let json = res.data;
+					let item = json.resourcesdata;
+
+					self.previews.data = item.preview || [];
+                    self.previews.data.forEach((it,index)=>{
+                        self.previews.originals.push(it.lpath);
+                    });
+                    if(!item.preview.length) {
+                        self.previews.icondata = item.icondata;
+                        self.previews.originalimg = item.originalimg;
+                        self.previews.originals.push(item.originalimg);
+                        self.$nextTick(function () {
+                            self.toggleImage(0);
+                        });
+
+                    }else {
+                        self.previews.icondata = item.preview[0].spath;
+                        self.previews.originalimg = item.preview[0].lpath;
+                        self.$nextTick(function () {
+                            self.imageSet();
+                            self.previewSize()
+                        });
+                    }
+                    self.imagesData = item;
+
+                    self.PostParam = null;
+				}).catch(function (error) {
+				    console.log(error);
+				});
+			},
+
+			async getImageSizeByUrl(img,callback){
+				let image = new Image();
+				image.src = img.lpath;
+				image.onload = await function () {
+
+					callback({
+						width: image.width,
+						height: image.height
+					});
+				};
+				image.onerror = await function () {
+					callback({
+						width: 0,
+						height: 0
+					});
+				};
+				
+			},
+			imageSet(){
+				var self = this;
+                let current= self.previews.data[this.previews.active];
+                self.toggleImage(1);
+
+				this.getImageSizeByUrl(current, function(param){
+
+					if(param.width){
+                        self.previews.originalimg=current.lpath;
+                        self.toggleImage(0);
+                        window.setTimeout(function(){
+                            self.previews.icondata=current.spath;
+                        },100);
+
+                    }
+				});
+				
+			},
+            toggleImage(flag) {
+                if(flag){
+                    document.querySelector('.image-viewer_img.max').classList.remove('opacity');
+                }else{
+                    document.querySelector('.image-viewer_img.max').classList.add('opacity');
+
+
+                }
+            },
+			previewClick(index){
+				let self = this;
+				if(this.previews.active == index || this.previews.data.length <= index || index <= -1)return false;
+				this.previews.active = index;
+				self.imageSet();
+				self.previewPosition();
+			},
+			previewPosition(){
+				let self = this;
+				if(!self.previews.size)return false;
+				let index = this.previews.active;
+				let WBox = self.$refs.previewBox.offsetWidth;
+				let fWBox = self.$refs.previewBox.offsetWidth / 2;
+				let WChild = self.$refs.previewChild.offsetWidth;
+				let offsetLeft = self.$refs['previewImage'+index][0].offsetLeft - 34;
+				if(offsetLeft < fWBox){
+					self.previews.transform = 0;
+				}else if(offsetLeft > (WChild - WBox)){
+					self.previews.transform = -(WChild - WBox);
+				}else{
+					self.previews.transform = -(offsetLeft - fWBox);
+				}
+			},
+			previewSwitch(type){
+				let self = this;
+				let WBox = self.$refs.previewBox.offsetWidth;
+				let WChild = self.$refs.previewChild.offsetWidth;
+				if(type == 'left'){
+					if(self.previews.transform == 0){
+						return;
+					}else{
+						let fw = this.previews.transform + WBox;
+						if(fw > 0){
+							self.previews.transform = 0;
+						}else{
+							this.previews.transform = fw;
+						}
+					}	
+				}else{
+					let fw = self.previews.transform - WBox;
+					if(fw < -(WChild - WBox)){
+						self.previews.transform = -(WChild - WBox);
+					}else{
+						self.previews.transform = fw;
+					}
+				}
+				
+			},
+			previewSize(){
+				let self = this;
+				if(!self.$refs.previewBox || !self.$refs.previewChild)return false;
+				let WBox = self.$refs.previewBox.offsetWidth;
+				let WChild = self.$refs.previewChild.offsetWidth;
+				if(WChild > WBox){
+					self.previews.size = true;
+				}else{
+					self.previews.size = false;
+				}
+			},
+
+        },
+		mounted(){
+		}
+	}
+</script>

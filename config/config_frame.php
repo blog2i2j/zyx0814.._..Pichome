@@ -20,7 +20,7 @@ $_config['default_action'] = 'index';
 /**
  * 其它配置
  */
-$_config['allow_robot'] = false;
+$_config['allow_robot'] = true;
 $_config['allow_view'] = 0;//(0=>所有人,1=>用户,2=>管理员,3=>创始人)
 $_config['libfile'] = '';
 $_config['language'] = '';

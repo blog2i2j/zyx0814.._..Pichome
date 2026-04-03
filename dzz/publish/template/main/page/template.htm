@@ -1,0 +1,365 @@
+<!--{template common/container/pc/header_start}-->
+<link rel="stylesheet" href="static/scss/default/index.css?{VERHASH}">
+<link rel="stylesheet" type="text/css" href="{MOD_PATH}/template/main/assets/css/index.css?{VERHASH}"/>
+<!--{template common/container/pc/header_end}-->
+<div id="dzzoffice">
+    <el-container class="page-main">
+        <el-header style="padding: 0;">
+            <!--{template main/components/header}-->
+        </el-header>
+        <el-container>
+
+            <el-main style="padding: 0;">
+                <el-scrollbar ref="refscrollbar" style="padding: 20px;">
+                    <div style="width: 100%;overflow: hidden;">
+                         <!--{template main/components/templatelist}-->
+                        <div style="display: flex;justify-content:space-between; padding-top: 20px;">
+                            <div  style="text-align: left;">
+                                <el-button size="large" icon="CirclePlus" type="primary" @click="handleEdit(0)">{lang create_template}</el-button>
+                                <el-upload
+                                        class="upload-demo"
+                                        style="display: inline-flex;margin-left:5px;vertical-align: bottom"
+                                        action="{MOD_URL}&op=template&do=uploadxml"
+                                        name="files"
+                                        :show-file-list=false
+                                        accept=".xml"
+                                        :on-success="handleUploadSuccess"
+                                        v-loading="importData.loading"
+                                >
+                                    <el-button  size="large" title="{lang import}" type="info"   plain icon="Upload">{lang import}</el-button>
+
+                                </el-upload>
+                            </div>
+
+                            <el-pagination v-if="pageData.count>pageData.pagesize"
+                                large
+                                background
+                                layout="sizes,prev, pager, next, total"
+                                :page-size="pageData.pagesize"
+                                :page-sizes="pageData.pagesizes"
+                                :total="pageData.count"
+                                :current-page="pageData.page"
+                                @current-change="handlePageChange"
+                                @size-change="handleSizeChange"
+
+                            ></el-pagination>
+                        </div>
+                    </div>
+                </el-scrollbar>
+            </el-main>
+        </el-container>
+        
+    </el-container>
+    <el-dialog
+            v-model="editDialog.visible"
+            title="{lang edit}"
+            width="600"
+            align-center
+    >
+        <div style="padding-bottom:20px">
+            <el-form
+                    ref="ruleFormRef"
+                    style="max-width: 600px"
+                    :model="ruleForm"
+                    :rules="rules"
+                    label-width="auto"
+            >
+                 <el-form-item label="{lang template_name}" :required="true">
+                    <el-input v-model="editDialog.data.tname"></el-input>
+                </el-form-item>
+                <el-form-item label="{lang template_desc}" :required="true">
+                    <el-input v-model="editDialog.data.tdesc"  :autosize="{ minRows: 2, maxRows: 4 }"  type="textarea"></el-input>
+                </el-form-item>
+                <el-form-item label="{lang template_ttype}" :required="true">
+                    <el-select v-model="editDialog.data.ttype" placeholder="{lang please_select}">
+                        <el-option label="{lang template_ttype_1}" :value="1"></el-option>
+                        <el-option label="{lang template_ttype_2}" :value="2"></el-option>
+                        <el-option label="{lang template_ttype_3}" :value="3"></el-option>
+                        <el-option label="{lang template_ttype_4}" :value="4"></el-option>
+                        <el-option label="{lang template_ttype_5}" :value="5"></el-option>
+                        <el-option label="{lang template_ttype_6}" :value="6"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="{lang template_tdir}" :required="true" >
+                    <el-input v-model="editDialog.data.tdir"></el-input>
+                </el-form-item>
+                <el-form-item label="{lang template_tflag}" :required="true">
+                    <el-input v-model="editDialog.data.tflag"></el-input>
+                </el-form-item>
+                <el-form-item label="{lang template_exts}">
+                    <el-input v-model="editDialog.data.exts"  :autosize="{ minRows: 2, maxRows: 4 }"  type="textarea"></el-input>
+                </el-form-item>
+            </el-form>
+
+
+        </div>
+        <template #footer>
+            <div class="dialog-footer">
+                <el-button @click="handleEditClose">{lang cancel}</el-button>
+                <el-button type="primary" @click="editSubmit">
+                    {lang save}
+                </el-button>
+            </div>
+        </template>
+    </el-dialog>
+</div>
+<script type="text/javascript">
+    const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch , onUnmounted } = Vue;
+    const dzzoffice = createApp({
+        data() {
+            return {
+                DocumentThemeColor:'',
+                keyword:'',
+                tableData:[],
+                pageData:{
+                    pagesizes:[10,20,30,50,100],
+                    pagesize:10,
+                    count:0,
+                    page:1
+                },
+                editDialog:{
+                    visible:false,
+                    id:0,
+                    data:{
+                        tname:'',
+                        tdesc:'',
+                        tdir:'',
+                        tflag:'',
+                        ttype:1,
+                        exts:''
+                    }
+                },
+                importData:{
+                    aid:0,
+                    loading:false
+                }
+            }
+        },
+
+        watch:{
+            DocumentThemeColor:{
+                handler(newval){
+                    document.querySelector('html').className = newval
+                },
+                deep:true,
+                // immediate:true
+            }
+        },
+        created() {
+            //主题颜色
+            let theme = localStorage.getItem('theme');
+            if(theme){
+                this.DocumentThemeColor=theme;
+            }else{
+                this.DocumentThemeColor = 'light'
+            }
+
+            let page=this.GetUrlParam('page');
+            if(page) {
+                this.pagedata.page = parseInt(page);
+            }
+            let keyword=this.GetUrlParam('keyword');
+            if(keyword) {
+                this.keyword = keyword;
+            }
+
+            this.GetData();
+        },
+        methods: {
+
+            handleEdit(id){
+
+                this.editDialog.id=parseInt(id);
+                if(this.editDialog.id>0){
+                    let curr = this.tableData.find(item=>{
+                        return item.id==id
+                    });
+                    console.log(curr);
+                    if(curr){
+                        this.editDialog.data={
+                            tname:curr.tname,
+                            tdesc:curr.tdesc,
+                            tdir:curr.tdir,
+                            tflag:curr.tflag,
+                            ttype:parseInt(curr.ttype),
+                            exts:curr.exts
+                        }
+                    }
+
+                }
+                this.editDialog.visible=true;
+            },
+            handleEditClose(){
+                this.editDialog= {
+                    visible: false,
+                    id: 0,
+                    data: {
+                        tname: '',
+                        tdesc: '',
+                        tdir: '',
+                        tflag: '',
+                        ttype: 1,
+                        exts: ''
+                    }
+                }
+            },
+            async editSubmit(){
+                let self=this;
+                // if(this.batchCollectDialog.rpids.length<1){
+                //     self.$message.error('{lang please_select_collect}');
+                //     return false;
+                // }
+                let {data: res} = await axios.post(MOD_URL+'&op=template&do=edit',{
+                    id:this.editDialog.id,
+                    ...this.editDialog.data
+                });
+                if(res.success) {
+                    self.$message.success('{lang do_success}');
+                    if(self.editDialog.id>0) {
+                        let index = this.tableData.findIndex(item => {
+                            return item.id == self.editDialog.id
+                        });
+                        if(index>-1){
+                            this.tableData[index]=res.data;
+                        }
+
+                    }else{
+                        this.tableData.push(res.data);
+                    }
+                    this.handleEditClose();
+                }else{
+                    self.$message.error(res.msg);
+                }
+            },
+
+            handleSizeChange( val){
+                this.pageData.pagesize = val;
+                this.GetData();
+            },
+
+
+            //获取哈希参数
+            GetUrlParam(name,url){
+                if(!url){
+                    url=location.hash;
+
+                }
+                if (!name) {
+                    return '';
+                }
+                var reg = new RegExp("(^#|&)" + name + "=([^&]*)(&|$)");
+                if (!url) {
+                    return '';
+                }
+                var r = url.match(reg);
+                if (r !== null) {
+                    return decodeURIComponent(r[2]);
+                }
+            },
+            handleSearchClear(){
+                this.pageData.page = 1;
+                this.keyword='';
+                this.GetData();
+            },
+            handleSearch(){
+                this.pageData.page = 1;
+                this.GetData();
+            },
+            handlePageChange(page){
+                let self = this;
+                this.pageData.page=page;
+              //  self.$nextTick(()=>{
+                    self.$refs.refscrollbar.scrollTo({top:0});
+           //     });
+                this.GetData();
+
+            },
+            handleExport(id){
+                window.location.href = '{MOD_URL}&op=template&do=export&id='+id;
+            },
+            handleImport(id){
+                window.location.href = '{MOD_URL}&op=import';
+            },
+            async handleDelete(id){
+                let self = this;
+                let {data: res } = await axios.post('{MOD_URL}&op=template&do=delete',{
+                    id:id
+                });
+                if(res.success == true){
+                    let index = self.tableData.findIndex(item => parseInt(item.id) == parseInt(id));
+                    self.tableData.splice(index,1);
+                    self.$message.success('{lang do_success}');
+                }else{
+                    self.$message.error(res.msg)
+                }
+            },
+
+            async GetData(){
+                let self = this;
+                let param = {
+                    page:this.pageData.page,
+                    perpage:this.pageData.pagesize,
+                    keyword:this.keyword
+                }
+                let {data: res } = await axios.post('{MOD_URL}&op=template&do=list',param);
+                this.tableData = res.data;
+                this.pageData.count = parseInt(res.total);
+
+
+            },
+            DocumentThemeChange(){
+                if(this.DocumentThemeColor=='light'){
+                    this.DocumentThemeColor='dark';
+                    localStorage.setItem('theme','dark');
+                }else{
+                    this.DocumentThemeColor='light';
+                    localStorage.setItem('theme','light');
+                }
+                let self=this;
+            },
+            async handleUploadSuccess(data){
+                let self = this;
+                self.importData.loading=true;
+                if(data.files && data.files.length && data.files[0].data){
+                    self.importData.aid=data.files[0].data.aid;
+                    let {data: res } = await axios.post('{MOD_URL}&op=template&do=import', {aid:self.importData.aid});
+                    if(res.success){
+                        let index = this.tableData.findIndex(item => {
+                            return item.id == res.data.id
+                        });
+                        if(index>-1){
+                            this.tableData[index]=res.data;
+                        }else{
+                            this.tableData.push(res.data);
+                        }
+                        self.$message.success('{lang do_success}');
+                    }else {
+                        self.$message.error(res.msg);
+                    }
+
+                }else{
+                    self.$message.error(__lang.upload_failed);
+                }
+                self.importData.loading=false;
+            }
+
+
+        },
+        mounted() {
+            dzzoffice.WindowThis = this;
+  
+        }
+    });
+    dzzoffice.use(ElementPlus, {
+        locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+    });
+    for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+        dzzoffice.component(key, component)
+    }
+    dzzoffice.component('comavatar', comavatar);
+    dzzoffice.component('international',international);
+    // 屏蔽警告信息
+    dzzoffice.config.warnHandler = function(){return null};
+    dzzoffice.mount('#dzzoffice');
+</script>
+<!--{template common/container/pc/footer}-->

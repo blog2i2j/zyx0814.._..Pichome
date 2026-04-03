@@ -1,0 +1,107 @@
+<!--{template common/robot/header_simple_start_none}-->
+<style>
+
+
+    .editor-content {
+        margin-bottom: 20px;
+    }
+
+    .file-content {
+        margin-bottom: 20px;
+    }
+
+    img {
+        max-width: 100%;
+        max-height:100%;
+    }
+    .mb20{
+        margin-bottom: 20px;
+    }
+
+    .file-list{
+        padding:20px 0;
+    }
+    .file-list .file-item{
+        margin-bottom: 10px;
+        position: relative;
+        display: flex;
+
+    }
+    .file-list .file-item .file-item-thumb{
+       text-align: center;
+       width:150px;
+       max-height:200px;
+        min-width:150px;
+        background-color: #FBFBFB;
+        border:1px solid #e1e1e1;
+        border-radius: 5px;
+    }
+    .file-list .file-item .file-item-info{
+        padding: 10px 20px;
+    }
+    .file-list .file-item .file-item-info div{
+        margin-bottom: 10px;
+    }
+</style>
+<!--{template common/robot/header_simple_end_none}-->
+<!--{template common/robot/commer_header_none}-->
+<div class="container" style="padding:20px">
+    <!--{if $data['pageset']['_file_carousel']}-->
+    <div class="banner mb20">
+        <img src="$data['pageset']['_file_carousel'][0]['src']">
+    </div>
+    <!--{/if}-->
+    <!--{if $data['pageset']['_html_desc']}-->
+    <div class="editor-content mb20">
+        $data['pageset']['_html_desc']
+    </div>
+    <!--{/if}-->
+    <div class="file-list">
+       <!--{loop $dataresources $file}-->
+        <div class="file-item">
+            <div class="file-item-thumb">
+                <a href="index.php?mod=details&path=$file['dpath']" target="_blank">
+                    <img src="$file['icondata']">
+                </a>
+            </div>
+            <div class="file-item-info">
+                <div class="file-item-title" title="{lang filename}"><a href="index.php?mod=details&path=$file['dpath']" target="_blank">{eval echo !empty($file['ext'])?$file['name'].'.'.$file['ext']:$file['name']}</a></div>
+                <!--{if $file['desc']}-->
+                <div class="file-item-desc" title="{lang description}">$file['desc']</div>
+                <!--{/if}-->
+                <div class="file-item-time" title="{lang create_time}">$file['dateline']</div>
+                <!--{if !empty($file['tags'])}-->
+                <div class="file-item-tags" title="{lang label}">{eval echo implode(',',$file['tags'])}</div>
+                <!--{/if}-->
+            </div>
+        </div>
+        <!--{/loop}-->
+    </div>
+</div>
+<div class="footer text-center">
+    <!--{if !empty($bottommenu)}-->
+    <div class="menu-container">
+        <ul class="main-menu">
+            $bottommenu
+        </ul>
+    </div>
+    <!--{/if}-->
+
+    <p class="bottomtitle text-center">
+        Powered By <a href="https://www.oaooa.com" target="_blank" >Pichome</a>&nbsp;V{eval echo CORE_VERSION}
+    </p>
+
+    <div class="beians text-center">
+        <!--{if $_G['setting']['sitebeian']}-->
+        <span class="beian"><a href="http://www.miibeian.gov.cn/" target="_blank">$_G['setting']['sitebeian']</a></span>
+        <!--{/if}-->
+
+    </div>
+</div>
+
+<!--{eval output();}-->
+<!--{if $_G['setting']['statcode']}-->
+<div class="text-center" style="display: none">$_G['setting']['statcode']</div>
+<!--{/if}-->
+</body>
+</html>

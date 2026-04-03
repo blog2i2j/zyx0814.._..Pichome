@@ -5,6 +5,17 @@
                 <el-icon class="icon-header"><Rank /></el-icon>
                 <el-text truncated tag="b">{{item.title}}</el-text>
                 <el-icon class="edit" @click="MainOperation('edit',key)"><Edit-Pen /></el-icon>
+
+
+                <el-switch style="margin-left:10px;display: inline-block;height:auto"
+                        v-model="item.showtitle"
+                        inline-prompt
+                        :active-value="1"
+                        :inactive-value="0"
+                        active-text="{lang show}{lang title}"
+                        inactive-text="{lang no_show}{lang title}"
+                />
+
             </div>
             
             <div class="right" v-show="mainvisible">
@@ -25,6 +36,7 @@
                 :field="MianFieldType[item.type].data"
                 :model="item" 
                 :typecollection="TypeCollection"
+                :licenseversion="licenseversion"
                 :ParenIndex="key"></component>
         </div>
     </div>
@@ -70,6 +82,7 @@
                     slide:{
                         loading:false,
                         key:'',
+
                         tid:0,//块id
                         type:'slide',//块类型
                         title:'{lang slide_show}',//块名称
@@ -304,6 +317,64 @@
                            }
                         ]
                     },
+                    collect_ids:{
+                        loading:false,
+                        tid: 0,//块id
+                        key:'',
+                        type: 'collect_ids',//块类型
+                        title:'{lang publish_collect}',//块名称
+                        style:{style:'',size:''},//样式
+                        langkey:'',
+                        data: [
+                            {
+                                name:'{lang title}',
+                                tdid:0,
+                                key:0,
+                                langkey:'',
+                                data:[
+                                    {
+                                        id: '',//数据源id
+                                        sort: 1,//1最新、2最热、3文件名
+                                        isfilename: 0,//文件名
+                                        number: 0,//获取数量
+                                        time:600,//缓存时间
+                                        moretxt:'{lang more}',
+                                        link: '0',//更多链接
+                                        linkval:'',//更多链接
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    collect_rec:{
+                        loading:false,
+                        tid: 0,//块id
+                        key:'',
+                        type: 'collect_rec',//块类型
+                        title:'{lang publish_recommend}',//块名称
+                        style:{style:'',size:''},//样式
+                        langkey:'',
+                        data: [
+                            {
+                                name:'{lang title}',
+                                tdid:0,
+                                key:0,
+                                langkey:'',
+                                data:[
+                                    {
+                                        ids: [],//数据源id
+                                        sort: 1,//1最新、2最热、3文件名
+                                        isfilename: 0,//文件名
+                                        number: 1,//排数
+                                        time:600,//缓存时间
+                                        moretxt:'{lang more}',
+                                        link: '0',//更多链接
+                                        linkval:'',//更多链接
+                                    }
+                                ]
+                            }
+                        ]
+                    },
                     banner:{
                         loading:false,
                         tid:0,//块id
@@ -321,12 +392,66 @@
                             }
                         ]
                     },
+                    image_mix:{
+                        loading:false,
+                        key:'',
+                        tid:0,//块id
+                        type:'image_mix',//块类型
+                        title:'{lang image_mix}',//块名称
+                        style:{style:''},//样式
+                        langkey:'',
+                        data:[
+                            {
+                                tdid:0,
+                                data:[
+                                    {
+                                        title: '',//标题
+                                        desc: '',
+                                        align: 'left',
+                                        aid:0,//图片
+                                        img:'',
+                                        moretxt:'{lang more}',
+                                        link: '0',//更多链接
+                                        linkval:'',//更多链接
+                                        
+                                    },
+                                ]
+                            }
+                        ]
+                    },
                     search_rec:{
                         loading:false,
                         tid:0,//块id
                         key:'',
                         type:'search_rec',//块类型
-                        title:'{lang search}',//块名称
+                        title:'{lang file_search}',//块名称
+                        style:{style:'',size:''},//样式
+                        langkey:'',
+                        data:[
+                            {
+                                tdid:0,
+                                data:[
+                                    {
+                                        key:0,
+                                        img:'',
+                                        aid:0,
+                                        title:'',
+                                        desc:'',
+                                        searchclassify:[],
+                                        defaultclassify: '',
+                                        hots: 0,
+                                        hotsValue:[]
+                                    },
+                                ]
+                            }
+                        ]
+                    },
+                    search_pub:{
+                        loading:false,
+                        tid:0,//块id
+                        key:'',
+                        type:'search_pub',//块类型
+                        title:'{lang publish_search}',//块名称
                         style:{style:'',size:''},//样式
                         langkey:'',
                         data:[
@@ -424,6 +549,7 @@
                     case 'slide':
                     case 'link':
                     case 'search_rec':
+                    case 'image_mix':
                     case 'contact':
                     case 'banner':
                         if(NewData.data[0].data && NewData.data[0].data.length){
@@ -475,12 +601,14 @@
                         case 'link':
                         case 'contact':
                         case 'search_rec':
+                        case 'image_mix':
                         case 'banner':
                             if(data.data[0]){
                                 data.data[0].tdid = res.data.data[0].tdid;
                             }
                         break;
                         case 'db_ids':
+                        case 'collect_ids':
                         case 'rich_text':
                         case 'question':
                         case 'file_rec':
@@ -593,7 +721,7 @@
                     if(element.tid){
                         ids.push(element.tid)
                     }
-                    
+
                 }
                 if(!ids.length)return false;
                 const {data: res} = await axios.post(BasicUrl+'sorttag',{

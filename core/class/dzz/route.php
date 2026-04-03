@@ -8,7 +8,7 @@ use \IO as IO;
 
 class Route{
 
-    public static function dzzRoute(&$params,$extra=null,&$break)
+    public static function dzzRoute(&$params,$extra=null)
     {
 
         global $_G,$_config,$_GET;
@@ -79,7 +79,6 @@ class Route{
             define('MOD_DIR',dirname($modfile));
             define('MOD_URL',BASESCRIPT.'?mod='.$mod);
             define('OP_NAME',$op);
-           // $break = true;
 			Hook::listen('mod_run');
             return DZZ_ROOT.$modfile;
         }

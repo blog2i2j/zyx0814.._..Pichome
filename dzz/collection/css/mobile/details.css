@@ -1,0 +1,15 @@
+.screen-popup .van-cell::after{
+	display: none;
+}
+.orguseradd-popup .perm-box{
+	position: absolute;
+	bottom: 70px;
+	padding: 0 12px;
+	height: 50px;
+}
+.orguseradd-popup .perm-box .van-radio-group{
+	height: 100%;
+}
+.orguseradd-popup .perm-box .van-radio-group .van-radio{
+	margin-right: 24px;
+}

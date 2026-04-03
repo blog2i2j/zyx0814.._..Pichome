@@ -180,10 +180,10 @@ class thumb
                     $filepath = \IO::moveThumbFile($cloudpath, 'dzz::'.$target);
                     if (!isset($filepath['error'])) {
                         @unlink($png);
-                        return $target;
+                        return $cloudpath;
                     }
                 } else {
-                    return $target;
+                    return 'dzz::'.$target;
                 }
 
             }

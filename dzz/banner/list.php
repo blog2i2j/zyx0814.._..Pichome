@@ -245,15 +245,16 @@ if($do == 'filelist'){//卡片列表
                     $sql .= " LEFT JOIN %t lang_$flag ON lang_$flag.idvalue=t.tid and lang_$flag.filed = %s ";
                     $params[] = 'lang_'.$lang;
                     $params[] = $flag;
-                }
-                foreach ($val as $v) {
-                    if($v == -1){
-                        $brr[] = "(isnull(lang_$flag.svalue) OR  lang_$flag.svalue='')";
-                    }else{
-                        $brr[] = " find_in_set(%s,lang_$flag.svalue)";
-                        $para[] = trim($v);
-                    }
 
+                    foreach ($val as $v) {
+                        if($v == -1){
+                            $brr[] = "(isnull(lang_$flag.svalue) OR  lang_$flag.svalue='')";
+                        }else{
+                            $brr[] = " find_in_set(%s,lang_$flag.svalue)";
+                            $para[] = trim($v);
+                        }
+
+                    }
                 }
                 $tmpwheresql = '';
                 if ($arr) {
@@ -282,19 +283,20 @@ if($do == 'filelist'){//卡片列表
                 }
 
                 $brr = [];
-                if($lang){
+                if($lang) {
                     $sql .= " LEFT JOIN %t lang_$flag ON lang_$flag.idvalue=t.tid and lang_$flag.filed = %s ";
-                    $params[] = 'lang_'.$lang;
+                    $params[] = 'lang_' . $lang;
                     $params[] = $flag;
-                }
-                foreach ($val as $v) {
-                    if($v == -1){
-                        $brr[] = "(isnull(lang_$flag.svalue) OR  lang_$flag.svalue='')";
-                    }else{
-                        $brr[] = " find_in_set(%s,lang_$flag.svalue)";
-                        $para[] = trim($v);
-                    }
 
+                    foreach ($val as $v) {
+                        if ($v == -1) {
+                            $brr[] = "(isnull(lang_$flag.svalue) OR  lang_$flag.svalue='')";
+                        } else {
+                            $brr[] = " find_in_set(%s,lang_$flag.svalue)";
+                            $para[] = trim($v);
+                        }
+
+                    }
                 }
                 $tmpwheresql = '';
                 if ($arr) {
@@ -424,11 +426,11 @@ if($do == 'filelist'){//卡片列表
             $order = 't.updatedate';
             break;
         default:
-            $sql .= " LEFT JOIN %t attr_$disp ON attr_$disp.tid=t.tid and attr_$disp.skey=%s ";
+            $sql .= " LEFT JOIN %t disp_$disp ON disp_$disp.tid=t.tid and disp_$disp.skey=%s ";
             $params[] = 'tab_attr';
             $params[] = $disp;
             $order = "val";
-            $dispfiled = 'any_value(attr_'.$disp.'.svalue) as val';
+            $dispfiled = 'any_value(disp_'.$disp.'.svalue) as val';
             break;
     }
     $ordersql = ' order by  t.topping_at desc,';
@@ -630,9 +632,11 @@ if($do == 'filelist'){//卡片列表
                         }
                     }
 
+
                     unset($cdata[$key]);
                 }
             }
+            $formdatas['updatedate']['value'] = $cdata['updatedate'];
             $cdata['sumnum'] = DB::result_first("select count(id) from %t where tid = %d", array('pichome_resourcestab', $tid));
             $cdata['showlist'] = $formdatas;
             $data[] = $cdata;
@@ -784,6 +788,7 @@ elseif($do == 'getTabShowList'){
     if(empty($showlist)){
         $showlist[] = ['flag'=>'tabname','labelname'=>$systemfiled['tabname']['labelname']];
     }
+    $showlist[] = ['flag'=>'updatedate','labelname'=>lang('更新时间')];
     exit(json_encode(['data'=>$showlist]));
 }elseif($do == 'getscreen'){//获取筛选项
     $cid = isset($_GET['cid']) ? intval($_GET['cid']) : 0;

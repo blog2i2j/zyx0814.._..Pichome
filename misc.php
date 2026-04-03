@@ -8,4 +8,5 @@
  */
 define('APPTYPEID', 100);
 define('CURSCRIPT', 'misc');
+define('BASESCRIPT', 'index.php');
 require __DIR__.'/core/dzzstart.php';

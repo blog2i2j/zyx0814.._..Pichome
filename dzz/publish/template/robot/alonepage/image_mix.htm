@@ -1,0 +1,73 @@
+<style>
+   .image_mix-box{
+        display: flex;
+    }
+   .image_mix-box .title{
+       font-size: 34px;
+       font-weight: 700;
+   }
+   .image_mix-box .desc{
+       font-size: 16px;
+       margin-top:30px;
+       line-height: 26px;
+   }
+   .image_mix-box .more{
+       font-size: 16px;
+       margin-top:30px;
+       line-height: 26px;
+   }
+   .image_mix-box .right image{
+       max-height:500px;
+   }
+   .image_mix-box.x-m,.image_mix-box.x-b,.image_mix-box.m-x,.image_mix-box.b-x{
+       padding:80px;
+       border:1px solid #e1e1e1;
+       border-radius: 10px;
+   }
+    .image_mix-box.x-m,.image_mix-box.x-m-n{
+        flex-direction: row;
+    }
+   .image_mix-box.m-x,.image_mix-box.m-x-n{
+       flex-direction: row-reverse;
+   }
+   .image_mix-box.x-b,.image_mix-box.x-b-n{
+       flex-direction: column;
+   }
+   .image_mix-box.b-x,.image_mix-box.b-x-n{
+       flex-direction: column-reverse;
+   }
+    .image_mix-box.x-m .left{
+        flex: 1;
+        padding-right:100px;
+    }
+   .image_mix-box.m-x .left{
+       flex: 1;
+       padding-left:100px;
+   }
+   .image_mix-box.x-b .left{
+       flex: 1;
+       padding-bottom:100px;
+   }
+   .image_mix-box.b-x .left{
+       flex: 1;
+       padding-top:100px;
+   }
+    .image_mix-box.x-m .right ,.image_mix-box.m-x .right{
+        flex: 2;
+    }
+
+
+</style>
+
+<div class="image_mix-box {$tag['style']['style']} {$tdata['tdata'][0]['align']}">
+    <div class="left">
+        <div class="title">$tdata['tdata'][0]['title']</div>
+        <div class="desc">$tdata['tdata'][0]['desc']</div>
+        <div class="more"><a href="{$tdata['tdata'][0]['linkval']}">$tdata['tdata'][0]['moretxt']</a></div>
+    </div>
+    <div class="right">
+        <div class="image">
+            <img src="{$tdata['tdata'][0]['imgurl']}" alt="" />
+        </div>
+    </div>
+</div>

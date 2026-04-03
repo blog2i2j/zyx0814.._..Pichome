@@ -220,7 +220,7 @@ class io_dzz extends io_api
     public function getPath($ext, $dir = 'dzz')
     {
         global $_G;
-        if ($ext && in_array(trim($ext, '.'), $_G['setting']['unRunExts'])) {
+        if ($ext && in_array(trim(strtolower($ext), '.'), $_G['setting']['unRunExts'])) {
             $ext = '.dzz';
         }
         $subdir = $subdir1 = $subdir2 = '';
@@ -502,7 +502,7 @@ class io_dzz extends io_api
             }
 
         }else{
-            $imginfo = getimagesize($_G['setting']['attachdir'] . $attach['attachment']);
+            $imginfo = dzzgetimagesize($_G['setting']['attachdir'] . $attach['attachment']);
             if (preg_match('/^(.*?)(\.[^.]+)$/', $attach['filename'], $matches)) {
                 // 获取不带扩展名的文件名
                 $filename = $matches[1];
@@ -583,7 +583,6 @@ class io_dzz extends io_api
                 return true;
             }else{
                 if(!$handle = fopen($path,'r')){
-                    fclose($handle);
                     return false;
                 }else{
                     fclose($handle);
@@ -958,7 +957,7 @@ class io_dzz extends io_api
         $ext = strtolower($filedirextensionarr[0]);
 
         if ($data['bz'] != 'dzz::') {
-            $cachefile = $_G['setting']['attachdir'] . './cache/' . md5($data['path']) . '.' . $data['ext'];
+            $cachefile = $_G['setting']['attachdir'] . './cache/' . md5($data['path']) . '.webp';
             $handle = fopen($cachefile, 'w+');
             $fp = fopen($fileuri, 'rb');
             while (!feof($fp)) {
@@ -987,7 +986,7 @@ class io_dzz extends io_api
                 if ($extraparams['watermarktype']) {
                     $extraflag .= '_' . $extraparams['watermarktype'];
                 }
-                if ($extraparams['watermarktype']['watermarktext']) {
+                if ($extraparams['watermarktext']) {
                     $extraflag .= '_' . $extraparams['watermarktext'];
                 }
 
@@ -1006,7 +1005,7 @@ class io_dzz extends io_api
             $target = $targetpath;
 
             if($ext == 'webp'){
-                $info = $this->webpinfo($fileuri);
+                $info = self::webpinfo($fileuri);
                 if ($info !== false) {
                     if ($info['Animation'] || $info['Alpha']) {
                         $target_attach = $_G['setting']['attachdir'] . './' . $target;
@@ -1087,7 +1086,7 @@ class io_dzz extends io_api
             $defaultspace = $_G['setting']['defaultspacesetting'];
             if($defaultspace['bz'] != 'dzz'){
                 $cloudpath = $defaultspace['bz'].':'.$defaultspace['did'] . ':' .$thumbpath;
-                $return = IO::moveThumbFile($cloudpath,$thumbpath);
+                $return = IO::moveThumbFile($cloudpath,'dzz::'.$thumbpath);
                 //$thumbpath = $return;
             }
             if(isset($return['error'])){
@@ -1145,7 +1144,7 @@ class io_dzz extends io_api
                     $bz = io_remote::getBzByRemoteid($cachedata['remoteid']);
                     if($data['rid']){
                         $thumbarr = [
-                            'opath' => $bz.$cachedata['path'],
+                            'opath' => $cachedata['path'],
                             'oremoteid'=>$cachedata['remoteid'],
                             'ocacheid'=>$cachedata['id'],
                         ];
@@ -1153,22 +1152,23 @@ class io_dzz extends io_api
                         $attr = array('width' => $cachedata['wdith'], 'height' => $cachedata['height']);
                         C::t('pichome_resources')->update($data['rid'], $attr);
                     }
-                    $filepath = $bz.$cachedata['path'];
+                    $filepath = $cachedata['path'];
                 }
                 else{
                     $data['original'] = 1;
                     $data['thumbtype'] = $thumbtype;
                     $data['extraparams'] = $extraparams;
                     //获取原图
-                    $thumbpathdata = Hook::listen('pichomethumb', $data, null, false, true);
+                    $thumbpathdata = Hook::listen('pichomethumb', $data, null, true);
 
                     $fileurl = $thumbpathdata[0];
                     if ($fileurl) {
                         //将原图计入缓存表
-                        $defaultbz = io_remote::getBzByRemoteid($defaultspace['remoteid']);
-                        $filepath = $defaultbz.$fileurl;
+                       // $defaultbz = io_remote::getBzByRemoteid($defaultspace['remoteid']);
+                        $filepath = $fileurl;
                         $infourl = IO::getStream($filepath);
                         $info = @getimagesize($infourl);
+                        $cachedataid=0;
                         if($data['aid']){
                             $thumbarr = [
                                 'width'=>isset($info[0]) ? intval($info[0]):0,
@@ -1177,13 +1177,13 @@ class io_dzz extends io_api
                                 'thumbtype'=>$thumbtype,
                                 'thumbsign'=>'original',
                                 'watermd5'=>$watermd5,
-                                'path'=>$fileurl,
+                                'path'=>$filepath,
                                 'remoteid'=>$defaultspace['did']
                             ];
-                            $cachedata = C::t('thumb_cache')->insertdata($thumbarr);
+                            $cachedataid = C::t('thumb_cache')->insertdata($thumbarr);
                         }
                         if($data['rid']) {
-                            C::t('thumb_record')->update($data['rid'],['opath'=>$filepath,'ocacheid'=>$cachedata['id']]);
+                            C::t('thumb_record')->update($data['rid'],['opath'=>$filepath,'ocacheid'=>intval($cachedataid)]);
                            if($info) {
                                $attr = array('width' =>isset($info[0]) ? intval($info[0]):0, 'height' => isset($info[1]) ? intval($info[1]):0);
                                C::t('pichome_resources')->update($data['rid'], $attr);
@@ -1295,8 +1295,7 @@ class io_dzz extends io_api
             ];
             $cachedata = C::t('thumb_cache')->fetch_data_by_thumbparam($thumbarr);
             if($cachedata){
-                $bz = io_remote::getBzByRemoteid($cachedata['remoteid']);
-                $thumbpath = $bz.$cachedata['path'];
+                $thumbpath = $cachedata['path'];
             }
         }
 
@@ -1326,7 +1325,7 @@ class io_dzz extends io_api
             }
             if($cachedata){
                 $bz = io_remote::getBzByRemoteid($cachedata['remoteid']);
-                $thumbpath = $bz.$cachedata['path'];
+                $thumbpath = $cachedata['path'];
                 if($thumbsign == 'small'){
                     $thumbarr = [
                         'spath'=>$thumbpath,
@@ -1349,7 +1348,7 @@ class io_dzz extends io_api
                     ];
                 }
                 //插入缩略图记录表
-                C::t('thumb_record')->update($data['rid'], $thumbarr);
+               if(isset($thumbarr)) C::t('thumb_record')->update($data['rid'], $thumbarr);
             }
             else{
                 //如果文件为特殊格式类型，则先生成大图，再生成目标图片
@@ -1357,7 +1356,7 @@ class io_dzz extends io_api
                     //查找是否有原图
                     $filepath = '';
                     //如果没有原图尝试生成原图
-                    if (!$thumbrecorddata['opath']) {
+                    if (empty($thumbrecorddata['opath'])) {
                         //如果有aid从缓存表获取数据
                         if($data['aid']){
                             //将数据插入缓存表
@@ -1374,7 +1373,7 @@ class io_dzz extends io_api
                         if($cachedata){
                             $bz = io_remote::getBzByRemoteid($cachedata['remoteid']);
                             $thumbarr = [
-                                'opath' => $bz.$cachedata['path'],
+                                'opath' => $cachedata['path'],
                                 'oremoteid'=>$cachedata['remoteid'],
                                 'ocacheid'=>$cachedata['id'],
                             ];
@@ -1391,15 +1390,19 @@ class io_dzz extends io_api
                             $data['extraparams'] = $extraparams;
 
                             //获取原图
-                            $thumbpathdata = Hook::listen('pichomethumb', $data, null, false, true);
+                            $thumbpathdata = Hook::listen('pichomethumb', $data, null,  true);
 
                             $fileurl = $thumbpathdata[0];
                             if ($fileurl) {
                                 //将原图计入缓存表
                                 $defaultbz = io_remote::getBzByRemoteid($defaultspace['remoteid']);
-                                $filepath = $defaultbz.$fileurl;
+                                $filepath = $fileurl;
                                 $infourl = IO::getStream($filepath);
+                                if($s=@filesize($infourl)){
+                                    $filesize=$s;
+                                }
                                 $info = @getimagesize($infourl);
+
                                 $thumbarr = [
                                     'width'=>isset($info[0]) ? intval($info[0]):0,
                                     'height'=>isset($info[1]) ? intval($info[1]):0,
@@ -1410,9 +1413,9 @@ class io_dzz extends io_api
                                     'path'=>$fileurl,
                                     'remoteid'=>$defaultspace['did']
                                 ];
-                                $cachedata = C::t('thumb_cache')->insertdata($thumbarr);
+                                $cachedataid = C::t('thumb_cache')->insertdata($thumbarr);
                                 if($data['rid']) {
-                                    C::t('thumb_record')->update($data['rid'],['opath'=>$filepath,'ocacheid'=>$cachedata['id']]);
+                                    C::t('thumb_record')->update($data['rid'],['opath'=>$filepath,'ocacheid'=>intval($cachedataid)]);
                                     $attr = array('width' => $thumbarr['width'], 'height' => $thumbarr['height']);
                                     C::t('pichome_resources')->update($data['rid'], $attr);
                                 }
@@ -1439,7 +1442,7 @@ class io_dzz extends io_api
                             'aid'=>$data['aid'],
                             'thumbtype'=>$thumbtype,
                             'watermd5'=>$watermd5,
-                            'path'=>$cthumbpath,
+                            'path'=>$thumbpath,
                             'remoteid'=>$defaultspace['did']
                         ];
                         $cacheid = C::t('thumb_cache')->insertdata($thumbarr);
@@ -1718,21 +1721,7 @@ class io_dzz extends io_api
             $attachment = $icoarr;
             $attachurl = IO::getStream($path);
             //添加事件
-            if ($attachurl) {
-                $eventdata = array('username' => getglobal('username'), 'dateline' => TIMESTAMP);
 
-                $infos = C::t('resources')->fetch_info_by_rid($path);
-
-                $path = C::t('resources_path')->fetch_pathby_pfid($infos['pfid']);
-                $hash = C::t('resources_event')->get_showtpl_hash_by_gpfid($infos['pfid'], $infos['gid']);
-                $eventdata['position'] = $icoarr['relpath'];
-
-                $eventdata['files'] = $icoarr['name'];
-                $eventdata['hash'] = $hash;
-                if (!C::t('resources_event')->addevent_by_pfid($icoarr['pfid'], 'downfile', 'down', $eventdata, $icoarr['gid'], $icoarr['rid'], $icoarr['name'])) {
-                    return false;
-                }
-            }
         } elseif (preg_match('/^dzz:[gu]id_\d+:.+?/i', $path)) {
             $dir = dirname($path) . '/';
             if (!$pfid = C::t('resources_path')->fetch_fid_bypath($dir)) {
@@ -1761,22 +1750,7 @@ class io_dzz extends io_api
             }
             $attachment = $icoarr;
             $attachurl = IO::getStream($path);
-            //添加事件
-            if ($attachurl) {
-                $eventdata = array('username' => getglobal('username'), 'dateline' => TIMESTAMP);
 
-                $infos = C::t('resources')->fetch_info_by_rid($path);
-
-                $path = C::t('resources_path')->fetch_pathby_pfid($infos['pfid']);
-                $hash = C::t('resources_event')->get_showtpl_hash_by_gpfid($infos['pfid'], $infos['gid']);
-                $eventdata['position'] = $icoarr['relpath'];
-
-                $eventdata['files'] = $icoarr['name'];
-                $eventdata['hash'] = $icoarr['hash'];
-                if (!C::t('resources_event')->addevent_by_pfid($icoarr['pfid'], 'downfile', 'down', $eventdata, $icoarr['gid'], $icoarr['rid'], $icoarr['name'])) {
-                    return false;
-                }
-            }
         }
         if ($attachment['ext'] && strpos(strtolower($attachment['name']), $attachment['ext']) === false) {
             $attachment['name'] .= '.' . $attachment['ext'];

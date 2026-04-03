@@ -4,6 +4,7 @@ if (!defined('IN_OAOOA')) {//所有的php文件必须加上此句，防止被外
     exit('Access Denied');
 }
 Hook::listen('adminlogin');
+$appname=lang('storage_setting');
 include_once libfile('function/cache');
 $do = isset($_GET['do']) ? trim($_GET['do']) : '';
 if (isset($_G['setting'])) $setting = $_G['setting'];
@@ -68,6 +69,15 @@ if ($do == 'addspace') {
         if ($connectdata['docstatus']) {
             $app = C::t('app_market')->fetch_by_identifier('onlyoffice_view', 'dzz');
             $connectdata['officedata'] = unserialize($app['extra']);
+
+        }else{
+            $connectdata['officedata']=array(
+                'DocumentUrl'=>'http://127.0.0.1:90/',
+                'jwtSecret'=>'',
+                'FileUrl'=>$_G['siteurl'],
+                'exts'=>$_G['config']['onlyofficeviewextlimit']
+            );
+
         }
         if ($connectdata['imagestatus']) {
             $connectdata['imagelib'] = getglobal('setting/imagelib') ? 'imagick' : 'gd';

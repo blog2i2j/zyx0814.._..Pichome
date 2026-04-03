@@ -1,0 +1,67 @@
+<style>
+    .banner-module .link-box.card .item-centent {
+        display: inline-block;
+        width: 200px;
+        height: 100px;
+        padding-left: 80px;
+        text-decoration: none;
+        position: relative;
+        vertical-align: bottom;
+        border-radius: 5px;
+        border: 1px solid #e1e1e1;
+        background-color: #FFF;
+        overflow: hidden;
+        margin: 0 10px 10px 0;
+    }
+    .banner-module .link-box.card .item-centent .img {
+        width: 50px;
+        height: 50px;
+        background-image: var(--imgurl);
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        display: inline-block;
+        position: absolute;
+        top: 0;
+        overflow: hidden;
+        left: 15px;
+        bottom: 0;
+        margin: auto;
+    }
+    .banner-module .link-box.card .item-centent .message {
+        height: 100%;
+        padding: 18px;
+        padding-left: 0;
+    }
+    .banner-module .link-box.card .item-centent .message .title {
+        display: inline-block;
+        width: 100%;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        font-size: var(--el-font-size-medium);
+        font-weight: 700;
+    }
+    .banner-module .link-box.card .item-centent .message .note {
+        word-break: break-all;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: var(--el-font-size-extra-small);
+        padding-top: 7px;
+    }
+</style>
+
+<div class="link-box card mb20">
+    <!--{loop $tdata['tdata']  $item}-->
+    <a class="item-centent el-card is-hover-shadow"  href="{eval echo !empty($item['url'])?$item['url']:$item['linkval']}" target="_blank" title="$item['title']" style="--imgurl: url({$item['img']});">
+        <span class="img"></span>
+        <div class="message">
+            <span class="title">{$item['title']}</span>
+            <span class="note">{$item['message']}</span>
+        </div>
+    </a>
+    <!--{/loop}-->
+</div>

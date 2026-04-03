@@ -1,5 +1,6 @@
 <?php
 $lang = array (
+    'appname'=>'栏目管理',
     'top_menu' => '顶部导航',
     'bottom_menu' => '底部导航',
     'data_source' => '数据来源',
@@ -16,6 +17,8 @@ $lang = array (
     'No_data_available' => '无数据',
     'Show_subordinates' => '显示下级',
     'number'=>'编号',
-    'tab_information_table'=>'专辑信息表'
+    'tab_information_table'=>'专辑信息表',
+    'intelligent'=>'智能数据',
+    'publish'=>'发布',
 );
 ?>

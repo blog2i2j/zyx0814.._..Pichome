@@ -45,30 +45,35 @@
 		<el-container class="page-main is-vertical">
 			<!--{template view/pc/components/screen}-->
 			<el-container class="page-main">
-				<el-aside width="auto" style="padding: 8px 10px;" v-if="searchData.img">
-					<div 
-					style="max-height: 651px;max-width: 487px;overflow:hidden;position: relative;border-radius: 8px;"
-					:style="{width:(searchData.boxW) +'px',height:(searchData.boxH) +'px'}">
-						<vue-cropper 
-							ref="vuecropper"
-							:can-move="false"
-							output-type="jpg"
-							:center-box="true"
-							:img="searchData.img"
-							:auto-crop="true" 
-							:auto-crop-width="searchData.width" 
-							:auto-crop-height="searchData.height"
-							:auto-crop-box="true" 
-							:min-crop-box-width="100" 
-							:stencil-props="{ mode: 'circle' }"
-							:min-crop-box-height="100"
-							:limit-min-size="[100,100]"
-							@img-load="handlecropimgload"
-						></vue-cropper>
-						<div v-if="searchData.loading" v-loading="searchData.loading" style="position: absolute;height: 100%;width: 100%;background: var(--el-bg-color-overlay);top: 0;left: 0;"></div>
-						<!-- <el-icon style="position: absolute;right: 6px;top: 6px;z-index: 100;color: #FFFFFF;font-size: 24px;cursor: pointer;" @click.stop="clearcropper"><Close-Bold /></el-icon> -->
+				<el-aside :width="(searchData.boxW+30)+'px'" style="padding-left: 10px;padding-top:10px; max-width:460px;" v-if="searchData.img">
+					<div style="padding: 10px;background: #303134;border-radius: 8px;">
+						<div 
+							style="position: relative;border-radius: 8px;"
+							:style="{width:(searchData.boxW) +'px',height:(searchData.boxH) +'px'}">
+							<vue-cropper 
+								ref="vuecropper"
+								:can-move="false"
+								info="false"
+								output-type="jpg"
+								:center-box="false"
+								:img="searchData.img"
+								:auto-crop="true" 
+								:auto-crop-width="searchData.width"
+								:auto-crop-height="searchData.height"
+								:auto-crop-x="searchData.autoCropX"
+								:auto-crop-y="searchData.autoCropY"
+								:auto-crop-box="true"
+								:min-crop-box-width="100" 
+								:stencil-props="{ mode: 'circle' }"
+								:min-crop-box-height="100"
+								:limit-min-size="[100,100]"
+								@img-load="handlecropimgload"
+							></vue-cropper>
+							<div v-if="searchData.loading" v-loading="searchData.loading" style="position: absolute;height: 100%;width: 100%;background: var(--el-bg-color-overlay);top: 0;left: 0;"></div>
+							<!-- <el-icon style="position: absolute;right: 6px;top: 6px;z-index: 100;color: #FFFFFF;font-size: 24px;cursor: pointer;" @click.stop="clearcropper"><Close-Bold /></el-icon> -->
+						</div>
 					</div>
-					<div style="padding-top: 10px;display: flex;justify-content: space-between;">
+					<div style="padding: 10px 10px 8px 10px;display: flex;justify-content: space-between;">
 						<el-button 
 							type="danger"
 							icon="Close" 
@@ -102,7 +107,7 @@
 										<comsort
 											:iscolumn="false"
 											:defaultval="HeaderRightBtnShow"
-											@change="HeaderShowChange"1>
+											@change="HeaderShowChange">
 										</comsort>
 										<template #reference>
 											<div style="margin-left: 12px;">
@@ -111,7 +116,7 @@
 										</template>
 									</el-popover>
 								</div>
-								<el-header height="50px" style="padding: 0px;padding-bottom: 4px;">
+								<el-header height="auto" style="padding: 0px;padding-bottom: 4px;">
 									<dzz-screen
 										ref="ScreenBoxRef"
 										:resize="DocumentResize"
@@ -307,6 +312,31 @@
 				self.DocumentResize += 1;
 				self.handleIsPc();
 			};
+			document.addEventListener('keydown', (e) => {
+				if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+					if(!self.searchImagePropover)return false;
+					// 确保页面已加载完成
+
+					setTimeout(() => {
+						// 获取剪贴板内容
+						if (window.isSecureContext && navigator.clipboard) {
+							navigator.clipboard.read().then(clipboardItems => {
+								for (const clipboardItem of clipboardItems) {
+									for (const type of clipboardItem.types) {
+										if (type.startsWith('image/')) {
+											clipboardItem.getType(type).then(blob => {
+												// 处理图片文件...
+												self.SearchUploadChange({raw: blob})
+											});
+										}
+									}
+								}
+							});
+						}
+					}, 100);
+				}
+			});
+
 		}
 	});
 	dzzoffice.use(DzzScreen);

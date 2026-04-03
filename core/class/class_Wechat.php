@@ -1130,7 +1130,7 @@ class Wechat
 	 */
 	protected function setCache($cachename,$value,$expired){
 		//TODO: set cache implementation
-		savecache($cachename,authcode($value,'ENCODE',getglobal('setting/authkey'),$expiree));
+		savecache($cachename,authcode($value,'ENCODE',getglobal('setting/authkey'),$expired));
 		return false;
 	}
 
@@ -1465,7 +1465,7 @@ class Wechat
 		return false;
 	}
 
-	/**
+	/*
 	 * 获取菜单(认证后的订阅号可用)
 	 * @return array('menu'=>array(....s))
 	 */
@@ -3983,7 +3983,7 @@ class PKCS7Encoder
         //计算需要填充的位数
         $amount_to_pad = PKCS7Encoder::$block_size - ($text_length % PKCS7Encoder::$block_size);
         if ($amount_to_pad == 0) {
-            $amount_to_pad = PKCS7Encoder::block_size;
+            $amount_to_pad = $block_size;
         }
         //获得补位所用的字符
         $pad_chr = chr($amount_to_pad);

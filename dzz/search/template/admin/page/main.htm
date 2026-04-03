@@ -1,0 +1,150 @@
+<!--{template common/container/pc/header_start}-->
+<link rel="stylesheet" href="static/scss/default/index.css?{VERHASH}">
+
+<script>
+	function debounce(fun, delay) {
+		var time;
+		return function(args) {
+			var that = this;
+			var _args = args;
+			if (time) clearTimeout(time);
+			time = setTimeout(function() {
+				fun.call(that, _args)
+			}, delay)
+		}
+	};
+</script>
+<!--{template common/container/pc/header_end}-->
+<div id="dzzoffice">
+	<el-container class="page-main">
+		<!--{template common/container/pc/header_default}-->
+		    <el-main>
+				<div class="container">
+					<div class="breadcrumb-wrapper" style="margin:15px 0">
+						<el-breadcrumb separator-icon="ArrowRight">
+							<el-breadcrumb-item><el-link href="{$_G['siteurl']}index.php?mod=manage">{lang manage_tool}</el-link></el-breadcrumb-item>
+							<el-breadcrumb-item>{lang appname}</el-breadcrumb-item>
+	
+						</el-breadcrumb>
+					</div>
+					<div  style="background: var(--el-bg-color);border: var(--el-border);border-radius: 5px;padding: 25px;">
+						<el-form 
+							:model="FormData" 
+							label-width="180px" 
+							label-suffix="：">
+							<el-form-item label="API地址" >
+								<el-input v-model="FormData.api" ></el-input>
+								<el-text tag="p" type="info" size="small" truncated>填写您的以图搜图API地址，如：http://192.168.0.2:8100/根据你的以图搜图服务填写</el-text>
+							</el-form-item>
+							<el-form-item label="密钥" >
+								<el-input v-model="FormData.key" ></el-input>
+								<el-text tag="p" type="info" size="small" truncated>接口密钥，用于校验请求，可以根据部署时设置的密钥填写</el-text>
+							</el-form-item>
+							<el-form-item label="相似度限制" >
+								<el-input v-model="FormData.limit" type="number"></el-input>
+								<el-text tag="p" type="info" size="small" truncated>搜索相似度限制，默认为0：不限制，设置后，搜索结果相似度必须小于该值才显示</el-text>
+							</el-form-item>
+							<el-form-item label="支持的文件后缀列表" >
+								<el-input v-model="FormData.ext" type="textarea" autosize></el-input>
+								<el-text tag="p" type="info" size="small" truncated>支持以图搜图的文件后缀列表，用小写字母。多个用英文逗号隔开吗，如：jpg，png，webp</el-text>
+							</el-form-item>
+							<el-form-item label="支持的文件后缀列表" >
+								<el-radio-group v-model="FormData.status">
+									<el-radio :label="0" border>关闭</el-radio>
+									<el-radio :label="1" border>开启</el-radio>
+								</el-radio-group>
+							</el-form-item>
+						</el-form>
+						<div style="text-align: center;min-width: 100%;">
+							<el-button type="primary" size="large">提交</el-button>
+						</div>
+					</div>
+					
+				</div>
+			</el-main>
+		  </el-container>
+	</el-container>
+
+</div>
+<script>
+	const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch,defineAsyncComponent, onBeforeUpdate } = Vue;
+	const dzzoffice = Vue.createApp({
+		data(){
+			return {
+				DocumentThemeColor:'',
+				FormData:{
+					api:'',
+					key:'',
+					limit:0,
+					ext:'',
+					status:0
+				}
+			}
+		},
+		
+		created(){
+			//主题颜色
+			let theme = localStorage.getItem('theme');
+			if(theme){
+				this.DocumentThemeColor=theme;
+			}else{
+				this.DocumentThemeColor = 'light'
+			}
+			
+		},
+		mixins:[],
+		watch:{
+			DocumentThemeColor:{
+				handler(newval){
+					document.querySelector('html').className = newval
+				},
+				deep:true,
+				// immediate:true
+			}
+		},
+		
+		methods:{
+			async handleSubmit(){
+				let self = this;
+				let {data: res} = await axios.post(MOD_URL+'&op=admin&do=submit',self.FormData);
+				if(res.success){
+					self.$message({
+						type:'success',
+						message:__lang.submit_success
+					})
+				}else{
+					self.$message.error(res.msg || __lang.submit_error);
+				}
+			},
+			DocumentThemeChange(){
+				if(this.DocumentThemeColor=='light'){
+					this.DocumentThemeColor='dark';
+					localStorage.setItem('theme','dark');
+				}else{
+					this.DocumentThemeColor='light';
+					localStorage.setItem('theme','light');
+				}
+				
+			}
+		},
+		components: {
+			
+		},
+		mounted(){
+
+		}
+	});
+	dzzoffice.component('comavatar',comavatar);
+	dzzoffice.component('international',international);
+	dzzoffice.use(ElementPlus, {
+		locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+	});
+	for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+		dzzoffice.component(key, component)
+	}
+	// 屏蔽警告信息
+	dzzoffice.config.warnHandler = function(){return null};
+	dzzoffice.mount('#dzzoffice');
+</script>
+
+<!--{template common/container/pc/footer}-->

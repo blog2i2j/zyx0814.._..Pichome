@@ -790,6 +790,7 @@ const tab_input = {
                 v-model="formdata.value"
                 :disabled="formdata.islocked"
                 :debounce="600"
+                @select="SaveData" 
                 @change="SaveData" 
                 :fetch-suggestions="InputSearchAsync"
                 :maxlength="formdata.length">
@@ -806,6 +807,7 @@ const tab_input = {
                 v-model="formdata.value"
                 :disabled="formdata.islocked"
                 :debounce="600"
+                @select="SaveData" 
                 @change="SaveData" 
                 :fetch-suggestions="InputSearchAsync">
                 <template #loading>

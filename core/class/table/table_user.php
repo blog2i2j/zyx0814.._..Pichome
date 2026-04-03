@@ -48,7 +48,15 @@ class table_user extends dzz_table
             'regip'=>$_G['clientip'],
             'groupid'=>$groupid
         );
-        $setarr['uid'] = parent::insert($setarr,1);
+        //判断用户数量
+        $limitusernum = defined('LICENSE_LIMIT') ? LICENSE_LIMIT : 1;
+        $unum=DB::result_first("select count(*) from ".DB::table('user'));
+        if($unum>=$limitusernum){
+            $setarr['error']=lang('license_user_exceed');
+        }else{
+            $setarr['uid'] = parent::insert($setarr,1);
+        }
+
         return $setarr;
     }
     public function update_password($uid,$password){
@@ -422,9 +430,9 @@ class table_user extends dzz_table
 		return $memberlist;
 	}
 
-	
 
-	public function insert($uid, $ip, $groupid, $extdata, $adminid = 0) {
+
+	public function insert_by_uid($uid, $ip='', $groupid=0, $extdata=array(), $adminid = 0) {
 		if(($uid = dintval($uid))) {
 			$profile = isset($extdata['profile']) ? $extdata['profile'] : array();
 			//$profile['uid'] = $uid;

@@ -15,7 +15,7 @@ class table_pichome_resources extends dzz_table
         parent::__construct();
     }
 
-    public function insert($setarr)
+    public function insert($setarr,$return_insert_id = false, $replace = false, $silent = false)
     {
 
         if (DB::result_first("select count(rid) from %t where rid = %s", array($this->_table, $setarr['rid']))) {
@@ -196,7 +196,7 @@ class table_pichome_resources extends dzz_table
         return true;
     }
 
-    public function fetch_by_rids($rids)
+    public function fetch_by_rids($rids,$perm=0)
     {
 
         if (!is_array($rids)) $rids = (array)$rids;
@@ -206,10 +206,14 @@ class table_pichome_resources extends dzz_table
             $v['fsize'] = formatsize($v['size']);
             $v['mtime'] = dgmdate(round($v['mtime'] / 1000), 'Y/m/d H:i');
             $v['dateline'] = dgmdate(round($v['dateline'] / 1000), 'Y/m/d H:i');
-            $v['name'] = str_replace(strrchr($v['name'], "."), "", $v['name']);
+           // $v['name'] = str_replace(strrchr($v['name'], "."), "", $v['name']);
+            //处理文件名称去掉后缀
+            if($v['ext']){
+                $v['name'] =preg_replace("/\.".$v['ext']."$/i",'',$v['name']);
+            }
             $v['btime'] = dgmdate(round($v['btime'] / 1000), 'Y/m/d H:i');
             //$v['dpath'] = dzzencode($v['rid'], '', 0, 0);
-            $v['dpath'] = Pencode(array('path'=>$v['rid'],'perm'=>0,'ishare'=>0,'isadmin'=>1),7200);
+            $v['dpath'] = Pencode(array('path'=>$v['rid'],'perm'=>$perm,'ishare'=>0,'isadmin'=>1),7200);
             $v['opentype'] = getTypeByExt($v['ext']);
             if ($v['opentype'] == 'audio' || $v['opentype'] == 'video') {
                 if(in_array($v['ext'],explode(',',getglobal('config/pichomeplayermediaext')))){
@@ -541,151 +545,206 @@ class table_pichome_resources extends dzz_table
     public function fetch_by_rid($rid, $nolevel = 0, $contaiondel = 0,$perm=0)
     {
         global $_G;
-        if (!$resourcesdata = parent::fetch($rid)) return array();
-        if ($resourcesdata['isdelete'] > 0 && !$contaiondel) return array();
-        //获取所有库分享和下载权限
-        $appdata = C::t('pichome_vapp')->fetch_all_sharedownlod($resourcesdata['appid']);
-        $attrdata = C::t('pichome_resources_attr')->fetch($rid);
-        if ($attrdata['desc']) $attrdata['desc'] = strip_tags($attrdata['desc']);
-        $resourcesdata = array_merge($resourcesdata, $attrdata);
-        if (is_numeric($resourcesdata['path'])) {
-            $attachment = C::t('attachment')->fetch(intval($resourcesdata['path']));
-            $bz = io_remote::getBzByRemoteid($attachment['remote']);
-            $resourcesdata['bz'] = $bz;
-            $resourcesdata['remoteid'] = $attachment['remote'];
-            $resourcesdata['path'] = $bz . $attachment['attachment'];
-            $resourcesdata = array_merge($resourcesdata, $attachment);
-        }
-        else {
-            if (strpos($appdata['path'], ':') === false ) {
-                $resourcesdata['bz'] = 'dzz::';
-            } else {
-                $patharr = explode(':', $appdata['path']);
-                if($patharr[1] && is_numeric($patharr[1])){
-                    $resourcesdata['bz'] = $patharr[0] . ':' . $patharr[1] . ':';
-                    $resourcesdata['remoteid'] = $patharr[1];
-                }else{
-                    $resourcesdata['bz'] = 'dzz::';
-                    $resourcesdata['remoteid'] = 1;
-                }
-            }
-            $resourcesdata['path'] = $appdata['path'] . BS . $resourcesdata['path'];
-        }
-        $resourcesdata['colors'] = C::t('pichome_palette')->fetch_colordata_by_rid($rid);
-        $resourcesdata['ext'] = strtolower($resourcesdata['ext']);
-        $resourcesdata['opentype'] = getOpentype($resourcesdata['ext']);
-        if(!$perm) {
-            $permactions = array('flag', 'read1', 'read2');
-            if ($resourcesdata['isdelete']) {
-                $resourcesdata['share'] = 0;
-                $resourcesdata['download'] = 0;
-                $resourcesdata['collection'] = 0;
-            } else {
-                $resourcesdata['share'] = $nolevel ? 0 : C::t('pichome_vapp')->getpermbypermdata($appdata['share'], $resourcesdata['appid'], 'share');
-                $resourcesdata['download'] = $nolevel ? 1 : C::t('pichome_vapp')->getpermbypermdata($appdata['download'], $resourcesdata['appid'], 'download');
-                $resourcesdata['collection'] = $nolevel ? 0 : ((defined('PICHOME_LIENCE') && ($_G['adminid'] == 1 || ($_G['uid'] && !$_G['config']['pichomeclosecollect']))) ? 1 : 0);
-                if ($resourcesdata['share']) {
-                    $permactions[] = 'share';
-                }
-                if ($resourcesdata['download']) {
-                    $permactions[] = 'download2';
-                }
-                if ($resourcesdata['collection']) {
-                    $permactions[] = 'collect';
-                }
-            }
-            $perm = \perm::setPerm($permactions);
+        $cachekey='fetch_by_rid_'.implode('_',[$rid,$nolevel,$contaiondel,$perm]);
+
+        if($cachedata=$this->fetch_cache($cachekey)) {
+            $resourcesdata = $cachedata;
         }else{
-            $resourcesdata['share'] = perm::check('share',$perm);
-            $resourcesdata['download'] =  perm::check('download2',$perm);
-            $resourcesdata['collection'] =  perm::check('collect',$perm);
+            if (!$resourcesdata = parent::fetch($rid)) return array();
+            if ($resourcesdata['isdelete'] > 0 && !$contaiondel) return array();
+            //获取所有库分享和下载权限
+            $appdata = C::t('pichome_vapp')->fetch_all_sharedownlod($resourcesdata['appid']);
+            $attrdata = C::t('pichome_resources_attr')->fetch($rid);
+            if ($attrdata['desc']) $attrdata['desc'] = strip_tags($attrdata['desc']);
+            $resourcesdata = array_merge($resourcesdata, $attrdata);
+            if (is_numeric($resourcesdata['path'])) {
+                $attachment = C::t('attachment')->fetch(intval($resourcesdata['path']));
+                $bz = io_remote::getBzByRemoteid($attachment['remote']);
+                $resourcesdata['bz'] = $bz;
+                $resourcesdata['remoteid'] = $attachment['remote'];
+                $resourcesdata['path'] = $bz . $attachment['attachment'];
+                $resourcesdata = array_merge($resourcesdata, $attachment);
+            } else {
+                if (strpos($appdata['path'], ':') === false) {
+                    $resourcesdata['bz'] = 'dzz::';
+                } else {
+                    $patharr = explode(':', $appdata['path']);
+                    if ($patharr[1] && is_numeric($patharr[1])) {
+                        $resourcesdata['bz'] = $patharr[0] . ':' . $patharr[1] . ':';
+                        $resourcesdata['remoteid'] = $patharr[1];
+                    } else {
+                        $resourcesdata['bz'] = 'dzz::';
+                        $resourcesdata['remoteid'] = 1;
+                    }
+                }
+                $resourcesdata['path'] = $appdata['path'] . BS . $resourcesdata['path'];
+            }
+            $resourcesdata['colors'] = C::t('pichome_palette')->fetch_colordata_by_rid($rid);
+            $resourcesdata['ext'] = strtolower($resourcesdata['ext']);
+            $resourcesdata['opentype'] = getOpentype($resourcesdata['ext']);
+
+            $levelLimit = $resourcesdata['level'] && getglobal('pichomelevel') < $resourcesdata['level'];
+            if (!$perm) {
+                if ($levelLimit) {
+                    $permactions = array('flag');
+                } else {
+                    $permactions = array('flag', 'read1', 'read2');
+                }
+
+                if ($resourcesdata['isdelete']) {
+                    $resourcesdata['share'] = 0;
+                    $resourcesdata['download'] = 0;
+                    $resourcesdata['collection'] = 0;
+                } elseif ($levelLimit) {
+                    $resourcesdata['share'] = 0;
+                    $resourcesdata['download'] = 0;
+                    $resourcesdata['collection'] = 0;
+                } else {
+                    $resourcesdata['share'] = $nolevel ? 0 : C::t('pichome_vapp')->getpermbypermdata($appdata['share'], $resourcesdata['appid'], 'share');
+                    $resourcesdata['download'] = $nolevel ? 1 : C::t('pichome_vapp')->getpermbypermdata($appdata['download'], $resourcesdata['appid'], 'download');
+                    $resourcesdata['collection'] = $nolevel ? 0 : ((defined('PICHOME_LIENCE') && ($_G['adminid'] == 1 || ($_G['uid'] && !$_G['config']['pichomeclosecollect']))) ? 1 : 0);
+                    if ($resourcesdata['share']) {
+                        $permactions[] = 'share';
+                    }
+                    if ($resourcesdata['download']) {
+                        $permactions[] = 'download2';
+                    }
+                    if ($resourcesdata['collection']) {
+                        $permactions[] = 'collect';
+                    }
+                }
+                $perm = \perm::setPerm($permactions);
+            } else {
+                $resourcesdata['share'] = perm::check('share', $perm);
+                $resourcesdata['download'] = perm::check('download2', $perm);
+                $resourcesdata['collection'] = perm::check('collect', $perm);
+            }
+            $resourcesdata['perm'] = $perm;
+            $resourcesdata['isdetail'] = 1;
+            $resourcesdata['dpath'] = Pencode(array('path' => $rid, 'perm' => $perm, 'ishare' => 0, 'isadmin' => 1), 3600);
+            $resourcesdata['isFilelistThumb'] = 1;
+            $imgdata = $this->getfileimageurl($resourcesdata, $appdata['path'], $appdata['type'], $resourcesdata['download'], 1);
+            if (!$imgdata['icondata'] && $imgdata['iconimg']) $imgdata['icondata'] = $imgdata['iconimg'];
+            $resourcesdata = array_merge($resourcesdata, $imgdata);
+
+            if ($resourcesdata['width'] == 0) $resourcesdata['width'] = 900;
+            if ($resourcesdata['height'] == 0) $resourcesdata['height'] = 900;
+            $thumbwidth = getglobal('config/pichomethumlargwidth') ? getglobal('config/pichomethumlargwidth') : 1920;
+            $thumbheight = getglobal('config/pichomethumlargheight') ? getglobal('config/pichomethumlargheight') : 1080;
+            $thumsizearr = $this->scaleImage($resourcesdata['width'], $resourcesdata['height'], $thumbwidth, $thumbheight);
+            $resourcesdata['iconwidth'] = $thumsizearr[0];
+            $resourcesdata['iconheight'] = $thumsizearr[1];
+
+            if (getglobal('adminid') == 1) $resourcesdata['realfianllypath'] = getglobal('siteurl') . 'index.php?mod=io&op=getStream' . '&path=' . Pencode(array('path' => $rid, 'perm' => $perm, 'ishare' => 0, 'isadmin' => 1), 0);;
+            if (in_array($resourcesdata['ext'], ['jpg', 'png', 'gif', 'webp', 'jpeg'])) $resourcesdata['showoriginal'] = 1;
+            else $resourcesdata['showoriginal'] = 0;
+            //$resourcesdata['name'] = str_replace(strrchr($resourcesdata['name'], "."), "", $resourcesdata['name']);
+
+            $resourcesdata['fsize'] = formatsize($resourcesdata['size']);
+            $resourcesdata['mtime'] = dgmdate(round($resourcesdata['mtime'] / 1000), 'Y/m/d H:i');
+            $resourcesdata['dateline'] = ($resourcesdata['lastdate']) ? dgmdate(round($resourcesdata['lastdate']), 'Y/m/d H:i') : dgmdate(round($resourcesdata['dateline'] / 1000), 'Y/m/d H:i');
+            $resourcesdata['btime'] = dgmdate(round($resourcesdata['btime'] / 1000), 'Y/m/d H:i');
+            $resourcesdata['foldernames'] = C::t('pichome_folderresources')->get_foldername_by_rid($rid);
+            $resourcesdata['tag'] = C::t('pichome_resourcestag')->fetch_tag_by_rid($rid);
+
+            $src = $this->getOpensrc($resourcesdata['ext'], $resourcesdata['bz']);
+            unset($resourcesdata['path']);
+            $random = rand();
+            $resourcesdata['iniframe'] = ($src) ? $src . '&random=' . $random . '&hash=' . VERHASH . '&path=' . $resourcesdata['dpath'] : '';
+            $this->store_cache($cachekey, $resourcesdata, 60*5);
         }
-        $resourcesdata['perm']=$perm;
-        $resourcesdata['isdetail'] = 1;
-        $resourcesdata['dpath'] = Pencode(array('path'=>$rid,'perm'=>$perm,'ishare'=>0,'isadmin'=>1),3600);
-        $resourcesdata['isFilelistThumb'] = 1;
-        $imgdata = $this->getfileimageurl($resourcesdata, $appdata['path'], $appdata['type'], $resourcesdata['download'],1);
-        if(!$imgdata['icondata'] && $imgdata['iconimg']) $imgdata['icondata'] = $imgdata['iconimg'];
-        $resourcesdata = array_merge($resourcesdata, $imgdata);
-
-        if ($resourcesdata['width'] == 0) $resourcesdata['width'] = 900;
-        if ($resourcesdata['height'] == 0) $resourcesdata['height'] = 900;
-        $thumbwidth = getglobal('config/pichomethumlargwidth') ? getglobal('config/pichomethumlargwidth') : 1920;
-        $thumbheight = getglobal('config/pichomethumlargheight') ? getglobal('config/pichomethumlargheight') : 1080;
-        $thumsizearr = $this->scaleImage($resourcesdata['width'], $resourcesdata['height'], $thumbwidth, $thumbheight);
-        $resourcesdata['iconwidth'] = $thumsizearr[0];
-        $resourcesdata['iconheight'] = $thumsizearr[1];
-        if (getglobal('adminid') == 1) $resourcesdata['realfianllypath'] = getglobal('siteurl') . 'index.php?mod=io&op=getStream' . '&path=' .Pencode(array('path'=>$rid,'perm'=>$perm,'ishare'=>0,'isadmin'=>1),0);
-        if(in_array($resourcesdata['ext'],['jpg','png','gif','webp','jpeg'])) $resourcesdata['showoriginal'] = 1;
-        else $resourcesdata['showoriginal'] = 0;
-        $resourcesdata['name'] = str_replace(strrchr($resourcesdata['name'], "."), "", $resourcesdata['name']);
-        $resourcesdata['fsize'] = formatsize($resourcesdata['size']);
-        $resourcesdata['mtime'] = dgmdate(round($resourcesdata['mtime'] / 1000), 'Y/m/d H:i');
-        $resourcesdata['dateline'] = ($resourcesdata['lastdate']) ? dgmdate(round($resourcesdata['lastdate']), 'Y/m/d H:i') : dgmdate(round($resourcesdata['dateline'] / 1000), 'Y/m/d H:i');
-        $resourcesdata['btime'] = dgmdate(round($resourcesdata['btime'] / 1000), 'Y/m/d H:i');
-        $resourcesdata['foldernames'] = C::t('pichome_folderresources')->get_foldername_by_rid($rid);
-        $resourcesdata['tag'] = C::t('pichome_resourcestag')->fetch_tag_by_rid($rid);
-
-        $src = $this->getOpensrc($resourcesdata['ext'], $resourcesdata['bz']);
-        unset($resourcesdata['path']);
-        $random = rand();
-        $resourcesdata['iniframe'] = ($src) ? $src . '&random=' . $random . '&hash=' . VERHASH . '&path=' . $resourcesdata['dpath'] : '';
-
+        Hook::listen('ResourceDataFilter',$resourcesdata);
         Hook::listen('lang_parse',$resourcesdata,['getResourcesLangData']);
+        //处理文件名称去掉后缀
+        if($resourcesdata['ext']){
+            $resourcesdata['name'] =preg_replace("/\.".$resourcesdata['ext']."$/i",'',$resourcesdata['name']);
+        }
         return $resourcesdata;
     }
 
-
-
-
-    public function getdatasbyrids($rids, $nodel = 0)
+    public function getdatasbyrids($rids, $nodel = 0,$perm=0)
     {
         global $_G;
         $returndata = [];
         //文件数据
-        $resourcesdata = $this->fetch_by_rids($rids);
+        $resourcesdata = $this->fetch_by_rids($rids,$perm);
         //获取所有库分享和下载权限,以及编码数据
         $downshare = C::t('pichome_vapp')->fetch_all_sharedownlod();
 
         //文件标注数
         $annonationnumdata = C::t('pichome_comments')->fetch_annonationnum_by_rids($rids);
-        //以图搜图判断
+
+        /*以图搜图判断，改为挂载点处理
         $imageSearchSetting = getglobal('setting/imageSearch_setting');
         $allowSearchExts=$imageSearchSetting['exts']?(explode(',',$imageSearchSetting['exts'])):array();
+        */
+        //处理level
 
         //获取所有的缩略图表数据
         $imagedatas = $this->getThumbsByrids($rids);
         foreach ($resourcesdata as $v) {
+
             if (($nodel && $v['isdelete'] > 0)  ) continue;
-
-            if($v['isdelete']){
+            $levelLimit = $resourcesdata['level'] && getglobal('pichomelevel') < $v['level'];
+            if($v['isdelete']) {
                 $v['share'] = $v['download'] = $v['collection'] = 0;
+            }elseif($levelLimit){
+                $v['share'] = $v['download'] = $v['collection'] = 0;
+            }elseif($perm){
+                $v['share'] =perm::check('share',$perm);
+                $v['download'] = perm::check('download2',$perm);
+                $v['collection'] = perm::check('collect',$perm);;
             }else{
-
                 $v['share'] = C::t('pichome_vapp')->getpermbypermdata($downshare[$v['appid']]['share'], $v['appid'], 'share');
                 $v['download'] = C::t('pichome_vapp')->getpermbypermdata($downshare[$v['appid']]['download'], $v['appid'], 'download');
                 $v['collection'] = (defined('PICHOME_LIENCE') && ($_G['adminid'] == 1 || ($_G['uid'] && !$_G['config']['pichomeclosecollect']))) ? 1 : 0;
             }
-            if(!$imageSearchSetting['status'] || empty($allowSearchExts) || (!in_array($v['ext'],$allowSearchExts))){
+           /* 改为挂载点处理
+           if(!$imageSearchSetting['status'] || empty($allowSearchExts) || (!in_array($v['ext'],$allowSearchExts))){
                 $v['allowImageSearch'] = 0;
             }else{
                 $v['allowImageSearch'] = 1;
+            }*/
+            if(!$perm){
+                //处理dpath;
+                if($levelLimit){
+                    $permactions=array('flag');
+                }else{
+                    $permactions=array('flag','read1','read2');
+                }
+                if($v['share']){
+                    $permactions[]='share';
+                }
+                if($v['download']){
+                    $permactions[]='download2';
+                    $permactions[]='download1';
+                }
+                if($v['collection']){
+                    $permactions[]='collect';
+                }
+                $perm=\perm::setPerm($permactions);
             }
-            //处理dpath;
-            $permactions=array('flag','read1','read2');
-            if($v['share']){
-                $permactions[]='share';
-            }
+            $v['perm']=$perm;
             if($v['download']){
-                $permactions[]='download2';
                 $v['downloadurl'] = IO::getFileUri($v['rid']);
             }
-            if($v['collection']){
-                $permactions[]='collect';
-            }
-            $perm=\perm::setPerm($permactions);
-
             $v['dpath'] = Pencode(array('path'=>$v['rid'],'perm'=>$perm,'ishare'=>0,'isadmin'=>1),7200);
+            $v['opentype'] = getTypeByExt($v['ext']);
+            if ($v['opentype'] == 'audio' || $v['opentype'] == 'video') {
+                if(in_array($v['ext'],explode(',',getglobal('config/pichomeplayermediaext')))){
+                    $v['mediaplayerpath'] = getglobal('siteurl') . 'index.php?mod=io&op=getStream&hash=' . VERHASH . '&path=' . $v['dpath'];
+                }else{
+                    if($ppath = DB::result_first("select path from %t where rid = %s and status = %d",array('video_record',$v['rid'],2))){
+                        $v['mediaplayerpath'] = IO::getFileUri($ppath);
+                    }else{
+                        $v['mediaplayerpath'] = false;
+                    }
+                }
+
+            }
+            $src = $this->getOpensrc($v['ext'], $v['bz']);
+
+            $v['iniframe'] = ($src) ? $src . '&hash=' . VERHASH . '&path=' . $v['dpath'] : '';
 
             if ($imagedatas[$v['rid']]['imgstatus']) {
                 $imgdata = [
@@ -719,9 +778,16 @@ class table_pichome_resources extends dzz_table
             $intcolor = DB::result_first("select color from %t where rid = %s order by weight desc", array('pichome_palette', $v['rid']));
             $v['color'] = dechex($intcolor);
             unset($v['path']);
+            Hook::listen('ResourceDataFilter',$v);
             $returndata[] = $v;
         }
         Hook::listen('lang_parse',$returndata,['getResourcesLangData',1]);
+        foreach ($returndata as &$v){
+            //处理文件名称去掉后缀
+            if($v['ext']){
+                $v['name'] =preg_replace("/\.".$v['ext']."$/i",'',$v['name']);
+            }
+        }
         return $returndata;
     }
 
@@ -827,8 +893,6 @@ class table_pichome_resources extends dzz_table
                 return array_merge($resourcesdata, $imgdatas);
             }
         }
-
-
     }
 
     public function fetch_like_words($keyword, $limit = 10)
@@ -892,7 +956,7 @@ class table_pichome_resources extends dzz_table
         $setarr = [];
         $setarr['lastdate'] = TIMESTAMP;
         //如果当前库有该文件,则使用当前文件
-        if ($rid = DB::result_first("select rid from %t where path = %s and appid = %s ", array('pichome_resources_attr', $aid, $appid))) {
+        if ($rid = DB::result_first("select r.rid from %t r LEFT JOIN %t attr ON r.rid=attr.rid where r.appid=%s and r.name=%s and attr.path = %d", array('pichome_resources','pichome_resources_attr',$data['appid'], $data['filename'],$data['aid'] ))) {
             $resourcesdata = C::t('pichome_resources')->fetch($rid);
             $nfids = explode(',', $resourcesdata['fids']);
             $setarr['rid'] = $rid;

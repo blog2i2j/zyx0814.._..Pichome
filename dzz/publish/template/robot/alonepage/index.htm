@@ -1,0 +1,212 @@
+<!--{template common/robot/header_simple_start_none}-->
+<style>
+
+    .editor-content {
+        margin-bottom: 20px;
+    }
+
+    .file-content {
+        margin-bottom: 20px;
+    }
+
+    img {
+        max-width: 100%;
+        max-height:100%;
+    }
+    .mb20{
+        margin-bottom: 20px;
+    }
+
+    /* Tab容器（支持多组Tab共存） */
+    .tab-wrapper {
+        width: 100%;
+        border: 1px solid var(--el-border-color);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    /* Tab导航栏 */
+    .tab-nav {
+        display: flex;
+        background-color: var(--el-bg-color-page);
+        border-bottom: 1px solid var(--el-border-color);
+    }
+
+    /* Tab标签通用样式 */
+    .tab-nav-item {
+        flex: 1;
+        padding: 16px 0;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 16px;
+
+    }
+
+    /* 激活的Tab标签 */
+    .tab-nav-item.active {
+        background-color: var(--el-bg-color);
+        color:var(--el-color-primary);;
+        border-bottom: 3px solid var(--el-color-primary);;
+    }
+
+    /* Tab标签hover效果 */
+    .tab-nav-item:hover {
+        color: #1677ff;
+        background-color: var(--el-button-hover-bg-color);
+    }
+
+    /* Tab内容容器 */
+    .tab-content {
+        padding: 24px;
+        min-height: 300px;
+        background-color: var(--el-bg-color);
+    }
+
+    /* Tab内容面板通用样式 */
+    .tab-content-item {
+        display: none;
+        line-height: 1.8;
+        color: #666;
+        animation: fadeIn 0.3s ease;
+    }
+
+    /* 激活的内容面板 */
+    .tab-content-item.active {
+        display: block;
+    }
+
+    /* 淡入动画 */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .banner-module-title{
+        margin:20px 0;
+
+    }
+    .banner-module:nth-child(1){
+        background-color:  var(--el-bg-color-page);
+    }
+</style>
+<!--{template common/robot/header_simple_end_none}-->
+<!--{template common/robot/commer_header_none}-->
+<div class="container" style="padding:20px">
+    <!--{loop $pagedata['tags'] $key0 $tag}-->
+    <!--{if $tag['showtitle']}--> <h3 class="banner-module-title">$tag['tagname']</h3><!--{/if}-->
+    <div class="banner-module {$tag['tagtype']} mb20">
+        <!--标签-->
+        <!--{if count($tag['data'])>1}-->
+        <div class="tab-wrapper">
+            <div class="tab-nav">
+                <!--{loop $tag['data'] $key $tdata}-->
+                <div class="tab-nav-item <!--{if $key==0}-->active<!--{/if}-->">$tdata['tdataname']</div>
+                <!--{/loop}-->
+            </div>
+
+            <!-- Tab内容区域 -->
+            <div class="tab-content">
+                <!--{loop $tag['data'] $key $tdata}-->
+                <div class="tab-content-item <!--{if $key==0}-->active<!--{/if}-->">
+                    <div class="tag-content">
+                        <!--{if $tag['tagtype']=='search_rec'}-->
+                        <!--{template robot/alonepage/search_rec}-->
+                        <!--{elseif $tag['tagtype']=='slide'}-->
+                        <!--{template robot/alonepage/slide}-->
+                        <!--{elseif $tag['tagtype']=='image_mix'}-->
+                        <!--{template robot/alonepage/image_mix}-->
+                        <!--{elseif $tag['tagtype']=='manual_rec'}-->
+                        <!--{template robot/alonepage/manual_rec}-->
+                        <!--{elseif $tag['tagtype']=='search_pub'}-->
+                        <!--{template robot/alonepage/search_pub}-->
+                        <!--{elseif $tag['tagtype']=='db_ids'}-->
+                        <!--{template robot/alonepage/db_ids}-->
+                        <!--{elseif $tag['tagtype']=='file_rec'}-->
+                        <!--{template robot/alonepage/file_rec}-->
+                        <!--{elseif $tag['tagtype']=='collect_ids'}-->
+                        <!--{template robot/alonepage/collect_ids}-->
+                        <!--{elseif $tag['tagtype']=='collect_rec'}-->
+                        <!--{template robot/alonepage/collect_rec}-->
+                        <!--{elseif $tag['tagtype']=='tab_rec'}-->
+                        <!--{template robot/alonepage/tab_rec}-->
+                        <!--{elseif $tag['tagtype']=='rich_text'}-->
+                        <!--{template robot/alonepage/rich_text}-->
+                        <!--{elseif $tag['tagtype']=='link'}-->
+                        <!--{template robot/alonepage/link}-->
+                        <!--{elseif $tag['tagtype']=='question'}-->
+                        <!--{template robot/alonepage/question}-->
+
+                        <!--{/if}-->
+                    </div>
+                </div>
+                <!--{/loop}-->
+
+            </div>
+        </div>
+        <!--{else}-->
+        <div class="tag-content">
+            {eval $tdata= $tag['data'][0];}
+            <!--{if $tag['tagtype']=='search_rec'}-->
+            <!--{template robot/alonepage/search_rec}-->
+            <!--{elseif $tag['tagtype']=='slide'}-->
+            <!--{template robot/alonepage/slide}-->
+            <!--{elseif $tag['tagtype']=='image_mix'}-->
+            <!--{template robot/alonepage/image_mix}-->
+            <!--{elseif $tag['tagtype']=='manual_rec'}-->
+            <!--{template robot/alonepage/manual_rec}-->
+            <!--{elseif $tag['tagtype']=='search_pub'}-->
+            <!--{template robot/alonepage/search_pub}-->
+            <!--{elseif $tag['tagtype']=='db_ids'}-->
+            <!--{template robot/alonepage/db_ids}-->
+            <!--{elseif $tag['tagtype']=='file_rec'}-->
+            <!--{template robot/alonepage/file_rec}-->
+            <!--{elseif $tag['tagtype']=='collect_ids'}-->
+            <!--{template robot/alonepage/collect_ids}-->
+            <!--{elseif $tag['tagtype']=='collect_rec'}-->
+            <!--{template robot/alonepage/collect_rec}-->
+            <!--{elseif $tag['tagtype']=='tab_rec'}-->
+            <!--{template robot/alonepage/tab_rec}-->
+            <!--{elseif $tag['tagtype']=='rich_text'}-->
+            <!--{template robot/alonepage/rich_text}-->
+            <!--{elseif $tag['tagtype']=='link'}-->
+            <!--{template robot/alonepage/link}-->
+            <!--{elseif $tag['tagtype']=='question'}-->
+            <!--{template robot/alonepage/question}-->
+            <!--{/if}-->
+        </div>
+        <!--{/if}-->
+    </div>
+    <!--{/loop}-->
+
+</div>
+<script>
+    function initTabSwitch() {
+        // 获取所有Tab容器
+        const tabWrappers = document.querySelectorAll('.tab-wrapper');
+
+        tabWrappers.forEach(wrapper => {
+            // 获取当前容器内的标签和内容
+            const navItems = wrapper.querySelectorAll('.tab-nav-item');
+            const contentItems = wrapper.querySelectorAll('.tab-content-item');
+
+            // 绑定点击事件
+            navItems.forEach((item, index) => {
+                item.addEventListener('click', () => {
+                    // 1. 移除所有标签的激活状态
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    // 2. 给当前点击的标签添加激活状态
+                    item.classList.add('active');
+                    // 3. 移除所有内容面板的激活状态
+                    contentItems.forEach(content => content.classList.remove('active'));
+                    // 4. 给对应索引的内容面板添加激活状态
+                    contentItems[index].classList.add('active');
+                });
+            });
+        });
+    }
+
+    // 页面加载完成后初始化Tab
+    window.addEventListener('DOMContentLoaded', initTabSwitch);
+</script>
+<!--{template common/robot/footer_none}-->

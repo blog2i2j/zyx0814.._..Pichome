@@ -1,0 +1,176 @@
+<!--{template common/container/pc/header_start}-->
+<link rel="stylesheet" href="static/scss/default/index.css?{VERHASH}">
+<link rel="stylesheet" href="user/my/template/pc/assets/index.css?{VERHASH}">
+<link rel="stylesheet" type="text/css" href="static/scss/layout.css?{VERHASH}"/>
+<link rel="stylesheet" type="text/css" href="{MOD_PATH}/template/pc/assets/index.css?{VERHASH}"/>
+<style>
+
+</style>
+<!--{template common/container/pc/header_end}-->
+<div id="dzzoffice">
+    <el-container class="page-main">
+        <el-header style="padding: 0;">
+            <!--{template pc/componets/header_list}-->
+        </el-header>
+        <el-main style="padding: 0">
+            <el-scrollbar ref="scrollbar" >
+                <div class="container">
+                    <div class="filter-box">
+                            <h2>
+                               <el-text tag="p" > {{sharedata.title}}</el-text>
+
+                            </h2>
+                        </div>
+                    <div class="notification">
+                        <el-table :data="tableData" style="width: 100%" :table-layout="auto" >
+                                <el-table-column  prop="name" label="{lang filename}"  min-width="200" >
+                                    <template #default="scope">
+                                        <div style="display:flex; align-items: center;">
+                                        <el-image style="max-width:32px;max-height:32px;margin-right: 8px;" v-if="scope.row.icondata" :src="scope.row.icondata" class="thumb"></el-image>
+                                        <el-link :underline="false" target="detail" :href="scope.row.viewurl">{{scope.row.name}}</el-link>
+                                        </div>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="fsize"  label="{lang file_size}" width="120"></el-table-column>
+
+                                <el-table-column prop="mtime"  label="{lang modify_time}" width="150"  align="center"></el-table-column>
+
+                                <el-table-column v-if="sharedata.download"  label="{lang download}" width="80" align="center">
+                                    <template #default="scope">
+                                        <a :href="scope.row.downurl" title="{lang download}" download><el-icon><Download /></el-icon></a>
+                                    </template>
+                                </el-table-column>
+
+                            </el-table>
+
+                    </div>
+
+                </div>
+            </el-scrollbar>
+        </el-main>
+    </el-container>
+
+</div>
+<script type="text/javascript">
+    const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch } = Vue;
+    const dzzoffice = createApp({
+        data() {
+            return {
+                DocumentThemeColor:'',
+                UcenterHeaderMenuIndex:'myshares',
+                tableData:{eval echo json_encode(($datas))},
+                sharedata:{eval echo json_encode(($sharedata))},
+                keyword:''
+            }
+        },
+
+        watch:{
+            DocumentThemeColor:{
+                handler(newval){
+                    document.querySelector('html').className = newval
+                },
+                deep:true,
+                // immediate:true
+            }
+        },
+        created() {
+            //主题颜色
+            let theme = localStorage.getItem('theme');
+            if(theme){
+                this.DocumentThemeColor=theme;
+            }else{
+                this.DocumentThemeColor = 'light'
+            }
+          //  this.getData();
+        },
+        methods: {
+            searchSubmit(){
+
+            },
+
+
+
+            TableDownQrcodeurl(url){
+                let a = document.createElement('a')
+                a.href = url;
+                a.download = '{lang qrcode}'
+                a.click()
+            },
+            async getShareUser(q) {
+                const self = this;
+                self.userloading = true;
+                const {data: res} = await axios.post(MOD_URL + '&op=ajax&do=getShareUser', {
+                    q: q
+                });
+                if (res.success) {
+                    self.userloading = false;
+                    self.userData = res.data;
+                } else {
+                    self.userloading = false;
+                    self.$message.error(res.msg || '{lang failure}');
+                }
+            },
+            //获取二维码
+            async TableGeturlqrcode(sid){
+                const self = this;
+                let curr = '';
+                curr = this.tableData.find((current) => {
+                    return current.id == sid;
+                });
+                if(curr && curr.isqrcode){
+                    return false;
+                }
+                const {data: res} = await axios.post(MOD_URL+'&op=ajax&do=geturlqrcode',{
+                    sid:sid
+                });
+                if(res.success){
+                    curr.isqrcode = true;
+                    curr.qrcodeurl = res.qrcode;
+                }else{
+                    self.$message.error(res.msg || '{lang failure}');
+                }
+            },
+            RightCopyUrl(url){
+                const self = this;
+                var input = document.createElement('input'); input.setAttribute('id', 'copyInput');
+                input.setAttribute('value', url);
+                document.getElementsByTagName('body')[0].appendChild(input);
+                document.getElementById('copyInput').select();
+                document.execCommand('copy')
+                self.$message({
+                    message: '{lang copy_clipboard}',
+                    type: 'success'
+                });
+                document.getElementById('copyInput').remove();
+            },
+
+            DocumentThemeChange(){
+                if(this.DocumentThemeColor=='light'){
+                    this.DocumentThemeColor='dark';
+                    localStorage.setItem('theme','dark');
+                }else{
+                    this.DocumentThemeColor='light';
+                    localStorage.setItem('theme','light');
+                }
+                let self=this;
+            },
+
+        },
+        mounted() {
+            dzzoffice.WindowThis = this;
+        }
+    });
+    dzzoffice.use(ElementPlus, {
+        locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+    });
+    for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+        dzzoffice.component(key, component)
+    }
+    dzzoffice.component('comavatar', comavatar);
+    dzzoffice.component('international',international);
+    // 屏蔽警告信息
+    dzzoffice.config.warnHandler = function(){return null};
+    dzzoffice.mount('#dzzoffice');
+</script>
+
+<!--{template common/container/pc/footer}-->

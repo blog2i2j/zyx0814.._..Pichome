@@ -55,20 +55,19 @@
 							}else{
 								window.open('index.php?mod=banner&op=download&dpath=' + self.showdata[self.showdataindex].data.dpath);
 							}
-							} else {
-								showToast({
-									message: '{lang data_error}',
-									icon: 'cross',
-								});
-							}
+						} else {
+							showToast({
+								message: '{lang data_error}',
+								icon: 'cross',
+							});
+						}
 					}
-
-					
 					return false;
 				}
 				if(type == 'share'){
 					let self = this;
-					self.shareDialog.id=self.showdata[this.ridIndex].data.rid;
+					self.shareDialog.filepaths=[self.showdata[this.showdataindex].data.rid];
+					self.shareDialog.sperm=self.showdata[this.showdataindex].data.perm;
 					self.shareDialog.stype=0;
 					self.shareDialog.visible=true;
 				}

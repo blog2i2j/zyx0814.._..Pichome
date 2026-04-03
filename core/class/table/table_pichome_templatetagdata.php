@@ -22,46 +22,23 @@ class  table_pichome_templatetagdata extends dzz_table
             $id = $setarr['id'];
             unset($setarr['id']);
             $olddata = parent::fetch($id);
+
         }
         $type = $setarr['type'];
         unset($setarr['type']);
         if($id){
             $setarr['id'] = $id;
-            Hook::listen('lang_parse',$setarr,['setAlonpagetagdataLangData',$type]);
         }
+
         if($setarr['tdata']){
             switch ($type){
-                case  'contact':
-                case  'rectangle_rec':
-                case  'link':
-                case  'manual_rec':
-                case  'banner':
-                case 'slide':
-                    $naids =  [];
-                    foreach($setarr['tdata'] as $v){
-                        $naids[] = $v['aid'];
-                    }
-                    if($olddata){
-                        $odata = unserialize($olddata['tdata']);
-                        $oaids = [];
-                        foreach($odata as $idata){
-                            $oaids[] = $idata['aid'];
-                        }
-
-
-                        $delaids = array_diff($oaids,$naids);
-                        foreach($delaids as $v){
-                            C::t('attachment')->delete_by_aid($v['aid']);
-                        }
-                        $naids = array_diff($naids,$oaids);
-                    }
-                    C::t('attachment')->addcopy_by_aid($naids);
-                    $setarr['tdata'] = serialize($setarr['tdata']);
-                    break;
                 case 'rich_text':
                     $setarr['tdata'] = getcontentdata($setarr['tdata'],$olddata['tdata']);
                     break;
                 case 'question':
+                    if($olddata['tdata']){
+                        $olddata['tdata'] = unserialize($olddata['tdata']);
+                    }
                     foreach($setarr['tdata'] as $k=>$v){
                         $setarr['tdata'][$k]['answer']= getcontentdata($setarr['tdata'][$k]['answer'],$olddata['tdata'][$k]['answer']);
                     }
@@ -70,32 +47,40 @@ class  table_pichome_templatetagdata extends dzz_table
                 default :
                     $naids =  [];
                     foreach($setarr['tdata'] as $v){
-                        $naids[] = $v['aid'];
+                        if(!empty($v['aid'])){
+                            $naids[] = $v['aid'];
+                        }
                     }
                     if($olddata){
-                        $odata = unserialize($olddata['tdata']);
-                        $oaids = [];
-                        foreach($odata as $idata){
-                            $oaids[] = $idata['aid'];
+                        if($olddata['tdata']){
+                            $odata = unserialize($olddata['tdata']);
                         }
-
-
+                        $oaids = [];
+                        if(!empty($odata)) {
+                            foreach ($odata as $idata) {
+                                if (!empty($idata['aid'])) {
+                                    $oaids[] = $idata['aid'];
+                                }
+                            }
+                        }
                         $delaids = array_diff($oaids,$naids);
                         foreach($delaids as $v){
-                            C::t('attachment')->delete_by_aid($v['aid']);
+                            C::t('attachment')->delete_by_aid($v);
                         }
                         $naids = array_diff($naids,$oaids);
                         if($naids)  C::t('attachment')->addcopy_by_aid($naids);
+                        $daids = array_diff($oaids,$naids);
+                        if($daids) C::t('attachment')->addcopy_by_aid($daids,-1);
                     }
                     $setarr['tdata'] = serialize($setarr['tdata']);
                     break;
-
             }
         }
 
-
         if($id){
-            parent::update($id,$setarr);
+            if(parent::update($id,$setarr)){
+                Hook::listen('lang_parse',$setarr,['setAlonpagetagdataLangData',$type]);
+            }
             return $id;
         }else{
             if($id = parent::insert($setarr,1)){
@@ -139,7 +124,7 @@ class  table_pichome_templatetagdata extends dzz_table
                 }
                 foreach($v['tdata'] as $k=>$val){
                     if($val['aid']){
-                        $v['tdata'][$k]['imgurl'] =IO::getFileUri('attach::'.$val['aid']);
+                        $v['tdata'][$k]['img']=($v['tdata'][$k]['imgurl'] =IO::getFileUri('attach::'.$val['aid']));
                     }
 
                     if(!$val['link']) $val['tdata'][$k]['url'] =  $val['linkval'] ? $val['linkval']:'';
@@ -152,23 +137,53 @@ class  table_pichome_templatetagdata extends dzz_table
                                 $url =  'index.php?mod=alonepage&op=view#id='.$val['linkval'];
                                 break;
                             case 3:
-                                $bdata = C::t('pichome_banner')->fetch($val['linkval']);
-                                if($bdata['btype'] == 4){
+                                if(is_array($val['linkval'])){
+                                    $bid=array_pop($val['linkval']);
+                                }else{
+                                    $bid = $val['linkval'];
+                                }
+                                $bdata = C::t('pichome_banner')->fetch($bid);
+
+                                if($bdata['btype'] == 4){//专辑
                                     $url = 'index.php?mod=banner&op=index&id=tb_'.$bdata['bdata'].'#id=tb_'.$bdata['bdata'];
-                                }elseif($bdata['btype'] == 3){
+                                }elseif($bdata['btype'] == 3){//链接
                                     $url = $bdata['bdata'];
+                                }elseif($bdata['btype'] == 1){//智能数据
+                                    $url = 'index.php?mod=intelligent&tid='. $bdata['bdata'];
+                                 }elseif($bdata['btype'] == 6){//发布
+                                    $url = 'index.php?mod=publish&id='. $bdata['bdata'];
                                 }else{
                                     $url = 'index.php?mod=banner&op=index&id='.$bdata['bdata'].'#id='.$bdata['bdata'];
                                 }
+
                                // $url = ($bdata['btype'] == 3) ? $bdata['bdata']:'index.php?mod=banner&op=index#id='.$bdata['bdata'];
                                 break;
+                            case 5:
+                                if(is_array($val['linkval'])){
+                                    $bid=array_pop($val['linkval']);
+                                }else{
+                                    $bid = $val['linkval'];
+                                }
+                                $bdata = C::t('#publish#publish_list')->fetch($bid);
+                                if($bdata){
+                                    $url = 'index.php?mod=publish&id='.$bdata['id'];
+                                }
+                                break;
                         }
-                        if(getglobal('setting/pathinfo')) $path = C::t('pichome_route')->feth_path_by_url($url);
-                        else $path = '';
-                        if($path){
-                            $v['tdata'][$k]['url'] = getglobal('siteurl').$path;
-                        }else{
-                            $v['tdata'][$k]['url'] = getglobal('siteurl').$url;
+                        if($url) {
+                            if (getglobal('setting/pathinfo')) $path = C::t('pichome_route')->fetch_path_by_url($url);
+                            else $path = '';
+
+                            if ($path) {
+                                $v['tdata'][$k]['url'] = getglobal('siteurl') . $path;
+                            } else {
+                                if (preg_match('/^https?:\/\//', $url)) {
+                                    $v['tdata'][$k]['url'] = $url;
+                                } else {
+                                    $v['tdata'][$k]['url'] = getglobal('siteurl') . $url;
+                                }
+
+                            }
                         }
                     }
                 }
@@ -186,23 +201,50 @@ class  table_pichome_templatetagdata extends dzz_table
 
 
     public function delete_by_tid($tid){
-        $ids = [];
+        $i=0;
         foreach(DB::fetch_all("select id from %t where tid = %d",[$this->_table,$tid]) as $v){
-            $ids[] = $v['id'];
+
+            if($this->delete_by_id($v['id'])){
+                $i++;
+            }
         }
-        if(parent::delete($ids)){
-            HOOK::listen('lang_parse',$ids,['delAlonepagedataLangData']);
-        }
+       return $i;
     }
     public function delete_by_id($id){
         if(!is_array($id)) $id = (array)$id;
+        $i=0;
         foreach($id as $v){
-            $cachename = 'templatetagdata_'.$v;
-            C::t('cache')->delete_cachedata_by_cachename($cachename);
-            parent::delete($v);
-            HOOK::listen('lang_parse',$v,['delAlonepagedataLangData']);
+            if($data=parent::fetch($v)) {
+                $tag=C::t('pichome_templatetag')->fetch($data['tid']);
+                $type = $tag['tagtype'];
+                switch ($type){
+                    case 'rich_text':
+                        getcontentdata('',$data['tdata']);
+                        break;
+                    case 'question':
+                        $tdata=unserialize($data['tdata']);
+                        foreach($tdata as $k=>$value){
+                           getcontentdata('',$value['answer']);
+                        }
+                        break;
+                    default :
+                        $tdata=unserialize($data['tdata']);
+                        $aids =  [];
+                        foreach($tdata as $value){
+                            if($value['aid']) $aids[] = $value['aid'];
+                        }
+                        if($aids) C::t('attachment')->addcopy_by_aid($aids,-1);
+                        break;
+                }
+                $cachename = 'templatetagdata_' . $v;
+                C::t('cache')->delete_cachedata_by_cachename($cachename);
+                HOOK::listen('lang_parse', $v, ['delAlonepagedataLangData']);
+                if(parent::delete($v)){
+                    $i++;
+                }
+            }
         }
-        return true;
+        return $i;
     }
 
 }

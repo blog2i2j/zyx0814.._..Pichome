@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root>
         <!-- 主题名称 -->
-        <item id="themename"><![CDATA[默认主题]]></item>
+        <item id="themename"><![CDATA[超酷时尚]]></item>
         <!-- 主题颜色 -->
         <item id="colors"><![CDATA[white,dark]]></item>
         <item id="defaultcolor"><![CDATA[dark]]></item>
@@ -84,6 +84,34 @@
                     <item id="value"><![CDATA[style4]]></item>
                 </item>
                 
+            </item>
+            <!-- 搜索 -->
+            <item id="search_pub">
+                <!-- 样式1 -->
+                <item id="style1">
+                    <item id="title"><![CDATA[简洁边框中对齐]]></item>
+                    <item id="default"><![CDATA[true]]></item>
+                    <item id="value"><![CDATA[style1]]></item>
+                </item>
+                <!-- 样式2 -->
+                <item id="style2">
+                    <item id="title"><![CDATA[简洁边框左对齐]]></item>
+                    <item id="default"><![CDATA[false]]></item>
+                    <item id="value"><![CDATA[style2]]></item>
+                </item>
+                <!-- 样式3 -->
+                <item id="style3">
+                    <item id="title"><![CDATA[无边框中对齐]]></item>
+                    <item id="default"><![CDATA[false]]></item>
+                    <item id="value"><![CDATA[style3]]></item>
+                </item>
+                <!-- 样式4 -->
+                <item id="style4">
+                    <item id="title"><![CDATA[无边框左对齐]]></item>
+                    <item id="default"><![CDATA[false]]></item>
+                    <item id="value"><![CDATA[style4]]></item>
+                </item>
+
             </item>
             <!-- 富文本 -->
             <item id="rich_text">
@@ -394,6 +422,88 @@
                     <item id="title"><![CDATA[大图小图混排]]></item>
                     <item id="default"><![CDATA[false]]></item>
                     <item id="value"><![CDATA[seven]]></item>
+                </item>
+            </item>
+            <!-- 混排 -->
+            <item id="image_mix">
+                <!-- 样式1 -->
+                <item id="x-m">
+                    <item id="title"><![CDATA[左文右图]]></item>
+                    <item id="default"><![CDATA[true]]></item>
+                    <item id="value"><![CDATA[x-m]]></item>
+                </item>
+                <!-- 样式1 -->
+                <item id="m-x">
+                    <item id="title"><![CDATA[左图右文]]></item>
+                    <item id="default"><![CDATA[false]]></item>
+                    <item id="value"><![CDATA[m-x]]></item>
+                </item>
+                <!-- 样式2 -->
+                <item id="x-b">
+                    <item id="title"><![CDATA[上文下图]]></item>
+                    <item id="default"><![CDATA[false]]></item>
+                    <item id="value"><![CDATA[x-b]]></item>
+                </item>
+                <!-- 样式3 -->
+                <item id="b-x">
+                    <item id="title"><![CDATA[上图下文]]></item>
+                    <item id="default"><![CDATA[false]]></item>
+                    <item id="value"><![CDATA[b-x]]></item>
+                </item>
+
+            </item>
+            <!-- 合集推荐 -->
+            <item id="collect_rec">
+                <!-- 样式1 -->
+                <item id="imageList">
+                    <item id="title"><![CDATA[网格]]></item>
+                    <item id="default"><![CDATA[true]]></item>
+                    <item id="value"><![CDATA[imageList]]></item>
+                </item>
+                <!-- 样式2 -->
+                <item id="details">
+                    <item id="title"><![CDATA[详情]]></item>
+                    <item id="default"><![CDATA[false]]></item>
+                    <item id="value"><![CDATA[details]]></item>
+                </item>
+                <!-- 样式3 -->
+                <item id="tabodd">
+                    <item id="title"><![CDATA[列表单列]]></item>
+                    <item id="default"><![CDATA[false]]></item>
+                    <item id="value"><![CDATA[tabodd]]></item>
+                </item>
+                <!-- 样式4 -->
+                <item id="tabeven">
+                    <item id="title"><![CDATA[列表双列]]></item>
+                    <item id="default"><![CDATA[false]]></item>
+                    <item id="value"><![CDATA[tabeven]]></item>
+                </item>
+            </item>
+            <!-- 合集展示 -->
+            <item id="collect_ids">
+                <!-- 样式1 -->
+                <item id="imageList">
+                    <item id="title"><![CDATA[网格]]></item>
+                    <item id="default"><![CDATA[true]]></item>
+                    <item id="value"><![CDATA[imageList]]></item>
+                </item>
+                <!-- 样式2 -->
+                <item id="details">
+                    <item id="title"><![CDATA[详情]]></item>
+                    <item id="default"><![CDATA[false]]></item>
+                    <item id="value"><![CDATA[details]]></item>
+                </item>
+                <!-- 样式3 -->
+                <item id="tabodd">
+                    <item id="title"><![CDATA[列表单列]]></item>
+                    <item id="default"><![CDATA[false]]></item>
+                    <item id="value"><![CDATA[tabodd]]></item>
+                </item>
+                <!-- 样式4 -->
+                <item id="tabeven">
+                    <item id="title"><![CDATA[列表双列]]></item>
+                    <item id="default"><![CDATA[false]]></item>
+                    <item id="value"><![CDATA[tabeven]]></item>
                 </item>
             </item>
         </item>

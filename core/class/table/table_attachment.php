@@ -135,7 +135,7 @@
                 if ($filter['oremoteid'] < 2) {
                     $where .= "  and remote<2";
                 } else {
-                    $where .= "  and remote= '{$filter[oremoteid]}'";
+                    $where .= "  and remote= '".$filter['oremoteid']."'";
                 }
             }
             
@@ -157,10 +157,10 @@
                 }
             }
             if ($filter['dateline']) {
-                $where .= " and dateline>='{$filter[dateline]}'";
+                $where .= " and dateline>='".$filter['dateline']."'";
             }
             if ($filter['aid1']) {
-                $where .= " and aid>'{$filter[aid1]}'";
+                $where .= " and aid>'".$filter['aid1']."'";
             }
             
             if ($filter['ignore']) {
@@ -174,7 +174,7 @@
             
         }
         
-        public function insert($setarr, $return_insert_id = 1,$nohook=0)
+        public function insert($setarr, $return_insert_id = 1,$nohook=0,$silent = false)
         {
             if ($aid = parent::insert($setarr, $return_insert_id)) {
                 

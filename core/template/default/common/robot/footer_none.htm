@@ -1,0 +1,28 @@
+<!--{if $data['pageset']['bottomEnable']}-->
+<div class="footer text-center">
+	<!--{if !empty($bottommenu)}-->
+	<div class="menu-container">
+		<ul class="main-menu">
+			$bottommenu
+		</ul>
+	</div>
+	<!--{/if}-->
+	<!--{if $data['pageset']['_textarea_bottomtitle_html']}-->
+	<p class="bottomtitle text-center">$data['pageset']['_textarea_bottomtitle_html']</p>
+	<!--{/if}-->
+	<div class="beians text-center">
+		<!--{if $data['pageset']['beian']}-->
+		<span class="beian"><a href="http://www.miibeian.gov.cn/" target="_blank">$data['pageset']['beian']</a></span>
+		<!--{/if}-->
+		<!--{if $data['pageset']['beianmps']}-->
+		<span class="beianmps"><a  style="margin-left:1em;" href="https://beian.mps.gov.cn/" target="_blank">$data['pageset']['beianmps']</a></span>
+		<!--{/if}-->
+	</div>
+</div>
+<!--{/if}-->
+<!--{eval output();}-->
+<!--{if $_G['setting']['statcode']}-->
+	<div class="text-center" style="display: none">$_G['setting']['statcode']</div>
+<!--{/if}--> 
+</body>
+</html>

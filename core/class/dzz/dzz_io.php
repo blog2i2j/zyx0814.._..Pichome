@@ -14,7 +14,7 @@
     
     class dzz_io
     {
-        protected function initIO($path)
+        public static  function initIO($path)
         {
             $path = self::clean($path);
             $bzarr = explode(':', $path);
@@ -28,7 +28,7 @@
             return new $classname($path);
         }
         
-        function MoveToSpace($path, $attach, $ondup = 'overwrite')
+       public static function  MoveToSpace($path, $attach, $ondup = 'overwrite')
         {
             $path = self::clean($path);
             if ($io = self::initIO($path)) {
@@ -37,15 +37,15 @@
                 return false;
             }
         }
-        
-        function authorize($bz, $refer = '')
+
+        public static function authorize($bz, $refer = '')
         {
             if ($io = self::initIO($bz)) {
                 $io->authorize($refer);
             }
         }
-        
-        function getQuota($bz)
+
+        public static function getQuota($bz)
         {
             if ($io = self::initIO($bz)) {
                 return $io->getQuota($bz);
@@ -53,8 +53,8 @@
                 return false;
             }
         }
-        
-        function chmod($path, $chmod, $son = 0)
+
+        public static function chmod($path, $chmod, $son = 0)
         {
             if ($io = self::initIO($path)) {
                 return $io->chmod($path, $chmod, $son);
@@ -62,8 +62,8 @@
                 return false;
             }
         }
-        
-        function parsePath($path)
+
+        public static function parsePath($path)
         {
             $path = self::clean($path);
             if ($io = self::initIO($path)) {
@@ -72,8 +72,8 @@
                 return false;
             }
         }
-        
-        function output_thumb($file, $mine = 'image/JPEG')
+
+        public static function output_thumb($file, $mine = 'image/JPEG')
         {//根据文件地址，输出图像流
             global $_G;
             $last_modified_time = filemtime($file);
@@ -100,36 +100,36 @@
         }
         
         //获取缩略图
-        function getThumb($path, $thumbsign, $original, $returnurl = false, $create = 0, $thumbtype = 1, $extpramas = array())
+        public static function getThumb($path, $thumbsign, $original, $returnurl = false, $create = 0, $thumbtype = 1, $extpramas = array())
         {
             $path = self::clean($path);
             if ($io = self::initIO($path)) return $io->getThumb($path, $thumbsign, $original, $returnurl, $create, $thumbtype, $extpramas);
         }
 
-        function getPreviewThumb($path, $thumbsign, $original, $returnurl = false, $create = 0, $thumbtype = 1, $extpramas = array()){
+        public static function getPreviewThumb($path, $thumbsign, $original, $returnurl = false, $create = 0, $thumbtype = 1, $extpramas = array()){
             $path = self::clean($path);
             if ($io = self::initIO($path)) return $io->getPreviewThumb($path, $thumbsign, $original, $returnurl, $create, $thumbtype, $extpramas);
         }
 
         //获取文件信息
-        function getfilesinfo($path){
+        public static function getfilesinfo($path){
             $path = self::clean($path);
             if ($io = self::initIO($path)) return $io->getfilesinfo($path);
         }
-        
-        function createThumbByOriginal($path,$data, $width, $height, $thumbtype = 1, $original = 0, $extraparams = array(),$filesize=0)
+
+        public static function createThumbByOriginal($path,$data, $width, $height, $thumbtype = 1, $original = 0, $extraparams = array(),$filesize=0)
         {
             $path = self::clean($path);
             if ($io = self::initIO($path)) return $io->createThumbByOriginal($path,$data,$width, $height, $thumbtype, $original, $extraparams,$filesize);
         }
-        function gettmpThumb($path, $width = 0, $height = 0, $returnurl = false, $thumbtype = 1, $extraparams = array()){
+        public static  function gettmpThumb($path, $width = 0, $height = 0, $returnurl = false, $thumbtype = 1, $extraparams = array()){
             $path = self::clean($path);
             if ($io = self::initIO($path)) return $io->gettmpThumb($path,$width, $height,$returnurl, $thumbtype, $extraparams);
         }
         /*
          *通过icosdata获取folderdata数据
         */
-        function getFolderByIcosdata($icosdata)
+        public static function getFolderByIcosdata($icosdata)
         {
             if ($io = self::initIO($icosdata['path'])) return $io->getFolderByIcosdata($icosdata);
             else return false;
@@ -138,7 +138,7 @@
         //$path: 路径
         //$getimagedata 是否获取图片宽高等数据
         //$bz==''是表示获取的是本地；此时path为icoid；
-        function getMeta($path, $getimagedata = 0)
+        public static function getMeta($path, $getimagedata = 0)
         {
             $path = self::clean($path);
             if ($io = self::initIO($path)) return $io->getMeta($path, $getimagedata);
@@ -146,7 +146,7 @@
         }
         
         //重命名文件
-        function rename($path, $newname)
+        public static function rename($path, $newname)
         {
             $path = self::clean($path);
             $newname = self::name_filter($newname);
@@ -159,14 +159,14 @@
         
         
         //根据路径获取目录树的数据；
-        function getFolderDatasByPath($path)
+        public static function getFolderDatasByPath($path)
         {
             $path = self::clean($path);
             if ($io = self::initIO($path)) return $io->getFolderDatasByPath($path);
             else return false;
         }
         //判断文件或目录是否存在
-        public function checkfileexists($path,$isdir = false){
+        public static  function checkfileexists($path,$isdir = false){
             $io = self::initIO($path);
             if ($io){
                 $path = self::clean($path);
@@ -176,7 +176,7 @@
         }
 
         //获取文件时间
-        public function getFimemtime($path){
+        public static  function getFimemtime($path){
             $io = self::initIO($path);
             if ($io){
                 $path = self::clean($path);
@@ -186,7 +186,7 @@
         }
         //获取文件流；
         //$path: 路径
-        public function getStream($path, $fop = 0)
+        public static  function getStream($path, $fop = 0)
         {
             $io = self::initIO($path);
             if ($io){
@@ -197,13 +197,13 @@
         }
         //获取文件地址；
         //$path: 路径
-        function getFileUri($path, $fop = 0)
+        public static function getFileUri($path, $fop = 0)
         {
             $path = self::clean($path);
             if ($io = self::initIO($path)) return $io->getFileUri($path, $fop);
             else return $path;
         }
-        function getFolderlist($path,  $nextmarker = '',$by = 'time',$order = 'DESC', $limit = 1000, $force = 0)
+        public static function getFolderlist($path,  $nextmarker = '',$by = 'time',$order = 'DESC', $limit = 1000, $force = 0)
         {
             $path = self::clean($path);
             if ($io = self::initIO($path)) return $io->getFolderlist($path, $nextmarker,$by, $order, $limit, $force);
@@ -218,7 +218,7 @@
          * @param string $force 读取缓存，大于0：忽略缓存，直接调用api数据，常用于强制刷新时。
          * @return icosdatas
          */
-        function listFiles($path,  $nextmarker = '',$by = 'time',$order = 'DESC', $limit = 1000, $force = 0)
+        public static function listFiles($path,  $nextmarker = '',$by = 'time',$order = 'DESC', $limit = 1000, $force = 0)
         {
             $path = self::clean($path);
             if ($io = self::initIO($path)) return $io->listFiles($path,  $nextmarker,$by,$order, $limit, $force);
@@ -231,7 +231,7 @@
         //$tbz:目标api；
         //返回：
         //$icosdata数组；
-        function CopyTo($opath, $path, $iscopy = 0, $force = 0)
+        public static function CopyTo($opath, $path, $iscopy = 0, $force = 0)
         {
             $path = self::clean($path);
             $opath = self::clean($opath);
@@ -245,7 +245,7 @@
          * @param string $path 目标位置（可能是同一api内或跨api，这两种情况分开处理）
          * @return icosdatas
          */
-        public function DeleteByData($data, $force = false)
+        public static  function DeleteByData($data, $force = false)
         {
             $havesubitem = 0;
             if (isset($data['contents'])) {
@@ -273,7 +273,7 @@
         //添加目录
         //$fname：目录名称;
         //$path：目录位置路径，如果是本地，$path 为pfid
-        function CreateFolder($path, $fname, $perm = 0, $params = array(), $ondup = 'newcopy', $force = false)
+        public static function CreateFolder($path, $fname, $perm = 0, $params = array(), $ondup = 'newcopy', $force = false)
         {
             $path = self::clean($path);//11
             $fname = self::name_filter($fname);
@@ -290,7 +290,7 @@
         //添加多层目录
         //$fid：父级目录id;
         //$path：目录位置路径，如aaa/bbb/ccc
-        function CreateFolderByPath($path, $fid, $bz = 'dzz', $params = array())
+        public static function CreateFolderByPath($path, $fid, $bz = 'dzz', $params = array())
         {
             $path = self::clean($path);
             if ($io = self::initIO($bz)) {
@@ -299,7 +299,7 @@
         }
         
         /*将文件缓存到本地,并且返回本地的访问地址*/
-        function cacheFile($data)
+        public static function cacheFile($data)
         {
             global $_G;
             $subdir = $subdir1 = $subdir2 = '';
@@ -321,7 +321,7 @@
         //获取文件数据
         //$data：文件的信息数组
         //返回我文件data；
-        function getFileContent($path)
+        public static function getFileContent($path)
         {
             $path = self::clean($path);
             if ($io = self::initIO($path)) return $io->getFileContent($path);
@@ -330,7 +330,7 @@
         //覆盖文件内容
         //$data：文件的信息数组
         //返回我文件data；
-        function setFileContent($path, $data, $force = false, $nocover = true)
+        public static function setFileContent($path, $data, $force = false, $nocover = true)
         {
             $path = self::clean($path);
             if ($io = self::initIO($path)) {
@@ -347,7 +347,7 @@
         
         //分片上传文件；
         //$path: 路径
-        function multiUpload($file, $path, $filename, $attach = array(), $ondup = "newcopy")
+        public static function multiUpload($file, $path, $filename, $attach = array(), $ondup = "newcopy")
         {
             $path = self::clean($path);
             $filename = self::name_filter($filename);
@@ -359,7 +359,7 @@
         //$fileContent：源文件数据;
         //$container：目标位置;
         //$bz：api;
-        function upload($fileContent, $path, $filename)
+        public static function upload($fileContent, $path, $filename)
         {
             $path = self::clean($path);
             $filename = self::name_filter($filename);
@@ -369,8 +369,8 @@
                 return $return;
             } else return false;
         }
-        
-        function upload_by_content($fileContent, $path, $filename, $partinfo = array())
+
+        public static function upload_by_content($fileContent, $path, $filename, $partinfo = array())
         {
             $path = self::clean($path);
             $filename = self::name_filter($filename);
@@ -381,7 +381,7 @@
                 return $return;
             } else return false;
         }
-        public function uploadByStream($path,$filename,$file,$fid,$relativePath='',$nohook=0){
+        public static  function uploadByStream($path,$filename,$file,$fid,$relativePath='',$nohook=0){
             $path = self::clean(urldecode($path));
             $name = self::name_filter(urldecode($filename));
             $relativePath = self::clean(urldecode($relativePath));
@@ -400,7 +400,7 @@
         }
     
         //public function uploadStream($file, $name, $path, $relativePath = '', $content_range = '')
-        public function uploadStream($file, $name, $appid, $pfid = '', $relativePath = '', $content_range = array(), $params = array())
+        public static  function uploadStream($file, $name, $appid, $pfid = '', $relativePath = '', $content_range = array(), $params = array())
         {
             $path = self::clean(urldecode($file));
             $name = self::name_filter(urldecode($name));
@@ -417,8 +417,8 @@
                 return $return;
             } else return false;
         }
-        
-        function Delete($path, $isdir = false)
+
+        public static function Delete($path, $isdir = false)
         {
             $path = self::clean($path);
             if ($io = self::initIO($path)) {
@@ -428,7 +428,7 @@
         }
         
         //恢复文件
-        function Recover($path, $combine = true, $force = false)
+        public static function Recover($path, $combine = true, $force = false)
         {
             $path = self::clean($path);
             if ($io = self::initIO($path)) {
@@ -437,32 +437,32 @@
         }
         
         //获取不重复的目录名称
-        public function getFolderName($fname, $path)
+        public static  function getFolderName($fname, $path)
         {
             $path = self::clean($path);
             $fname = self::name_filter($fname);
             if ($io = self::initIO($path)) return $io->getFolderName($fname, $path);
             else return false;
         }
-        
-        
-        public function download($paths, $filename = '', $checkperm = 'download', $param = array())
+
+
+        public static  function download($paths, $filename = '', $checkperm = 'download', $param = array())
         {
             $paths = (array)$paths;
             $paths = self::clean($paths);
             if ($io = self::initIO($paths[0])) return $io->download($paths, $filename, $checkperm, $param);
             else return false;
         }
-        
-        public function localdownload($paths, $filename = '', $checkperm = 'download', $param = array())
+
+        public static  function localdownload($paths, $filename = '', $checkperm = 'download', $param = array())
         {
             $paths = (array)$paths;
             $paths = self::clean($paths);
             if ($io = self::initIO($paths[0])) return $io->localdownload($paths, $filename, $checkperm, $param);
             else return false;
         }
-        
-        public function getCloud($bz)
+
+        public static  function getCloud($bz)
         {
             $bzarr = explode(':', $bz);
             $cloud = DB::fetch_first("select * from " . DB::table('connect') . " where bz='{$bzarr[0]}'");
@@ -483,8 +483,8 @@
             $root['cloudtype'] = $cloud['type'];
             return $root;
         }
-        
-        public function clean($str) {//清除路径
+
+        public static  function clean($str) {//清除路径
 			if(is_array($str)){
 				foreach($str as $key=> $value){
 					$str[$key]=self::clean_path(str_replace(array( "\n", "\r", '../'), '', $value));
@@ -495,7 +495,7 @@
 
 			return $str;
 		}
-		private function clean_path($str){
+		private static function clean_path($str){
 			if(preg_match("/\.\.\//",$str)){
 				$str=str_replace('../','',$str);
 				return self::clean_path($str);
@@ -503,14 +503,15 @@
 				return $str;
 			}
 		}
-        
-        public function name_filter($name)
+
+        public static  function name_filter($name)
         {
             return str_replace(array('/', '\\', ':', '*', '?', '<', '>', '|', '"', "\n"), '', $name);
         }
-        
-        public function saveToAttachment($file_path, $filename, $tospace = 1, $width = 256, $height = 256, $deletesource = 1)
+
+        public static  function saveToAttachment($file_path, $filename, $tospace = 1, $width = 256, $height = 256, $deletesource = 1)
         {
+            global $_G;
             $md5 = md5_file($file_path);
             $filesize = filesize($file_path);
             if ($md5 && $attach = DB::fetch_first("select * from %t where md5=%s and filesize=%d", array('attachment', $md5, $filesize))) {
@@ -580,8 +581,8 @@
                 }
             }
         }
-        
-        public function getPath($filename, $dir = 'dzz')
+
+        public static  function getPath($filename, $dir = 'dzz')
         {
             $pathinfo = pathinfo($filename);
             $ext = $pathinfo['extension'] ? ($pathinfo['extension']) : '';
@@ -600,7 +601,7 @@
             return $target . date('His') . '' . strtolower(random(16)) . '.' . $ext;
         }
         //获取水印图地址
-        public  function getwaterimg($path){
+        public static   function getwaterimg($path){
             $path = self::clean($path);
             if ($io = self::initIO($path)) {
                 $return = $io->getwaterimg($path);
@@ -608,7 +609,7 @@
             } else return false;
         }
         //移动云端文件到上传区
-        public function movetmpdataToattachment($path, $data)
+        public static  function movetmpdataToattachment($path, $data)
         {
             $path = self::clean($path);
             if ($io = self::initIO($path)) {
@@ -625,7 +626,7 @@
         }
         
         //移动文件到下载缓冲区
-        public function moveFileToDownload($path, $filepath)
+        public static  function moveFileToDownload($path, $filepath)
         {
             $path = self::clean($path);
             if ($io = self::initIO($path)) {
@@ -636,7 +637,7 @@
         }
         
         //移动缩略图到目标位置
-        public function moveThumbFile($path, $filepath)
+        public static  function moveThumbFile($path, $filepath)
         {
             $path = self::clean($path);
             if ($io = self::initIO($path)) {

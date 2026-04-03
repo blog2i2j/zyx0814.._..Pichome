@@ -1,0 +1,249 @@
+<!--{template common/container/pc/header_start}-->
+<link rel="stylesheet" href="static/scss/default/index.css?{VERHASH}">
+<link rel="stylesheet" type="text/css" href="{MOD_PATH}/template/library/black/view/pc/assets/css/index.css?{VERHASH}"/>
+<script type="text/javascript" src="static/vue_components/OrguserSelect/index.js?{VERHASH}"></script>
+<link rel="stylesheet" type="text/css" href="{MOD_PATH}/template/library/black/view/pc/assets/js/FullScreenSlider/index.css?{VERHASH}"/>
+<script type="text/javascript" src="{MOD_PATH}/template/library/black/view/pc/assets/js/FullScreenSlider/index.js?{VERHASH}"></script>
+<link rel="stylesheet" type="text/css" href="static/scss/layout.css?{VERHASH}"/>
+<script type="text/javascript" src="static/vue_components/ImageLayout/index.js?{VERHASH}"></script>
+<script type="text/javascript" src="{MOD_PATH}/template/library/black/view/pc/assets/js/menu.js?{VERHASH}"></script>
+<!--{template common/container/pc/header_end}-->
+<div id="dzzoffice">
+    <el-container class="page-main">
+            <el-main style="padding: 0;--tw-bg-opacity: 1;background-color: rgb(2 11 19 / var(--tw-bg-opacity, 1));" class="dzz-container">
+                <el-scrollbar ref="MainscrollbarRef" @scroll="HandleElScrollbar">
+                    <div class="main-header">
+                        <!--{template library/black/view/pc/components/header}-->
+                    </div>
+                    <div style="width: 100%;overflow: hidden;position: relative;" v-if="RightformLick._file_carousel && RightformLick._file_carousel.length">
+                        <div class="fullscreen-slider">
+                            <!-- 轮播图容器 -->
+                            <div class="slider-container" >
+                                <div class="slider-slide"  v-for="item in RightformLick._file_carousel" :data-type="item.type">
+                                    <template v-if="item.filetype=='mp4'">
+                                        <video  class="slider-video" muted loop playsinline>
+                                            <source :src="item.src" type="video/mp4">
+                                          </video>
+                                    </template>
+                                    <template v-else>
+                                        <el-image style="width: 100%; height: 100%;" :src="item.src" fit="cover"></el-image>
+                                    </template>
+                                </div>
+                            </div>
+                            
+                            <!-- 分页器容器 -->
+                            <div class="slider-pagination">
+                              <div class="slider-dot" v-for="(item,index) in RightformLick._file_carousel" :data-index="index">
+                                <el-image 
+                                style="width: 20px; height: 20px" 
+                                :src="item.thumb" 
+                                fit="cover"></el-image>
+                              </div>
+                            </div>
+                        </div>
+                        <div class="search-box">
+                            <text class="sm-text-32 md-text-38 lg-text-50">{{RightformLick.title}}</text>
+                            <div class="search-input" v-if="RightformLick.search">
+                                <el-button class="Camera" link icon="Camera" style="font-size: 20px;" v-if="RightformLick.picture"></el-button>
+                                <el-divider v-if="RightformLick.picture" direction="vertical" style="margin: 0;margin-left: 20px;"></el-divider>
+                                <input type="text" />
+                                <el-button class="sub" size="large" round  type="primary">搜索</el-button>
+                                
+                            </div>
+                        </div>
+                    </div>
+                    <div style="padding: 20px;">
+                        <Image-Layout 
+                            ref="RefImageLayout"
+                            layout="waterFall"
+                            :showmessage="ImageProps.ShowMessage"
+                            url="index.php?mod=publish&op=ajax&do=getappdatalist"
+                            :urlparam="ImageProps.urlparam"
+                            :scrollref="scrollref">
+                        </Image-Layout>
+                    </div>
+                </el-scrollbar>
+            </el-main>
+    </el-container>
+</div>
+<script type="text/javascript">
+    const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch , onUnmounted } = Vue;
+    const dzzoffice = createApp({
+        data() {
+            return {
+                keyword:'',
+                active:0,
+                dialogTableVisible:false,
+                scrollref:'',
+                appid:'',
+                menuData:{
+                    data:[],
+                    active:'all'
+                },
+                ImageProps:{
+					layout:'rowGrid',//rowGrid,imageList,waterFall
+					ShowMessage:{
+						display:[],
+                    	other:null
+					},
+					urlparam:{
+                        appid: '',
+                        asc: 'desc',
+                        page: 1,
+                        perpage: 60,
+                    },
+					operation:{
+						click:true,//节点是否可被选择
+	                    dblclick:false,//节点是否可被双击选择
+	                    ctrl:false,//是否开启ctrl选中
+	                    shift:false,//是否开启shift选中
+	                    contextmenu:false,//是否开启右键
+	                    drap:false,//是否开启拖动选中
+						checked:false,
+						allowImageSearch:false
+					}
+				},
+                RightformBasic:{
+                    title:'',
+                    desc:'',
+                    link:'https://codesign.qq.com/app/s/567525060095993',
+                },
+                RightformLick:{
+                    _file_logo:'',
+                    title:'',
+                    search:1,
+                    picture:1,
+                    _file_carousel:[],
+                    _file_page:{}
+                },
+            }
+        },
+        mixins:[],
+        watch:{
+  
+        },
+        created() {
+            this.GetData();
+        },
+        methods: {
+            async GetData(){
+				let self = this;
+                let {data: res} = await axios.post('{MOD_URL}&operation=basic',{
+                    id:'$id'
+                });
+                this.appid = res.pval;
+                this.RightformLick._file_logo = res.pageset._file_logo&&res.pageset._file_logo.length?res.pageset._file_logo[0]:{aid:0,src:''};
+                this.RightformLick.title = res.pageset.title?res.pageset.title:'';
+                this.RightformLick.search = res.pageset.search?parseInt(res.pageset.search):0;
+                this.RightformLick.picture = res.pageset.picture?parseInt(res.pageset.picture):0;
+                this.RightformLick._file_carousel = res.pageset._file_carousel?res.pageset._file_carousel:[];
+                let fid = this.GetUrlParam('fid');
+                console.log(fid);
+                this.ImageProps.urlparam = {
+                    pid:'$id',
+                    appid: res.pval,
+                    asc: 'desc',
+                    page: 1,
+                    perpage: 60,
+                    fids:fid
+                };
+                self.$nextTick(function(){
+                    const sliderContainer = document.querySelector('.fullscreen-slider');
+                    const slider = new FullScreenSlider({
+                        container: sliderContainer,
+                        interval: 3000,
+                        autoPlay: true
+                    });
+                    self.$refs.RefImageLayout.restart();
+                    self.GetFolderData(0)
+				});
+			},
+            itemClick(index){
+                this.active = index;
+            },
+            handleSelect(data){
+                let self = this;
+                if(this.menuData.active == data.fid)return false;
+                this.menuData.active = data.fid;
+                this.ImageProps.urlparam['fids'] = data.fid!='all'?data.fid:'';
+                location.hash = 'fid='+(data.fid != 'all'?data.fid:'');
+                self.$refs.RefImageLayout.restart();
+            },
+            async GetFolderData(leve){
+				let self = this;
+                let {data: res} = await axios.post('index.php?mod=pichome&op=library&do=ajax&operation=getsearchfolder',{
+                    appid:this.appid
+                });
+                if(leve == 0){
+                    let folderdatanum = res.folderdatanum;
+                    folderdatanum.unshift(
+                        {
+                           fid:'all',
+                           fname:'全部',
+                           leaf:true 
+                        }
+                    )
+                    this.menuData.data = folderdatanum;
+                }
+			},
+            HandleElScrollbar(data){
+				var self = this;
+				self.$refs.RefImageLayout.HandleElScrollbar();
+                const sliderContainer = document.querySelector('.fullscreen-slider');
+                let offsetHeight = sliderContainer.offsetHeight - 76;
+                const header = document.querySelector('.main-header .page-header');
+                if(data.scrollTop > offsetHeight){
+                    header.classList.add('highlight');
+                }else{
+                    header.classList.remove('highlight');
+                }
+			},
+            //获取哈希参数
+			GetUrlParam(name,url){
+				if(!url){
+					var hash=location.hash;
+					var url=hash.replace(/&.+$/i,'').replace('#','');
+				}else{
+					var url=location.hash;
+				}
+				if (!name) {
+					return '';
+				}
+				var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+				if (!url) {
+					return '';
+				}
+				var r = url.match(reg);
+				if (r !== null) {
+					return decodeURIComponent(r[2]);
+				}
+			},
+        },
+        mounted() {
+            let self = this;
+            this.scrollref = self.$refs.MainscrollbarRef;
+            dzzoffice.WindowThis = this;
+            
+            
+        },
+        components: {
+			'orguser-select':orguserselect,
+            menuitem
+			
+		},
+    });
+    dzzoffice.use(ElementPlus, {
+        locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+    });
+    for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+        dzzoffice.component(key, component)
+    }
+    dzzoffice.use(ImageLayout);
+    dzzoffice.component('comavatar', comavatar);
+    dzzoffice.component('international',international);
+    // 屏蔽警告信息
+    dzzoffice.config.warnHandler = function(){return null};
+    dzzoffice.mount('#dzzoffice');
+</script>
+
+<!--{template common/container/pc/footer}-->

@@ -1,0 +1,155 @@
+<van-popup v-model="Operation.PopupVisible" class="my-popup"  position="right" @closed="OperationClosed">
+	<van-nav-bar 
+		left-arrow @click-left="OperationNavbarLeftClick">
+			<template #title>
+				<template v-if="Operation.type=='editparent'">{lang edit_collect_name}</template>
+				<template v-else-if="Operation.type=='addparent'">{lang add_category}</template>
+				<template v-else-if="Operation.type=='editchild'">{lang edit_name}</template>
+				<template v-else-if="Operation.type=='addsibling'">{lang Create_peer}</template>
+				<template v-else-if="Operation.type=='addchild'">{lang Create_Child}</template>
+			</template>
+			<template #right>
+			    <van-button 
+					@click="OperationNavbarRightClick" 
+					size="small" 
+					type="primary" 
+					:disabled="Operation.name?false:true">{lang confirms}</van-button>
+			</template>
+		</van-nav-bar>
+	<div class="scroll-box">
+		<van-cell-group>
+			<van-cell>
+				<template #title>
+					<template v-if="Operation.type=='editparent'">{lang collect_name}:</template>
+					<template v-else>{lang classify_name}:</template>
+				</template>
+				<template #label>
+				    <van-field v-model.trim="Operation.name" maxlength="100" placeholder="{lang please_input}" />
+				</template>
+			</van-cell>
+		</van-cell-group>
+	</div>
+</van-popup>
+<script type="text/javascript">
+	var JsOperationMixin = {
+		data(){
+			return {
+				Operation:{
+					PopupVisible:false,
+					name:'',
+					//editparent:修改收藏夹名称，addparent:添加顶级分类，editchild：修改分类名称，addsibling：添加兄弟，addchild：添加子分类
+					type:'',
+					node:''
+				}
+			}
+		},
+		methods:{
+			OperationNavbarLeftClick(){
+				this.Operation.PopupVisible = false;
+			},
+			async OperationNavbarRightClick(){
+				var self = this;
+				self.$toast.loading({
+					message: '{lang In_the_save}',
+					className:'conter-toast',
+					duration: 0,
+					forbidClick: true,
+					loadingType: 'spinner',
+				});
+				var param = {};
+				var url = '';
+				if(self.Operation.type == 'editparent'){
+					param = {
+						clid:self.ParamBasic.clid,
+						name:self.Operation.name
+					}
+					url = MOD_URL+'&op=collect&do=addcollect';
+				}else{
+					url = MOD_URL+'&op=collect&do=addcollectcat';
+				}
+				if(self.Operation.type == 'addparent'){
+					param = {
+						clid:self.ParamBasic.clid,
+						catname:self.Operation.name
+					}
+				}
+				if(self.Operation.type == 'editchild'){
+					param = {
+						clid:self.ParamBasic.clid,
+						cid:self.Operation.node.cid,
+						pcid:self.Operation.node.pcid,
+						catname:self.Operation.name
+					}
+				}
+				if(self.Operation.type == 'addsibling'){
+					param = {
+						clid:self.ParamBasic.clid,
+						pcid:self.Operation.node.pcid,
+						catname:self.Operation.name
+					}
+				}
+				if(self.Operation.type == 'addchild'){
+					param = {
+						clid:self.ParamBasic.clid,
+						pcid:self.Operation.node.cid,
+						catname:self.Operation.name
+					}
+				}
+				var res = await axios.post(url,param);
+				if(res == 'intercept'){
+					return false;
+				}
+				var json = res.data;
+				if(json.success){
+					if(self.Operation.type == 'editparent'){
+						self.DocumentName = json.success.name;
+						self.$notify({ type: 'success', message: '{lang modification_success}' });
+					}
+					if(self.Operation.type == 'addparent'){
+						var item = json.success;
+						item['loaded'] = false;
+						item['loading'] = false;
+						item['leaf'] = true;
+						item['children'] = [];
+						self.Classifys.data.push(item);
+					}
+					if(self.Operation.type == 'editchild'){
+						self.Operation.node.catname = json.success.catname;
+					}
+					if(self.Operation.type == 'addsibling'){
+						var item = json.success;
+						item['loaded'] = false;
+						item['loading'] = false;
+						item['leaf'] = true;
+						item['children'] = [];
+						if(parseInt(self.Operation.node.pcid)>0){
+							self.ClassifysAppend(self.Operation.node.pcid,self.Classifys.data,item);
+						}else{
+							
+							self.Classifys.data.push(item);
+						}
+					}
+					if(self.Operation.type == 'addchild'){
+						var item = json.success;
+						item['loaded'] = false;
+						item['loading'] = false;
+						item['leaf'] = true;
+						item['children'] = [];
+						self.Operation.node.leaf = false;
+						self.Operation.node.children.push(item);
+					}
+					self.$toast.clear();
+				}else{
+					self.$notify({ type: 'danger', message: '{lang save_unsuccess}' });
+				}
+				self.Operation.PopupVisible = false;
+			},
+			
+			OperationClosed(){
+				this.Operation.name = '';
+				this.Operation.type = '';
+				this.Operation.node = '';
+			}
+		}
+	};
+</script>

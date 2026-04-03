@@ -134,7 +134,7 @@ elseif($do == 'editbannerdata'){//编辑栏目基本数据
         }else{
             $url = 'index.php?mod=banner&op=index&id='.$data['bdata'].'#id='.$data['bdata'];
         }
-        if($setting['pathinfo'] && $data['btype'] != 3) $path = C::t('pichome_route')->feth_path_by_url($url);
+        if($setting['pathinfo'] && $data['btype'] != 3) $path = C::t('pichome_route')->fetch_path_by_url($url);
         else $path = '';
         if($path){
             $data['url'] = $path;
@@ -152,17 +152,20 @@ elseif($do=='move'){//移动栏目和排序
         exit(json_encode(array('success'=>'true')));
     }
     exit(json_encode(array('success' => 'false')));
-}elseif($do == 'bannerlist'){//获取栏目列表
+}
+elseif($do == 'bannerlist'){//获取栏目列表
     $bannerlist = C::t('pichome_banner')->getbannerlist();
     exit(json_encode(['success'=>true,'data'=>$bannerlist]));
-}elseif($do == 'getalonepage'){//获取单页列表
+}
+elseif($do == 'getalonepage'){//获取单页列表
     $pagelist= [];
     foreach(DB::fetch_all("select * from %t where 1",['pichome_templatepage']) as $v){
         Hook::listen('lang_parse',$v,['getAlonepageLangData']);
         $pagelist[] = array('id'=>$v['id'],'name'=>$v['pagename']);
     }
     exit(json_encode(['success'=>true,'data'=>$pagelist]));
-}elseif($do == 'getapporsources'){//获取库列表或智能列表
+}
+elseif($do == 'getapporsources'){//获取库列表
     //$stype = isset($_GET['stype']) ? intval($_GET['stype']):0;
     $data = [];
     /*if($stype && $stype != 5){
@@ -182,6 +185,112 @@ elseif($do=='move'){//移动栏目和排序
         }
    // }
     exit(json_encode(['success'=>true,'data'=>$data]));
+}elseif($do == 'getIntelligentData'){//获取智能数据列表
+    $data = [];
+    foreach(DB::fetch_all("select * from %t where 1",['intelligent']) as $v){
+
+        $data[] = array('id'=>$v['tid'],'name'=>$v['title']);
+    }
+    exit(json_encode(['success'=>true,'data'=>$data]));
+}elseif($do == 'getPublishData') {//获取发布列表
+    $q = isset($_GET['q']) ? trim($_GET['q']) : '';
+    $data = [];
+    $sql = "pstatus>0 ";
+    $params = array('publish_list');
+    if ($q) {
+        $sql .= " and pname like %s";
+        $params[] = "%" . $q . "%";
+    }
+    foreach (DB::fetch_all("select * from %t where $sql", $params) as $v) {
+
+        $data[] = array('id' => $v['id'], 'ptype' => $v['ptype'], 'name' => $v['pname']);
+    }
+    exit(json_encode(['success' => true, 'data' => $data]));
+}elseif($do == 'getSourceData'){
+    $id=isset($_GET['id']) ? trim($_GET['id']):'';
+    $stype=isset($_GET['stype']) ? intval($_GET['stype']):0;
+    $q=isset($_GET['q']) ? trim($_GET['q']):'';
+    $limit=20;
+    $data = [];
+    switch($stype){
+        case 0:
+            $sql="isdelete < 1";
+            $params = array('pichome_vapp');
+            if($id){
+                $sql.=" and (1 OR appid = %s)";
+                $params[] = $id;
+            }
+            if($q){
+                $sql.=" and appname like %s";
+                $params[] = "%" . $q . "%";
+            }
+
+            foreach(DB::fetch_all("select * from %t where $sql limit $limit",$params) as $v){
+                if ($v['type'] != 3 && !IO::checkfileexists($v['path'],1)) {
+                    continue;
+                }
+                Hook::listen('lang_parse',$v,['getVappLangData']);
+                $data[] = array('id'=>$v['appid'],'name'=>$v['appname']);
+            }
+            break;
+        case 1: //智能数据
+            $sql="1";
+            $params = array('intelligent');
+            if($id){
+                $sql.=" and (1 OR tid = %d)";
+                $params[] = $id;
+            }
+            if($q){
+                $sql.=" and title like %s";
+                $params[] = "%" . $q . "%";
+            }
+            foreach(DB::fetch_all("select * from %t where $sql limit $limit",$params) as $v){
+                $data[] = array('id'=>$v['tid'],'name'=>$v['title']);
+            }
+            break;
+        case 2: //单页
+            $sql="1";
+            $params = array('pichome_templatepage');
+            if($id){
+                $sql.=" and (1 OR id = %d)";
+                $params[] = $id;
+            }
+            if($q){
+                $sql.=" and pagename like %s";
+                $params[] = "%" . $q . "%";
+            }
+            foreach(DB::fetch_all("select * from %t where $sql",$params) as $v){
+                Hook::listen('lang_parse',$v,['getAlonepageLangData']);
+                $data[] = array('id'=>$v['id'],'name'=>$v['pagename']);
+            }
+            break;
+        case 4: //专辑
+            $tabgroupdata = [];
+            $tabstatus = 0;
+            Hook::listen('checktab', $tabstatus);
+            if ($tabstatus) {//获取有tab数据
+                Hook::listen('gettabgroupdata', $tabgroupdata);
+            }
+            $data = array_values($tabgroupdata);
+            break;
+        case 6:
+            $sql = "pstatus=1 ";
+            $params = array('publish_list');
+            if($id){
+                $sql.=" and (1 OR id = %d)";
+                $params[] = $id;
+            }
+            if ($q) {
+                $sql .= " and pname like %s";
+                $params[] = "%" . $q . "%";
+            }
+            foreach (DB::fetch_all("select * from %t where $sql", $params) as $v) {
+                $data[] = array('id' => $v['id'], 'ptype' => $v['ptype'], 'name' => $v['pname']);
+            }
+            break;
+    }
+    exit(json_encode(['success'=>true,'data'=>$data]));
+
 }elseif($do == 'delbanner'){
     $id = isset($_GET['id']) ? intval($_GET['id']):0;
     C::t('pichome_banner')->delete_by_id($id);
@@ -197,15 +306,12 @@ elseif($do=='move'){//移动栏目和排序
     $bdata = C::t('pichome_banner')->fetch($id);
     if($bdata['btype'] == 3){
         $url = $bdata['bdata'];
-        $sid = 'link_'.md5($url);
     }elseif($bdata['btype'] == 4){
         $url = 'index.php?mod=banner&op=index&id=tab_'.$bdata['bdata'].'#id=tb_'.$bdata['bdata'];
-        $sid = 'tb_'.$bdata['bdata'];
     }else{
         $url = 'index.php?mod=banner&op=index&id='.$bdata['bdata'].'#id='.$bdata['bdata'];
-        $sid = 'b_'.$bdata['bdata'];
     }
-    $qrcode = C::t('pichome_route')->getQRcodeBySid($url,$sid);
+    $qrcode = C::t('pichome_route')->getQRcodeByUrl($url);
     exit(json_encode(['success'=>true,'qrcode'=>$qrcode]));
 }elseif($do == 'gettabdata'){//获取标签组
     $tabgroupdata = [];

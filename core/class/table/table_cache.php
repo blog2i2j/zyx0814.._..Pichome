@@ -28,7 +28,7 @@ class table_cache extends dzz_table
         if (memory('check')) {
             unset($setarr['cachekey']);
             memory('set', $cachename, $setarr, $expiretime);
-            if($recordtime) memory('set', $cachename.'_time', TIMESATMP, $expiretime);
+            if($recordtime) memory('set', $cachename.'_time', TIMESTAMP, $expiretime);
         } else {
             if (DB::result_first("select count(*) from %t where cachekey = %s", array('cache', $cachename))) {
                 unset($setarr['cachekey']);

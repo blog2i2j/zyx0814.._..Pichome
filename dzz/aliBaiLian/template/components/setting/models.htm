@@ -1,0 +1,138 @@
+<div class="content" >
+    <el-table
+            v-loading="btnloading"
+            :data="tableData"
+            border
+            style="width: 100%;background-color:var(--el-bg-color); ">
+        <el-table-column
+                label="{lang modelCodeName}"
+                show-overflow-tooltip>
+            <template #default="scope">
+                <span style="margin-left: 8px;">{{scope.row.model}}</span>
+            </template>
+        </el-table-column>
+        <el-table-column
+                label="{lang modelName}"
+                show-overflow-tooltip>
+            <template #default="scope">
+                <span style="margin-left: 8px;">{{scope.row.name}}</span>
+            </template>
+        </el-table-column>
+        <el-table-column
+                label="{lang vendor}"
+                width="130">
+            <template #default="scope">
+                <span style="margin-left: 8px;">{{scope.row.vendor}}</span>
+            </template>
+        </el-table-column>
+        <el-table-column
+                label="{lang modelType}"
+              >
+            <template #default="scope">
+                <span >{{scope.row.type}}</span>
+            </template>
+        </el-table-column>
+        <el-table-column
+                label="{lang dateline}"
+        width="160">
+            <template #default="scope">
+                <span >{{scope.row.fdateline}}</span>
+            </template>
+        </el-table-column>
+        <el-table-column
+                label="{lang operation}"
+                width="146">
+            <template #default="scope">
+                <el-button type="info" size="small" @click="TableEdit(scope.row)">{lang edit}</el-button>
+
+                <el-popconfirm
+                        @confirm="TableDelete(scope.row)"
+                        title="{lang delete_confirm}">
+                    <template #reference>
+                        <el-button type="danger"  size="small">{lang delete}</el-button></template>
+                </el-popconfirm>
+
+
+            </template>
+        </el-table-column>
+    </el-table>
+    <div style="margin-top: 16px;display: flex;justify-content: space-between;" >
+        <el-button icon="plus" type="primary" size="large" @click="handleTemplateAdd">{lang add}</el-button>
+        <el-pagination
+                @current-change="getModels"
+                layout="prev, pager, next"
+                :total="pagedata.total"
+                v-if="pagedata.total>pagedata.perpage" />
+    </div>
+
+</div>
+
+<script type="text/javascript">
+    var ModelMixin = {
+        data(){
+            return {
+                tableData:[],
+                pagedata:{
+                    page:1,
+                    perpage:20,
+                    total:0
+                }
+            }
+        },
+        created() {
+
+        },
+        methods:{
+            async getModels(page, size  ){
+
+                this.tabledata = [];
+                const {data: res} = await axios.post('{MOD_URL}&op=setting&do=modelList',{
+                    page:page || 1,
+                    perpage:size || 20,
+                });
+
+                if(res.success){
+                    this.tableData=[]
+                    if(res.data && res.data.length){
+                        this.tableData=res.data;
+
+                    }
+                }
+
+            },
+            async TableDelete(item){
+                var self = this;
+                self.loading = true;
+                var res = await axios.post(MOD_URL+'&op=setting&do=modelDelete',{model:item.model});
+                if(res == 'intercept'){
+                    return false;
+                }
+                var json = res.data;
+                if(json.success){
+                    let index=self.tableData.findIndex(function(val){
+                        return  item.model == val.model;
+                    });
+                    if(index>-1) self.tableData.splice(index,1);
+                    self.$message({
+                        message:'{lang delete_success}',
+                        type:'success'
+                    });
+                }else{
+                    self.$message.error(json.msg);
+                }
+                self.loading = false;
+            },
+
+            TableEdit(item){
+
+                this.Catalogue=item;
+                this.Catalogue.dialogVisible=true;
+
+
+            },
+            handleTemplateAdd() {
+                this.Catalogue.dialogVisible = true;
+            },
+        }
+    };
+</script>

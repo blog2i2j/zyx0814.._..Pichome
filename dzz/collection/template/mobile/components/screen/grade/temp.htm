@@ -1,0 +1,29 @@
+<div class="screen-item">
+	<template v-if="ParamScreen.value.grade.loading">
+		<van-loading class="custom-load" size="24px" type="spinner" color="var(--header-text)" vertical>{lang loading}</van-loading>
+	</template>
+	<template v-else>
+		<template v-if="ParamScreen.value.shape.data && ParamScreen.value.grade.data.length">
+			<van-cell-group>
+				<van-cell v-for="(item, index) in ParamScreen.value.grade.data" clickable :key="index" @click="ScreenGradeClick(item.grade)" :value="item.num" class="van-cell-tag" :class="ParamScreen.value.grade.value.indexOf(item.grade)>-1?'active':''">
+					<template #title>
+						<template v-if="item.grade">
+							<van-icon name="star" color="var(--header-text)" v-for="iitem in item.grade" />
+						</template>
+						<template v-else>{lang unrated}</template>
+					</template>
+				</van-cell>
+			</van-cell-group>
+		</template>
+		<template v-else>
+			<div class="notScreen">
+				<div>
+					<img src="dzz/pichome/image/notScreen.png" >
+					<div>{lang No_filtering_criteria}</div>
+				</div>
+			</div>
+		</template>
+		
+	</template>
+	
+</div>

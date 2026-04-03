@@ -19,7 +19,6 @@ $lang = array (
 	'password_share'=>'请输入提取密码',
 	'password_share_error'=>'提取密码不正确',
 
-
 );
 
 ?>

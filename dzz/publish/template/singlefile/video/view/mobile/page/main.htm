@@ -1,0 +1,138 @@
+<!--{template common/container/pc/header_start}-->
+<link rel="stylesheet" href="static/scss/default/index.css?{VERHASH}">
+<link rel="stylesheet" href="static/scss/common.css?{VERHASH}">
+
+<link rel="stylesheet" type="text/css" href="{MOD_PATH}/template/singlefile/video/view/mobile/assets/css/index.css?{VERHASH}"/>
+<script type="text/javascript" src="static/vue_components/sharedialog/index.js?{VERHASH}"></script>
+<script type="text/javascript" src="{MOD_PATH}/template/library/default/view/mobile/assets/js/menu.js?{VERHASH}"></script>
+<!--{template common/container/pc/header_end}-->
+<div id="dzzoffice" v-loading="pageloading" >
+	<el-container>
+
+		<!--{template singlefile/video/view/mobile/components/header}-->
+
+		<el-main style="padding: 0;" class="dzz-container">
+			<div class="container-centent container" :class="pageset.pageWidth">
+				<div class="title-wrapper block" v-if="pageset.name">
+					<el-text class="title">{{pageset.name}}</el-text>
+				</div>
+
+				<div class="actions">
+					<div class="left">
+						<el-text type="info" ><el-icon><Calendar /></el-icon> {{pdata.fdateline}}</el-text>
+						<el-text type="info" style="margin-left:0.5em"><el-icon><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M24 36C35.0457 36 44 24 44 24C44 24 35.0457 12 24 12C12.9543 12 4 24 4 24C4 24 12.9543 36 24 36Z" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/><path d="M24 29C26.7614 29 29 26.7614 29 24C29 21.2386 26.7614 19 24 19C21.2386 19 19 21.2386 19 24C19 26.7614 21.2386 29 24 29Z" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/></svg></el-icon> {{pdata.hots}}</el-text>
+					</div>
+					<div class="right">
+						<el-button v-if="parseInt(pdata.download)>0" type="text" link  @click="handleDown"><el-icon><Download /></el-icon> {lang download}</el-button>
+						<el-button v-if="parseInt(pdata.share)>0" type="text" link   @click="handleShare"><el-icon><Share /></el-icon> {lang share}</el-button>
+					</div>
+				</div>
+				<div class="content-wrapper" v-if="pdata.resourcesdata.iniframe">
+					<IFRAME class="iframe" :src="pdata.resourcesdata.iniframe" frameborder="0" width="100%" height="100%"></IFRAME>
+				</div>
+				<div class="desc-wrapper block" v-if="pageset._html_desc" >
+					<div class="content editor-content-view" v-html="pageset._html_desc"></div>
+				</div>
+				<el-footer v-if="pageset.bottomEnable">
+					<div class="page-footer" style="border:var(--el-border);">
+						<el-text v-if="pageset._textarea_bottomtitle" v-html="pageset._textarea_bottomtitle" tag="p" style="display: flex;align-items: center;justify-content: center;margin-top: 0.5em;"></el-text>
+						<div  style="display: flex;align-items: center;justify-content: center;margin-top:0.5em">
+						 <el-link v-if="pageset.beian" href="https://beian.miit.gov.cn/" title="{lang beian}" target="_blank">{{pageset.beian}}</el-link>
+						 <el-link v-if="pageset.beianmps" title="{lang beianmps}" style="margin-left:1em;" href="https://beian.mps.gov.cn/" target="_blank">{{pageset.beianmps}}</el-link>
+						</div>
+					</div>
+				</el-footer>
+			</div>
+			
+			
+		</el-main>
+		<el-footer class="page-header" id="footer_header" style="padding: 0px 10px;border: 0;border-top:1px solid var(--el-border-color);height: 60px;" v-if="pageset.topNavigation">
+			<!--{template singlefile/video/view/mobile/components/footer}-->
+		</el-footer>
+	</el-container>
+	<!--分享对话框加载-->
+	<!--{eval  include template('shareAddDialog','./dzz/shares/template/')}-->
+</div>
+
+<script type="text/javascript">
+	const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch, computed, onBeforeUpdate , onUnmounted } = Vue;
+	const dzzoffice = createApp({
+		el: '#dzzoffice',
+		data() {
+			return {
+				DocumentThemeColor:'',//dark,
+
+				ispc:parseInt('$ispc'),
+				pdata:$json_data,
+				pageset:$json_pageset,
+				content:'',
+				pageloading:false,
+			}
+		},
+		watch: {
+
+			DocumentThemeColor:{
+				handler(newval){
+					document.querySelector('html').className = newval
+				},
+				deep:true,
+				// immediate:true
+			}
+		},
+		created() {
+			let theme = localStorage.getItem('theme');
+			if(theme){
+				this.DocumentThemeColor=theme;
+			}else{
+				this.DocumentThemeColor = 'light'
+			}
+			this.getBannerData();
+
+		},
+		mixins:[FooterMixin,HeaderMixins,ShareAddDialogMixin],
+		methods: {
+			handleDown(){
+				window.open('{MOD_URL}&op=download&dpath='+this.pdata.resourcesdata.dpath);
+			},
+			handleShare(){
+				this.shareDialog.title = this.pdata.resourcesdata.name;
+				this.shareDialog.filepaths =[this.pdata.resourcesdata.rid];
+				this.shareDialog.visible=true;
+				this.shareDialog.stype=0;
+
+			},
+
+			DocumentThemeChange(){
+				if(this.DocumentThemeColor=='light'){
+					this.DocumentThemeColor='dark';
+					localStorage.setItem('theme','dark');
+				}else{
+					this.DocumentThemeColor='light';
+					localStorage.setItem('theme','light');
+				}
+			},
+		},
+		mounted() {
+
+		},
+		components: {
+			comavatar,
+			international,
+			DzzShareDialog,
+			menuitem
+
+		},
+
+	});
+	dzzoffice.use(ElementPlus, {
+		locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+	});
+	for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+		dzzoffice.component(key, component)
+	}
+
+	// 屏蔽警告信息
+	dzzoffice.config.warnHandler = function(){return null};
+	dzzoffice.mount('#dzzoffice');
+</script>
+<!--{template common/container/pc/footer}-->

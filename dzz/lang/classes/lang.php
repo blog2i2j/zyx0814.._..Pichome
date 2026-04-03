@@ -429,7 +429,7 @@ class lang
         }
     }
 
-    public function delTabbannerLangData($bid)
+    public static function delTabbannerLangData($bid)
     {
         if (!is_array($bid)) $bid = array($bid);
         global $_G, $idTypeMap;
@@ -441,7 +441,7 @@ class lang
         }
     }
 
-    public function saveTabbannerLangData(&$data)
+    public static function saveTabbannerLangData(&$data)
     {
         global $_G, $idTypeMap;
         $lang = $_G['language'];
@@ -477,7 +477,7 @@ class lang
 
     }
 
-    public function getTabbannerLangKey(&$data, $ismore = false)
+    public static function getTabbannerLangKey(&$data, $ismore = false)
     {
         self::getLangKey($data, ['tabbanner', $ismore]);
     }
@@ -506,7 +506,7 @@ class lang
         $data = array_merge($data, $newdata);
     }
 
-    public function saveTabnameLangData(&$data)
+    public static function saveTabnameLangData(&$data)
     {
         global $_G, $idTypeMap;
         $lang = $_G['language'];
@@ -645,12 +645,14 @@ class lang
                 if ($k == 'tdata') {
                     $odata = C::t('#lang#lang')->fetchSvalueBySkey($table_sf, $langarr['key']);
                     if ($type == 'rich_text') {
-                        if (!$odata) $odata['odata'] = '';
-                        $data[$k] = getcontentdata($data[$k], $odata['odata']);
+                        $data[$k] = getcontentdata($data[$k], $odata?$odata:'');
                     } elseif ($type == 'question') {
-                        if ($odata) $odata = unserialize($odata['odata']);
-                        $compardata = isset($odata['odata'][0]['answer']) ? $odata['odata'][0]['answer'] : '';
-                        $data[$k][0]['answer'] = getcontentdata($data[$k][0]['answer'], $compardata);
+                        $compardata='';
+                        if (!empty($odata['odata']) && ($odata1 = unserialize($odata['odata']))){
+
+                           $compardata = isset($odata1[0]['answer']) ? $odata1[0]['answer'] : '';
+                        }
+                        if($compardata) $data[$k][0]['answer'] = getcontentdata($data[$k][0]['answer'], $compardata);
                     }
                 }
 
@@ -842,7 +844,7 @@ class lang
         }
         $data = [];
     }
-     public function delSelectOptionLangData($id)
+     public static function delSelectOptionLangData($id)
     {
         if (!is_array($id)) $id = array($id);
         global $_G, $idTypeMap;
@@ -918,7 +920,7 @@ class lang
 
     }
 
-    public function saveFiledLangData(&$data)
+    public static function saveFiledLangData(&$data)
     {
         global $_G, $idTypeMap;
         $lang = $_G['language'];
@@ -955,7 +957,7 @@ class lang
         unset($data['langkey']);
     }
 
-    public function saveFiledoptionsLangData(&$data)
+    public static function saveFiledoptionsLangData(&$data)
     {
         global $_G, $idTypeMap;
         $lang = $_G['language'];
@@ -1084,7 +1086,7 @@ class lang
         //unset($data['appid']);
     }
 
-    public function delAlonepagedataLangData($id)
+    public static function delAlonepagedataLangData($id)
     {
         if (!is_array($id)) $id = array($id);
         global $_G, $idTypeMap;
@@ -1096,7 +1098,7 @@ class lang
         }
     }
 
-    public function delAlonepageLangData($id)
+    public static function delAlonepageLangData($id)
     {
         if (!is_array($id)) $id = array($id);
         global $_G, $idTypeMap;
@@ -1108,7 +1110,7 @@ class lang
         }
     }
 
-    public function delAlonepagetagLangData($tagid)
+    public static function delAlonepagetagLangData($tagid)
     {
         if (!is_array($tagid)) $tagid = array($tagid);
         global $_G, $idTypeMap;
@@ -1120,7 +1122,7 @@ class lang
         }
     }
 
-    public function delBannerLangData($bid)
+    public static function delBannerLangData($bid)
     {
         if (!is_array($bid)) $bid = array($bid);
         global $_G, $idTypeMap;

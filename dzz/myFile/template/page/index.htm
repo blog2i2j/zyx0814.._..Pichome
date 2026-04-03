@@ -1,0 +1,284 @@
+<!--{template common/container/pc/header_start}-->
+<link rel="stylesheet" href="static/scss/default/index.css?{VERHASH}">
+<link rel="stylesheet" href="user/my/template/pc/assets/index.css?{VERHASH}">
+<link rel="stylesheet" href="dzz/pichome/template/storehouse/pc/assets/css/library.css?{VERHASH}">
+<style>
+    .filter-item:not(.is-checked) {
+        background-color: var(--el-bg-color);
+    }
+	.btn-download{
+        position: absolute;
+        right: 10px;
+        top: 6px;
+        z-index: 20;
+        opacity: 0;
+    }
+    .piece:hover .btn-download{
+        opacity: 1;
+    }
+    .operation-btn {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-box-pack: center;
+        -ms-flex-pack: center;
+        justify-content: center;
+        -webkit-box-align: center;
+        -ms-flex-align: center;
+        align-items: center;
+        cursor: pointer;
+        outline: none;
+	}
+
+
+</style>
+<!--{template common/container/pc/header_end}-->
+<div id="dzzoffice">
+	<el-container class="page-main">
+		<!--{template common/container/pc/header_default}-->
+		<el-main class="container">
+			<!--{template common/container/pc/ucenter_header}-->
+			<div class="notification">
+                <div style="padding-bottom: 20px;border-bottom: var(--el-border); display: flex;justify-content: space-between;">
+                    <div> 
+                        <template  v-for="item in actoionData">
+                            <el-check-tag style="margin-right: 6px;"  class="filter-item" :checked="dataActive==item.key"  @change="filterChange(item.key)" >{{item.text}}</el-check-tag>
+                        </template>
+                    </div>
+                    <div style="display: flex;"> 
+                        <el-date-picker
+                            style="width: 260px;"
+                            v-model="Timevalue"
+                            type="daterange"
+                            start-placeholder="{lang start_date}"
+                            end-placeholder="{lang end_date}"
+                            format="YYYY-MM-DD"
+                            date-format="YYYY/MM/DD"
+                            value-format="YYYY/MM/DD"
+                            @change="GetData"
+                        ></el-date-picker>
+                        <el-input
+                            style="width: 260px;margin-left: 12px;"
+                            v-model="keyword"
+                            placeholder="{lang search}"
+                            class="input-search"
+                            clearable
+                            @change="GetData">
+                            <template #suffix>
+                              <el-icon @click="searchSubmit" style="cursor: pointer;"><Search /></el-icon>
+                            </template>
+                          </el-input>
+                    </div>
+                </div>
+                <ul class="wrap-content" style="padding-top: 20px;">
+                    <template v-for="item in ListData">
+                        <li 
+                            class="piece" style="cursor: default;">
+                            <el-card shadow="hover" > 
+                                <div class="box-images" :style="{'--background-image-url': 'url('+item.icondata+')'}" @click="mainclick(item.open)" >
+                                    <el-image style="width: 100%; height: 100%;cursor:pointer" :src="item.icondata" fit="contain">
+                                        <template #error><div class="el-image__placeholder"></div></template>
+                                    </el-image>
+                                </div>
+                                <div class="layer" style="top: calc(100% - 96px);">
+                                    <div style="height: 96px;padding-top: 24px;position:relative">
+                                        <p class="name" >
+                                            <el-text class="el-text--default" truncated style="font-size: 20px;font-weight: 700;
+                                            color: var(--el-text-color-primary);">{{item.filename}}</el-text>
+											
+                                        </p>
+                                        <div style="display: flex;">
+                                            <el-tag style="margin-right: 12px;" disable-transitions>
+                                                <template v-if="item.source == 'aiDraw'">
+                                                    {lang smart_drawing}
+                                                </template>
+                                                <template v-else>
+                                                    {lang smart_cutouts}
+                                                </template>
+                                            </el-tag>
+                                            <el-text truncated >{{item.fdate}}</el-text>
+											
+                                        </div>
+
+                                    </div>
+                                </div>
+                                <div class="btn-download" style="">
+                                    <el-dropdown @command="ImageOperationf" :teleported="false">
+                                                <span class="operation-btn">
+                                                    <el-icon><More-Filled /></el-icon>
+                                                </span>
+                                        <template #dropdown>
+                                            <el-dropdown-menu>
+                                                <el-dropdown-item
+
+                                                        :command="ImageOperationVal('down',item)">
+                                                    <el-icon><Download /></el-icon>
+                                                    {lang download}
+                                                </el-dropdown-item>
+                                                <el-dropdown-item
+                                                        :command="ImageOperationVal('delete',item)"
+                                                        class="circulars">
+                                                    <el-icon><Delete /></el-icon>
+                                                    {lang delete}
+                                                </el-dropdown-item>
+                                            </el-dropdown-menu>
+                                        </template>
+                                    </el-dropdown>
+                                    <!--<el-button type="primary" size="small" @click="handleDownload(item.dpath,item.filename)">{lang download}</el-button>
+                                    <el-button type="danger" size="small" @click="handleDelete(item.dpath,item.filename)">{lang delete}</el-button>-->
+                                </div>
+                            </el-card>
+                        </li>
+                    </template>
+                </ul>
+			</div>
+		</el-main>
+	</el-container>
+</div>
+
+<script type="text/javascript">
+	const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch } = Vue;
+	const dzzoffice = createApp({
+		data() {
+			return {
+				DocumentThemeColor:'',
+				UcenterHeaderMenuIndex:'myFile',
+                actoionData:[
+                    {key:'',text:__lang.all},
+                    {key:'aiDraw',text:__lang.smart_drawing},
+                    {key:'bodySeg',text:__lang.smart_cutouts},
+                ],
+                dataActive:'',
+                Timevalue:[],
+                keyword:'',
+                ListData:[]
+			}
+		},
+        mixins:[UcenterHeader],
+		watch:{
+			DocumentThemeColor:{
+				handler(newval){
+					document.querySelector('html').className = newval
+				},
+				deep:true,
+				// immediate:true
+			}
+			
+			
+		},
+		created() {
+			 //主题颜色
+			let theme = localStorage.getItem('theme');
+			if(theme){
+				this.DocumentThemeColor=theme;
+			}else{
+				this.DocumentThemeColor = 'light'
+			}
+			this.GetData()
+		},
+		methods: {
+            mainclick(open){
+				
+				if(open.type!='download') window.open( open.url,'preview');
+				return false;
+			},
+			handleDownload(path,filename){
+				window.location.href='index.php?mod=io&op=download&path='+path+'&filename='+encodeURI(filename);
+				return false;
+			},
+            async ImageOperationf(data){
+                let self = this;
+
+                if(data.type == 'down'){
+                    window.location.href='index.php?mod=io&op=download&path='+data.data.dpath+'&filename='+encodeURI(data.data.filename);
+                }else if(data.type == 'delete'){
+                    self.$confirm('{lang confirm_delete}','',{
+                        type: 'warning',
+                        confirmButtonText: '{lang confirms}',
+                        cancelButtonText: '{lang cancel}',
+                    })
+                    .then( async () => {
+                        //window.location.href='index.php?mod=myFile&op=ajax&do=delete&id='+data.data.id;
+                        let res = await axios.post(MOD_URL+'&op=ajax&do=del',{
+                            id:data.data.id,
+                        });
+                        if(res.data.success){
+                            let index = self.ListData.findIndex(item => item.id == data.data.id);
+                            if(index>-1){
+                                self.ListData.splice(index,1);
+                            }
+                        }else{
+                            self.$message({
+                                message: res.data.msg,
+                                type: 'error'
+                            });
+                        }
+                    })
+                    .catch(() => {
+
+                    })
+                }
+            },
+            ImageOperationVal(type,data){
+                return {
+                    type:type,
+                    data:data
+                };
+            },
+            handleDelete(path,filename){
+                let self=this;
+
+
+
+            },
+            filterChange(val){
+                if(this.dataActive == val)return false;
+                this.dataActive = val;
+                this.GetData()
+            },
+			DocumentThemeChange(){
+				if(this.DocumentThemeColor=='light'){
+					this.DocumentThemeColor='dark';
+					localStorage.setItem('theme','dark');
+				}else{
+					this.DocumentThemeColor='light';
+					localStorage.setItem('theme','light');
+				}
+				let self=this;
+				self.$message({
+					message: 'this is a message.',
+					type: 'success',
+				  });
+			},
+			async GetData(){
+                let param = {
+                    page:1,
+                    type:this.dataActive || '',
+                    date:this.Timevalue&&this.Timevalue.length?this.Timevalue.join('_'):'',
+                    keyword:this.keyword
+                }
+                let {data: res} = await axios.post('{MOD_URL}&operation=list',param);
+                this.ListData = res.data;
+            }
+			
+			
+		},
+		mounted() {}
+	});
+	dzzoffice.use(ElementPlus, {
+		locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+	});
+	for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+		dzzoffice.component(key, component)
+	}
+	dzzoffice.component('comavatar', comavatar);
+    dzzoffice.component('international',international);
+	// 屏蔽警告信息
+	dzzoffice.config.warnHandler = function(){return null};
+	dzzoffice.mount('#dzzoffice');
+</script>
+
+<!--{template pc/frame/footer_simple}-->

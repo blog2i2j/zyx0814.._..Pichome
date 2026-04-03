@@ -24,31 +24,38 @@ class ImageAIkey
             $rids = $data['rid'];
             if (empty($rids)) return true;
             if (!is_array($rids)) $rids = [$rids];
+            //判断是否开启eagle同步
+            $eagleupdate = false;
+            \Hook::listen('checkeaglesync',$eagleupdate);
+            $allowvapptype = [1,3];
+            if($eagleupdate) $allowvapptype[] = 0;
             //查询所有开启的模板
-            if($appdata['type'] == 1 || $appdata['type'] == 3){
+            if(in_array($appdata['type'],$allowvapptype)){
                 $this->getAiKey($data,$type,$appdata);
             }
             if ($type == 'file') {
                 if($imageSetting['chatModel']) {
-                    $data['Aichat'] = [
+                    $data['Aichat'][]= [
                         'url' => getglobal('siteurl') . 'index.php?mod=ollama&op=chat',
                         'recordurl' => getglobal('siteurl') . 'index.php?mod=ollama&op=chat&do=getHistory',
                         'delhistoryurl' => getglobal('siteurl') . 'index.php?mod=ollama&op=chat&do=clearchat',
                         'type' => 'image',
-                        'params' => 'rid'
+                        'params' => 'rid',
+                        'name'=>lang('appname',array(),'','dzz/ollama'),
+                        'key'=>'ollama::chatImage'
                     ];
                 }
             }
-            return false;
+
         }
         elseif($type == 'folder'){
             if(empty($data['fid'])) return true;
             $this->getAiKey($data,$type,$appdata);
-            return false;
+
         }elseif($type == 'vapp'){
             if(empty($data['appid'])) return true;
             $this->getAiKey($data,$type,$appdata);
-            return false;
+
         }
     }
 
@@ -80,7 +87,7 @@ class ImageAIkey
             'vapp'=>'appid'
         ];
         if(!empty($filedkey)){
-            $data['Aikey']=[
+            $data['Aikey'][]=[
                 'key' => 'ollama::chatImage',
                 'name' => lang('appname',array(),'','dzz/ollama'),
                 'params' => $params[$type],

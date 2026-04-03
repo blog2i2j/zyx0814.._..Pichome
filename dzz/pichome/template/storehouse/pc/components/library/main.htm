@@ -1,146 +1,303 @@
-<ul class="wrap-content">
-	<li 
-		v-for="item in Table.data"
-		class="piece" 
-		:class="{'piece-add':item.type == 'add'}"
-		:key="item.appid" 
-		:class="{'is-progress':parseInt(item.state)==1||parseInt(item.state)==2||parseInt(item.state)==3}" >
-		<el-card shadow="hover"> 
-			<template v-if="item.type == 'add'">
-				<div class="new">
-					<el-icon><Circle-Plus /></el-icon>
-					<el-text tag="p" style="width: 100%;">{lang create}</el-text>
-				</div>
-				<div class="entrys">
-					<div style="width: 260px;height: auto;">
-						<el-button @click="TableAdd('3')"><img style="height:40px;vertical-align: middle;margin-right:10px;" src="dzz/pichome/image/library/pichome.png" /> PicHome {lang library}</el-button>
-						<el-button @click="TableAdd('1')"><img style="height:40px;vertical-align: middle;margin-right:10px;" src="dzz/pichome/image/library/file.png" /> {lang normal_directory}</el-button>
-						<el-button @click="TableAdd('0')"><img style="height:40px;vertical-align: middle;margin-right:10px;" src="dzz/pichome/image/library/eagle.png" /> Eagle&nbsp;{lang library}</el-button>
-						<el-button @click="TableAdd('2')"><img style="height:40px;vertical-align: middle;margin-right:10px;" src="dzz/pichome/image/library/billfish.png" />Billfish&nbsp;{lang library}</el-button>
+<template v-if="style=='icon'">
+	<ul class="wrap-content" v-loading="Table.loading">
+		<li 
+			v-for="item in Table.data"
+			class="piece" 
+			:class="{'piece-add':item.type == 'add'}"
+			:key="item.appid" 
+			:class="{'is-progress':parseInt(item.state)==1||parseInt(item.state)==2||parseInt(item.state)==3}" >
+			<el-card shadow="hover"> 
+					<template v-if="parseInt(item.state)==1||parseInt(item.state)==2||parseInt(item.state)==3">
+						<div class="progress">
+							<el-progress type="circle" :percentage="item.percent"></el-progress>
+
+
+
+						</div>
+					</template>
+				<a 
+					:href="item.url"
+					class="box-images" 
+					:style="{'--background-image-url': 'url('+(item.icon?item.icon:'{$_G['siteurl']}dzz/images/b.gif')+')'}">
+					<el-image v-if="item.icon" style="width: 100%; height: 100%;" :src="item.icon" fit="contain">
+						<template #error><div class="el-image__placeholder"></div></template>
+					</el-image>
+				</a>
+				<div class="layer">
+					<div style="height: 96px;padding-top: 24px;">
+						<p class="name">
+							<template v-if="parseInt(item.type)==1">
+								<el-image
+									style="width: 22px; height: 22px;margin-right: 8px;"
+									src="dzz/pichome/image/library/file.png"
+									fit="contain">
+									<template #error><div class="el-image__placeholder"></div></template>
+								</el-image>
+							</template>
+							<template v-else-if="parseInt(item.type)==2">
+								<el-image
+								style="width: 22px; height: 22px;margin-right: 8px;"
+									src="dzz/pichome/image/library/billfish.png"
+									fit="contain">
+									<template #error><div class="el-image__placeholder"></div></template>
+								</el-image>
+							</template>
+							<template v-else-if="parseInt(item.type)==3">
+								<el-image
+								style="width: 22px; height: 22px;margin-right: 8px;"
+									src="dzz/pichome/image/library/pichome.png"
+									fit="contain">
+									<template #error><div class="el-image__placeholder"></div></template>
+								</el-image>
+							</template>
+							<template v-else>
+								<el-image
+								style="width: 22px; height: 22px;margin-right: 8px;"
+									src="dzz/pichome/image/library/eagle.png"
+									fit="contain">
+									<template #error><div class="el-image__placeholder"></div></template>
+								</el-image>
+							</template>
+							<el-text class="el-text--default" truncated style="font-size: 20px;font-weight: 700;
+							color: var(--el-text-color-primary);">{{item.appname}}</el-text>
+
+						</p>
+						<div>
+							<el-link 
+								class="link" 
+								type="primary" 
+								:href="item.url" 
+								target="_blank"
+								:underline="false"
+							>{$_G['siteurl']}{{item.url}}</el-link>
+						</div>
+					</div>
+					<template v-if="item.isdelete>0">
+						<div class="operation">
+							<div
+									class="el-button edit el-button--info"
+									@click="RecycleOperation('recovery',item.appid)">
+								<span>{lang recovery}</span>
+							</div>
+							<div
+									class="el-button edit el-button--danger"
+									@click="RecycleOperation('delete',item.appid)">
+								<span>{lang completely_delete}</span>
+							</div>
+						</div>
+					</template>
+					<template v-else>
+					<div class="operation">
+						<a class="el-button el-button--success edit" :href="'{MOD_URL}&op=library&do=filelist#appid='+item.appid" target="_blank">
+							<span>{lang edit}</span>
+						</a>
+						<el-popover
+							placement="top"
+							popper-class="qrcode-box"
+							:width="144"
+							:teleported="false"
+							data-container='body'
+							@before-enter="TableGeturlqrcode(item.appid)"
+							trigger="hover">
+							<div class="box" v-loading="!item.isqrcode">
+								<el-image draggable="false" v-if="item.qrcodeurl" :src="item.qrcodeurl" fit="contain">
+									<template #error><div class="el-image__placeholder"></div></template>
+								</el-image>
+								<el-text tag="p" style="text-align: center;padding-top: 12px;">{lang QR}</el-text>
+								<div v-if="item.qrcodeurl" class="download" @click="TableDownQrcodeurl(item.qrcodeurl)">
+									<div style="text-align: center;">
+										<el-icon style="font-size: 22px;"><Download /></el-icon>
+										<el-text tag="p" style="width: 100%;">{lang Download_QR}</el-text>
+									</div>
+								</div>
+							</div>
+							<template #reference>
+								<el-button type="info" plain>
+									<el-icon style="font-size: 24px;" >
+										<svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"><path d="M112 195.84A83.84 83.84 0 0 1 195.84 112h202.992a83.84 83.84 0 0 1 83.84 83.84v202.992a83.84 83.84 0 0 1-83.84 83.84H195.84A83.84 83.84 0 0 1 112 398.832V195.84zM195.84 176A19.84 19.84 0 0 0 176 195.84v202.992c0 10.96 8.88 19.84 19.84 19.84h202.992a19.84 19.84 0 0 0 19.84-19.84V195.84A19.84 19.84 0 0 0 398.832 176H195.84z m345.488 19.84A83.84 83.84 0 0 1 625.168 112H828.16A83.84 83.84 0 0 1 912 195.84v202.992a83.84 83.84 0 0 1-83.84 83.84H625.184a83.84 83.84 0 0 1-83.84-83.84V195.84z m83.84-19.84a19.84 19.84 0 0 0-19.84 19.84v202.992c0 10.96 8.88 19.84 19.84 19.84H828.16A19.84 19.84 0 0 0 848 398.832V195.84A19.84 19.84 0 0 0 828.16 176H625.184zM112 625.168a83.84 83.84 0 0 1 83.84-83.84h202.992a83.84 83.84 0 0 1 83.84 83.84V828.16A83.84 83.84 0 0 1 398.832 912H195.84A83.84 83.84 0 0 1 112 828.16V625.184z m83.84-19.84a19.84 19.84 0 0 0-19.84 19.84V828.16c0 10.944 8.88 19.824 19.84 19.824h202.992a19.84 19.84 0 0 0 19.84-19.84V625.184a19.84 19.84 0 0 0-19.84-19.84H195.84z m345.488-32a32 32 0 0 1 32-32h88.16a32 32 0 0 1 32 32v86.832h49.088v-86.832a32 32 0 0 1 32-32h95.84a32 32 0 0 1 0 64h-63.84v86.832a32 32 0 0 1-32 32h-113.072a32 32 0 0 1-32-32v-86.832h-24.16v92.592a32 32 0 1 1-64 0v-124.592z m329.088 54.256a32 32 0 0 1 32 32v53.184a32 32 0 0 1-64 0v-53.184a32 32 0 0 1 32-32z m-240.912 150.832a32 32 0 0 1 32-32h134.16a32 32 0 0 1 0 64h-102.16v29.92H838.4v-21.184a32 32 0 0 1 64 0v53.184a32 32 0 0 1-32 32H661.504a32 32 0 0 1-32-32v-93.92z m-56.16-12.832a32 32 0 0 1 32 32v74.752a32 32 0 1 1-64 0v-74.752a32 32 0 0 1 32-32z"></path></svg>
+									</el-icon>
+								</el-button>
+							</template>
+						</el-popover>
+						<!-- <el-button type="info" plain icon="share" @click="RightCopyUrl(item.url)" style="font-size: 24px;margin-left: 12px;"></el-button> -->
+						<el-button type="info" plain icon="Position" @click="handlePosition(item)" style="font-size: 24px;margin-left: 12px;"></el-button>
+						<el-dropdown 
+							:teleported="false"
+							placement="top-start"
+							style="margin-left: 12px;" 
+							@command="TableMoreOpertion">
+							<el-button type="info" plain icon="MoreFilled" style="font-size: 24px;"></el-button>
+							<template #dropdown>
+								<el-dropdown-menu>
+									<template v-if="parseInt(item.connect) == 1">
+										<el-dropdown-item icon="Refresh" :command="{item:item,type:'renew'}">{lang update}</el-dropdown-item>
+										<el-dropdown-item icon="Refresh" :command="{item:item,type:'reload'}">{lang validation_updates}</el-dropdown-item>
+									</template>
+									<el-dropdown-item icon="Setting" :command="{item:item,type:'set'}">{lang setting}</el-dropdown-item>
+									<el-dropdown-item icon="Delete" :command="{item:item,type:'delete'}">{lang delete}</el-dropdown-item>
+								</el-dropdown-menu>
+							</template>
+						</el-dropdown>
 						
 					</div>
+					</template>
 				</div>
-			</template>
-			<template v-else>
-				<template v-if="parseInt(item.state)==1||parseInt(item.state)==2||parseInt(item.state)==3">
-				<div class="progress">
-					<el-progress type="circle" :percentage="item.percent"></el-progress>
-				</div>
-			</template>
-			<a 
-				:href="item.url"
-				class="box-images" 
-				:style="{'--background-image-url': 'url('+(item.icon?item.icon:'{$_G[siteurl]}dzz/images/b.gif')+')'}">
-				<el-image v-if="item.icon" style="width: 100%; height: 100%;" :src="item.icon" fit="contain">
-					<template #error><div class="el-image__placeholder"></div></template>
-				</el-image>
-			</a>
-			<div class="layer">
-				<div style="height: 96px;padding-top: 24px;">
-					<p class="name">
-						<template v-if="parseInt(item.type)==1">
+			</el-card>
+		</li>
+	</ul>
+</template>
+<template v-else>
+	<div style="padding: 0px 20px 16px;background: var(--el-bg-color);border: var(--el-border);border-radius: 12px;" v-loading="Table.loading">
+		<el-table :data="Table.data" style="width: 100%">
+			<el-table-column prop="appname" label="{lang name}">
+				<template #default="scope">
+					<div style="min-width:250px">
+						<template v-if="parseInt(scope.row.type)==1">
 							<el-image
-								style="width: 22px; height: 22px;margin-right: 8px;"
-								src="dzz/pichome/image/library/file.png"
-								fit="contain">
+									style="width: 22px; height: 22px;margin-right: 8px;vertical-align: bottom;display:inline-block"
+									src="dzz/pichome/image/library/file.png"
+									fit="contain">
 								<template #error><div class="el-image__placeholder"></div></template>
 							</el-image>
 						</template>
-						<template v-else-if="parseInt(item.type)==2">
+						<template v-else-if="parseInt(scope.row.type)==2">
 							<el-image
-							style="width: 22px; height: 22px;margin-right: 8px;"
-								src="dzz/pichome/image/library/billfish.png"
-								fit="contain">
+									style="width: 22px; height: 22px;margin-right: 8px;vertical-align: bottom;display:inline-block"
+									src="dzz/pichome/image/library/billfish.png"
+									fit="contain">
 								<template #error><div class="el-image__placeholder"></div></template>
 							</el-image>
 						</template>
-						<template v-else-if="parseInt(item.type)==3">
+						<template v-else-if="parseInt(scope.row.type)==3">
 							<el-image
-							style="width: 22px; height: 22px;margin-right: 8px;"
-								src="dzz/pichome/image/library/pichome.png"
-								fit="contain">
+									style="width: 22px; height: 22px;margin-right: 8px;vertical-align: bottom;display:inline-block"
+									src="dzz/pichome/image/library/pichome.png"
+									fit="contain">
 								<template #error><div class="el-image__placeholder"></div></template>
 							</el-image>
 						</template>
 						<template v-else>
 							<el-image
-							style="width: 22px; height: 22px;margin-right: 8px;"
-								src="dzz/pichome/image/library/eagle.png"
-								fit="contain">
+									style="width: 22px; height: 22px;margin-right: 8px;vertical-align: bottom;display:inline-block"
+									src="dzz/pichome/image/library/eagle.png"
+									fit="contain">
 								<template #error><div class="el-image__placeholder"></div></template>
 							</el-image>
 						</template>
-						<el-text class="el-text--default" truncated style="font-size: 20px;font-weight: 700;
-						color: var(--el-text-color-primary);">{{item.appname}}</el-text>
-					</p>
-					<div>
-						<el-link 
-							class="link" 
-							type="primary" 
-							:href="item.url" 
-							target="_blank"
-							:underline="false"
-						>{$_G['siteurl']}{{item.url}}</el-link>
+						<el-link :href="'{MOD_URL}&op=library&do=filelist#appid='+scope.row.appid" :underline="false" plain class="el-text--default"  @click="TableMoreOpertion({item:scope.row,type:'edit'})">{{scope.row.appname}}</el-link>
 					</div>
-				</div>
-				<div class="operation">
-					<a class="el-button el-button--success edit" :href="'{MOD_URL}&op=library&do=filelist#appid='+item.appid" target="_blank">
-						<span>{lang edit}</span>
-					</a>
-					<el-popover
-						placement="top"
-						popper-class="qrcode-box"
-						:width="144"
-						:teleported="false"
-						data-container='body'
-						@before-enter="TableGeturlqrcode(item.appid)"
-						trigger="hover">
-						<div class="box" v-loading="!item.isqrcode">
-							<el-image draggable="false" v-if="item.qrcodeurl" :src="item.qrcodeurl" fit="contain">
-								<template #error><div class="el-image__placeholder"></div></template>
-							</el-image>
-							<el-text tag="p" style="text-align: center;padding-top: 12px;">{lang QR}</el-text>
-							<div v-if="item.qrcodeurl" class="download" @click="TableDownQrcodeurl(item.qrcodeurl)">
-								<div style="text-align: center;">
-									<el-icon style="font-size: 22px;"><Download /></el-icon>
-									<el-text tag="p" style="width: 100%;">{lang Download_QR}</el-text>
-								</div>
-							</div>
-						</div>
-						<template #reference>
-							<el-button type="info" plain>
-								<el-icon style="font-size: 24px;" >
-									<svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"><path d="M112 195.84A83.84 83.84 0 0 1 195.84 112h202.992a83.84 83.84 0 0 1 83.84 83.84v202.992a83.84 83.84 0 0 1-83.84 83.84H195.84A83.84 83.84 0 0 1 112 398.832V195.84zM195.84 176A19.84 19.84 0 0 0 176 195.84v202.992c0 10.96 8.88 19.84 19.84 19.84h202.992a19.84 19.84 0 0 0 19.84-19.84V195.84A19.84 19.84 0 0 0 398.832 176H195.84z m345.488 19.84A83.84 83.84 0 0 1 625.168 112H828.16A83.84 83.84 0 0 1 912 195.84v202.992a83.84 83.84 0 0 1-83.84 83.84H625.184a83.84 83.84 0 0 1-83.84-83.84V195.84z m83.84-19.84a19.84 19.84 0 0 0-19.84 19.84v202.992c0 10.96 8.88 19.84 19.84 19.84H828.16A19.84 19.84 0 0 0 848 398.832V195.84A19.84 19.84 0 0 0 828.16 176H625.184zM112 625.168a83.84 83.84 0 0 1 83.84-83.84h202.992a83.84 83.84 0 0 1 83.84 83.84V828.16A83.84 83.84 0 0 1 398.832 912H195.84A83.84 83.84 0 0 1 112 828.16V625.184z m83.84-19.84a19.84 19.84 0 0 0-19.84 19.84V828.16c0 10.944 8.88 19.824 19.84 19.824h202.992a19.84 19.84 0 0 0 19.84-19.84V625.184a19.84 19.84 0 0 0-19.84-19.84H195.84z m345.488-32a32 32 0 0 1 32-32h88.16a32 32 0 0 1 32 32v86.832h49.088v-86.832a32 32 0 0 1 32-32h95.84a32 32 0 0 1 0 64h-63.84v86.832a32 32 0 0 1-32 32h-113.072a32 32 0 0 1-32-32v-86.832h-24.16v92.592a32 32 0 1 1-64 0v-124.592z m329.088 54.256a32 32 0 0 1 32 32v53.184a32 32 0 0 1-64 0v-53.184a32 32 0 0 1 32-32z m-240.912 150.832a32 32 0 0 1 32-32h134.16a32 32 0 0 1 0 64h-102.16v29.92H838.4v-21.184a32 32 0 0 1 64 0v53.184a32 32 0 0 1-32 32H661.504a32 32 0 0 1-32-32v-93.92z m-56.16-12.832a32 32 0 0 1 32 32v74.752a32 32 0 1 1-64 0v-74.752a32 32 0 0 1 32-32z"></path></svg>
+				</template>
+
+			</el-table-column>
+			<el-table-column prop="filenum" label="{lang filenum}" width="180" align="center">
+				<template #default="scope">
+					<template v-if="scope.row.state!='2' && scope.row.state!='3'">
+						<el-text  size="small" title="{lang importednum}">{{scope.row.filenum}}</el-text>
+					</template>
+					<template v-else>
+						<el-text size="small" title="{lang importednum}">{{scope.row.donum}}</el-text>
+						<el-text size="small" type="info"> / </el-text>
+						<el-text size="small" title="{lang filenum}">{{scope.row.filenum}}</el-text>
+					</template>
+				</template>
+			</el-table-column>
+
+			<el-table-column prop="state" label="{lang status}" width="100" align="center">
+				<!-- // -1更新失败,0未导入,1准备中,2导入中,3校验中,4完成 -->
+				<template #default="scope">
+					<template v-if="parseInt(scope.row.state)==-1">
+						<el-text size="small" type="warning">{lang library_state_-1}</el-text>
+					</template>
+					<template v-else-if="parseInt(scope.row.state)==0 ">
+						<el-text v-if="scope.row.type=='3'" size="small" type="info">---</el-text>
+						<el-text v-else size="small" >{lang library_state_0}</el-text>
+					</template>
+
+					<template v-else-if="parseInt(scope.row.state)==1">
+						<el-text size="small" type="info">{lang library_state_1}</el-text>
+					</template>
+					<template v-else-if="parseInt(scope.row.state)==2">
+						<el-text size="small" type="info">{lang library_state_2}</el-text>
+					</template>
+					<template v-else-if=" parseInt(scope.row.state)==3">
+						<el-text size="small" type="info">{lang library_state_3}</el-text>
+					</template>
+					<template v-else-if="parseInt(scope.row.state)==4">
+						<el-text size="small" type="success">{lang library_state_4}</el-text>
+					</template>
+				</template>
+			</el-table-column>
+			<el-table-column label="{lang operation}" width="360" align="center">
+				  <template #default="scope">
+					  <template v-if="parseInt(scope.row.isdelete)==0">
+
+						<div style="width: 100%;text-align: right;">
+						<el-dropdown 
+							style="margin-right: 12px;"  
+							@command="TableMoreOpertion" 
+							v-if="parseInt(scope.row.connect) == 1"
+							:disabled="parseInt(scope.row.state)==1 || parseInt(scope.row.state)==2 || parseInt(scope.row.state)==3">
+							<el-button plain :disabled="parseInt(scope.row.state)==1 || parseInt(scope.row.state)==2 || parseInt(scope.row.state)==3">
+								<el-icon :class="{'el-icon-loading':parseInt(scope.row.state)==2 || parseInt(scope.row.state)==3}">
+									<svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M42 8V24" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 24L6 40" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M42 24C42 14.0589 33.9411 6 24 6C18.9145 6 14.3216 8.10896 11.0481 11.5M6 24C6 33.9411 14.0589 42 24 42C28.8556 42 33.2622 40.0774 36.5 36.9519" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
 								</el-icon>
+								<el-icon style="margin-left: 6px;"><Caret-Bottom></Caret-Bottom></el-icon>
 							</el-button>
-						</template>
-					</el-popover>
-					<el-button type="info" plain icon="share" @click="RightCopyUrl(item.url)" style="font-size: 24px;margin-left: 12px;"></el-button>
-					<el-dropdown 
-						:teleported="false"
-						style="margin-left: 12px;" 
-						@command="TableMoreOpertion">
-						<el-button type="info" plain icon="MoreFilled" style="font-size: 24px;"></el-button>
-						<template #dropdown>
-							<el-dropdown-menu>
-								<template v-if="parseInt(item.connect) == 1">
-									<el-dropdown-item icon="Refresh" :command="{item:item,type:'renew'}">{lang update}</el-dropdown-item>
-									<el-dropdown-item icon="Refresh" :command="{item:item,type:'reload'}">{lang validation_updates}</el-dropdown-item>
-								</template>
-								<el-dropdown-item icon="Setting" :command="{item:item,type:'set'}">{lang setting}</el-dropdown-item>
-								<el-dropdown-item icon="Delete" :command="{item:item,type:'delete'}">{lang delete}</el-dropdown-item>
-							</el-dropdown-menu>
-						</template>
-					</el-dropdown>
-					
-				</div>
-			</div>
-			</template>
-			
-		</el-card>
-	</li>
-    
-</ul>
+							<template #dropdown>
+								<el-dropdown-menu>
+									<el-dropdown-item icon="Refresh" :command="{item:scope.row,type:'renew'}">{lang update}</el-dropdown-item>
+									<el-dropdown-item icon="Refresh" :command="{item:scope.row,type:'reload'}">{lang validation_updates}</el-dropdown-item>
+								</el-dropdown-menu>
+							</template>
+						</el-dropdown>
+						
+
+						<el-tooltip content="{lang share}" placement="top">
+							<el-button plain @click="RightCopyUrl(scope.row.url)">
+								<el-icon><Share /></el-icon>
+							</el-button>
+						</el-tooltip>
+						<el-tooltip content="{lang publish}" placement="top">
+							<el-button plain icon="Position" @click="handlePosition(scope.row)" ></el-button>
+						</el-tooltip>
+						<!--<el-tooltip content="{lang edit}" placement="top">
+							<el-button plain  @click="TableMoreOpertion({item:scope.row,type:'edit'})">
+								<el-icon><Edit-Pen /></el-icon>
+							</el-button>
+						</el-tooltip>-->
+						<el-tooltip content="{lang setting}" placement="top">
+							<el-button plain  @click="TableMoreOpertion({item:scope.row,type:'set'})">
+								<el-icon><Setting /></el-icon>
+							</el-button>
+						</el-tooltip>
+						<el-tooltip content="{lang delete}" placement="top">
+							<el-button type="danger" plain  @click="TableMoreOpertion({item:scope.row,type:'delete'})">
+								<el-icon><Delete /></el-icon>
+							</el-button>
+						</el-tooltip>
+					</div>
+					  </template>
+					  <template v-else>
+						  <div style="width: 100%;text-align: right;">
+							  <el-tooltip content="{lang recovery}" placement="top">
+								  <el-button plain @click="RecycleOperation('recovery',scope.row.appid)">
+									  <el-icon><Refresh-Right /></el-icon>
+								  </el-button>
+							  </el-tooltip>
+							  <el-tooltip content="{lang delete}" placement="top">
+								  <el-button plain type="danger"  @click="RecycleOperation('delete',scope.row.appid)">
+									  <el-icon><Delete /></el-icon>
+								  </el-button>
+							  </el-tooltip>
+						  </div>
+					  </template>
+				  </template>
+			</el-table-column>
+		</el-table>
+	</div>
+	
+</template>
+
 
 <script>
 	// -1更新失败,0未导入,1准备中,2导入中,3校验中,4完成
@@ -155,9 +312,13 @@
 					GetFetachNum:0,
 					GetFetachAppids:[],
 				},
+				style:'icon'
             }
         },
         methods:{
+			handlePosition(data){//发布
+				window.open('index.php?mod=publish&op=choose&ptype=3&value='+data.appid)
+			},
             TableMoreOpertion(data){//库操作
                 const self = this;
                 switch(data.type){
@@ -219,53 +380,8 @@
 				}
 
 			},
-            TableSortable(){//排序
-				var _this = this;
-				var tbody = document.querySelector('.wrap-content');
-				Sortable.create(tbody, {
-					draggable: ".piece",
-					preventOnFilter: true,
-                    animation: 150,
-					filter:'.piece-add',
-					onMove: function (evt,originalEvent) {
-						if(evt.related.classList.contains('piece-add')) {
-							return false;
-						}
-					},
-					onUpdate ({ newIndex, oldIndex }) {//列表内元素顺序更新的时候触发
-						var currRow = _this.Table.data.splice(oldIndex, 1)[0];
-						_this.Table.data.splice(newIndex, 0, currRow);
-						var appids = [];
-						for(let i in _this.Table.data){
-							let item = _this.Table.data[i];
-							if(item.type == 'add')continue;
-							appids.push(item.appid);
-						}
-						appids = appids.join(',');
-						_this.TableSortableSubmit(appids);
-					}
-				});
-			},
-			async TableSortableSubmit(appids){//排序保存
-				var self = this;
-				var res = await axios.post(MOD_URL+'&op=library&operation=sort',{
-					settingsubmit:true,
-					formhash:'{FORMHASH}',
-					appids:appids,
-				});
-				if(res == 'intercept'){
-					return false;
-				}
-				var data = res.data;
-				if(data.success){
-					// self.$message({
-					// 	type:'success',
-					// 	message:'排序成功'
-					// });
-				}else{
-					self.$message.error(data.msg || '{lang sort_error}');
-				}
-			},
+
+
 			async TableDelete(appid,index){//删除库
                 var self = this;
                 self.$messageBox.confirm('{lang delete_recycle_bin}', '{lang prompt}', {
@@ -293,6 +409,8 @@
                             self.Table.GetFetachAppids.splice(self.Table.GetFetachAppids.indexOf(appid),1);
                         }
                         self.Table.data.splice(index,1);
+						self.total1++;
+						self.total0--;
                     }else{
                         self.$message.error('{lang delete_unsuccess}');
                     }
@@ -301,37 +419,43 @@
 
 
 			},
-			async TableGetData(arr){//获取数据
+			async TableGetData(){//获取数据
 				var self = this;
                 self.Table.loading = true;//获取中
-				var {data: res} = await axios.post(MOD_URL+'&op=library&operation=getdata');
+				var {data: res} = await axios.post(MOD_URL+'&op=library&operation=getdata',{
+					isdelete:self.activeName=='list'?0:1,
+					keyword:self.keyword,
+					page:self.pageset.page,
+					perpage:self.pageset.perpage
+				});
 				if(res == 'intercept'){
 					return false;
 				}
-                arr = [];
-                for(let i in res.data){
-					res.data[i]['icon'] = '';
-					res.data[i]['isqrcode'] = false;
-					res.data[i]['qrcodeurl'] = '';
-                    arr.push(res.data[i]);
-                }
-				self.Table.data = arr;//添加数据
-				self.Table.loading = false;//获取完成
-				self.Table.data.unshift({
-					type:'add',
-					gid:'add'
-				})
-				for(var i in self.Table.data){//在更新的需要继续更新
-					if(parseInt(self.Table.data[i].state) == 1 || parseInt(self.Table.data[i].state) == -1 || parseInt(self.Table.data[i].state) == 2 || parseInt(self.Table.data[i].state) == 3){
-						if(self.Table.GetFetachAppids.indexOf(self.Table.data[i].appid)<0){
-							self.Table.GetFetachAppids.push(self.Table.data[i].appid);
+
+				if(res.success) {
+					self.pageset.total=parseInt(res.total);
+					let arr = [];
+					for (let i in res.data) {
+						res.data[i]['icon'] = '';
+						res.data[i]['isqrcode'] = false;
+						res.data[i]['qrcodeurl'] = '';
+						arr.push(res.data[i]);
+					}
+					self.Table.data = arr;//添加数据
+					self.Table.loading = false;//获取完成
+					for (var i in self.Table.data) {//在更新的需要继续更新
+						if (parseInt(self.Table.data[i].state) == 1 || parseInt(self.Table.data[i].state) == -1 || parseInt(self.Table.data[i].state) == 2 || parseInt(self.Table.data[i].state) == 3) {
+							if (self.Table.GetFetachAppids.indexOf(self.Table.data[i].appid) < 0) {
+								self.Table.GetFetachAppids.push(self.Table.data[i].appid);
+							}
 						}
 					}
+
+					if (self.Table.GetFetachNum == 0) {
+						self.TableRefreshLoading();//执行更新队列
+					}
+					self.TableGeVappico();//获取图片
 				}
-				if(self.Table.GetFetachNum == 0){
-					self.TableRefreshLoading();//执行更新队列
-				}
-				self.TableGeVappico();//获取图片
 				// self.TableDataForEach();//执行缩略图队列
 			},
 			async TableGeVappico(){//获取库图片
@@ -340,28 +464,28 @@
 				if(self.activeName == 'list'){
 					isdelete = 0;
 				}
-				var {data: res} = await axios.post(MOD_URL+'&op=library&operation=getvappico',{
-					isdelete:isdelete
+				if(self.style=='list') return false;
+				let vappids = [];
+				for (let index = 0; index < self.Table.data.length; index++) {
+					if(self.Table.data[index]){
+						vappids.push(self.Table.data[index]['appid']);
+					}
+				}
+				const {data: res} = await axios.post(MOD_URL+'&op=library&operation=getvappico',{
+					appids:vappids,
 				});
-				for (let index = 0; index < res.data.length; index++) {
-					const element = res.data[index];
-					if(self.activeName == 'list'){
+				if(res.success){
+					for (let index in res.data) {
+						const element = res.data[index];
 						let curr = self.Table.data.find(function(current){
 							return current.appid == element.appid;
 						});
 						if(curr){
 							curr['icon'] = element.icon;
 						}
-					}else{
-						let curr = self.recycleData.data.find(function(current){
-							return current.appid == element.appid;
-						});
-						if(curr){
-							curr['icon'] = element.icon;
-						}
 					}
-					
 				}
+
 			},
 			TableDataForEach(){//缩略图队列
 				var self = this;
@@ -480,6 +604,7 @@
 						if(xtem){
 							if(parseInt(item.state)==4){//完成
 								xtem.filenum = item.filenum;
+								xtem.donum = item.donum;
 								xtem.percent = 100;
 
 								if(self.Table.GetFetachAppids.indexOf(xtem.appid)>-1){
@@ -503,6 +628,7 @@
 									xtem.percent = 100;
 								}
 								xtem.filenum = item.filenum;
+								xtem.donum = item.donum;
 								xtem.percent = parseInt(item.percent);
 								xtem.state = parseInt(item.state);
 								if(parseInt(item.state)==0){
@@ -522,7 +648,7 @@
 			},
         },
         mounted(){
-            this.TableSortable();//初始化排序
+
         }
     }
 </script>

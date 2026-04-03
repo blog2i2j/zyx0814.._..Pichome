@@ -644,7 +644,7 @@ EOF;
                 return false;
             } else {
                 //插入缩略图记录表
-                return array('success'=>$thumbpath);
+                return array('success'=>$cloudpath);
             }
         } else return array('success'=>$url);
     }

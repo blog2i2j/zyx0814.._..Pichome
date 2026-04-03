@@ -16,37 +16,50 @@
         //权限二进制值规范
 
 
-        public function add_share($rid,$stype =0,$params=array()){
-            $appid='';
-            $viewurl='';
+        public function add_share($ids,$stype =0,$params=array()){
+            if(empty($ids)) return false;
+            if(!is_array($ids)) $ids=array($ids);
             switch ($stype){
                 case 0://文件
-                    if(!$data= C::t('pichome_resources')->fetch($rid)){
+
+                    if(!$data= C::t('pichome_resources')->fetch($ids[0])){
                         return false;
                     }
-                    $appid=$data['appid'];
+                    $title=$data['name'];
+                    if(count($ids)>1){
+                        $title.=lang('deng');
+                    }
+
                     break;
                 case 1://收藏夹文件
-                    if(!$data = C::t('pichome_collectlist')->fetch($rid)){
+                    if(!$data = C::t('pichome_collectlist')->fetch($ids[0])){
                         return false;
                     }
                     if(!$resource= C::t('pichome_resources')->fetch($data['rid'])){
                         return false;
                     }
-                    $data['name']=$resource['name'];
-                    $appid=$data['appid'];
+                    $title=$resource['name'];
+
                     break;
                 case 2://收藏夹
-                    if(!$data = C::t('pichome_collect')->fetch($rid)){
+                    if(!$data = C::t('pichome_collect')->fetch($ids[0])){
                         return false;
+                    }
+                    $title=$data['name'];
+                    if(count($ids)>1){
+                        $title.=lang('deng');
                     }
                     break;
                 case 3: //专辑
                     $tabstatus = 0;
                     Hook::listen('checktab', $tabstatus);
                     if($tabstatus){
-                        if(!$data = C::t('#tab#tab')->fetch($rid)){
+                        if(!$data = C::t('#tab#tab')->fetch($ids[0])){
                             return false;
+                        }
+                        $title=$data['tabname'];
+                        if(count($ids)>1){
+                            $title.=lang('deng');
                         }
                     }
 
@@ -54,14 +67,12 @@
             }
 
             $setarr = [
-                'title'=>$data['name'],
-                'filepath'=>$rid,
-                'appid'=>$appid,
-                'clid'=>isset($data['clid']) ? $data['clid']:0,
+                'title'=>$title,
+                'filepath'=>implode(',',$ids),
                 'dateline'=>TIMESTAMP,
                 'uid'=>getglobal('uid'),
                 'username'=>getglobal('username'),
-                'stype'=>$stype
+                'stype'=>$stype,
             ];
             if($params['title']){
                 $setarr['title']=$params['title'];
@@ -78,6 +89,9 @@
             if($params['perm']){
                 $setarr['perm']=intval($params['perm']);
             }
+            if($params['sperm']){
+                $setarr['sperm']=intval($params['sperm']);
+            }
             if($id = DB::result_first("select id from %t where uid = %d and stype = %d and filepath = %s ",array($this->_table,$setarr['uid'],$setarr['stype'],$setarr['filepath']))){
                  parent::update($id,$setarr);
             }else{
@@ -91,28 +105,27 @@
                $data = parent::fetch($data);
             }
             $viewurl='';
-            $path='';
+
             switch ($data['stype']){
                 case 0://文件
+                    $viewurl=getglobal('siteurl').'index.php?mod=shares&op=detail&path=';
                     $path=$data['filepath'];
-                    $viewurl=getglobal('siteurl').'index.php?mod=pichome&op=share&path=';
                     break;
                 case 1://收藏夹文件
                     $collection = C::t('pichome_collectlist')->fetch($data['filepath']);
                     $path=$collection['rid'];
-                    $viewurl=getglobal('siteurl').'index.php?mod=pichome&op=share&path=';
+                    $viewurl=getglobal('siteurl').'index.php?mod=shares&op=detail&path=';
                     break;
                 case 2://收藏夹
                     $path=$data['filepath'];
-                    $viewurl=getglobal('siteurl').'index.php?mod=collection&op=detail&shareid=';
+                   $viewurl=getglobal('siteurl').'index.php?mod=collection&op=detail&sid=';
                     break;
                 case 3: //专辑
                     $path=$data['filepath'];
-                    $viewurl=getglobal('siteurl').'index.php?mod=tab&op=share&path=';
+                    $viewurl=getglobal('siteurl').'index.php?mod=tab&op=share&sid=';
                     break;
             }
-
-            return $viewurl.Pencode(array('path'=>$path,'perm'=>$data['perm'],'sid'=>$data['id']),600);
+           return $viewurl.Pencode(array('path'=>$path,'perm'=>$data['perm'],'sid'=>$data['id']),600);
         }
         public function getShareUrl($data){
             if(!$data) {
@@ -132,11 +145,12 @@
             if($data['endtime']) $data['fendtime']=dgmdate($data['endtime'],'Y-m-d');
             $data['fstatus']=lang('share_status_'.$data['status']);
             $data['fstype']=lang('share_stype_'.$data['stype']);
-
+            $data['sperm']=intval($data['sperm']);
+            $data['perm']=intval($data['perm']);
             if(perm::check('download2',$data['perm'])){
                 $data['fperm']=lang('share_perm_1');
             }
-
+            $data['sid']=$data['id'];
             $data['qrcodeurl']='';
             $data['isqrcode']=false;
             return $data;
@@ -153,18 +167,32 @@
         }
         public function delete_by_riduid($rid){
             $uid = getglobal('uid') ? getglobal('uid'):0;
-            $id = DB::result_first("select id from %t where filepath = %s and uid = %d",array($this->_table,$rid,$uid));
-            if($id) parent::delete($id);
-            return true;
+            $sql="uid=%d and find_in_set(%s,filepath)";
+            $params=array($this->_table,$uid,$rid);
+
+           if($id = DB::result_first("select id from %t where $sql",$params)){
+               return parent::delete($id);
+           }
+           return true;
         }
-        public function delete_by_rid($rid){
-            if(!is_array($rid)) $rid = (array) $rid;
+        public function delete_by_rid($rids){
+            if(!is_array($rids)) $rids = (array) $rids;
             $uid = getglobal('uid') ? getglobal('uid'):0;
             $ids = [];
-            foreach(DB::fetch_all("select id from %t where filepath in(%n) ",array($this->_table,$rid,$uid)) as $v){
+            $sql='stype=0';
+            $params=array($this->_table);
+            $arr=array();
+            foreach($rids as $rid){
+                $arr[]="find_in_set(%s,filepath)";
+                $params[]=$rid;
+            }
+            if($arr){
+                $sql.=" and (".implode(' OR ',$arr).")";
+            }
+            foreach(DB::fetch_all("select id from %t where $sql ",$params) as $v){
                 $ids[] = $v['id'];
             }
-            if(!empty($ids)) parent::delete($ids);
+            if(!empty($ids)) return parent::delete($ids);
             return true;
         }
         public function fetch_by_idandtype($id,$stype=0){

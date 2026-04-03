@@ -14,7 +14,7 @@
             parent::__construct();
         }
       	
-      	public function insert($setarr){
+      	public function insert($setarr, $return_insert_id = false, $replace = false, $silent = false){
       		$rid = trim($setarr['rid']);
       		if($attrdata = parent::fetch($rid)){
       			unset($setarr['rid']);

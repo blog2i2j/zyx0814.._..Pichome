@@ -116,7 +116,7 @@ if ($operation == 'basic') {
     }else{
 		$settingnew = $_GET['settingnew'];
         if ($settingnew['unRunExts'])
-            $settingnew['unRunExts'] = explode(',', trim($settingnew['unRunExts'], ','));
+            $settingnew['unRunExts'] = explode(',', trim(strtolower($settingnew['unRunExts']), ','));
         else
             $settingnew['unRunExts'] = array();
         if (!in_array('php', $settingnew['unRunExts']))
@@ -174,11 +174,11 @@ if ($operation == 'basic') {
     }
 }elseif($operation == 'mail'){
     if(!submitcheck('settingsubmit')) {
-        $passwordmask = $setting['mail']['auth_password'] ? $setting['mail']['auth_password']{0} . '********' . substr($setting['mail']['auth_password'], -2) : '';
+        $passwordmask = $setting['mail']['auth_password'] ? $setting['mail']['auth_password'][0] . '********' . substr($setting['mail']['auth_password'], -2) : '';
         $smtps = array();
         foreach ($setting['mail']['smtp'] as $id => $smtp) {
             $smtp['auth'] = $smtp['auth'] ? true : false;
-            $smtp['auth_password'] = $smtp['auth_password'] ? $smtp['auth_password']{0} . '********' . substr($smtp['auth_password'], -2) : '';
+            $smtp['auth_password'] = $smtp['auth_password'] ? $smtp['auth_password'][0] . '********' . substr($smtp['auth_password'], -2) : '';
 			$smtp['id'] = $id;
             $smtps[] = $smtp;
         }
@@ -202,7 +202,7 @@ if ($operation == 'basic') {
             //     $settingnew['mail']['smtp'][] = $value;
             // }
 			if ( !$value['delete'] && !empty($value['server']) && !empty($value['port'])) {
-			    $passwordmask = $setting['mail']['smtp'][$id]['auth_password'] ? $setting['mail']['smtp'][$id]['auth_password']{0} . '********' . substr($setting['mail']['smtp'][$id]['auth_password'], -2) : '';
+			    $passwordmask = $setting['mail']['smtp'][$id]['auth_password'] ? $setting['mail']['smtp'][$id]['auth_password'][0] . '********' . substr($setting['mail']['smtp'][$id]['auth_password'], -2) : '';
 			    $value['auth_password'] = $value['auth_password'] == $passwordmask ? $setting['mail']['smtp'][$id]['auth_password'] : $value['auth_password'];
 			    $settingnew['mail']['smtp'][] = $value;
 			}

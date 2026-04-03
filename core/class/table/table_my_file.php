@@ -15,7 +15,7 @@ class table_my_file extends dzz_table
     public function delete_by_id($id){
         $data = parent::fetch($id);
         if(parent::delete($id)){
-            C::t('attachment')->delete_by_aid($aid);
+           if($data['aid']) C::t('attachment')->delete_by_aid($data['aid']);
         }
         return true;
     }

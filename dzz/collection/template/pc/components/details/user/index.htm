@@ -1,0 +1,157 @@
+
+<el-scrollbar id="container_scroll" class="page-component__scroll">
+	<div class="user-container">
+		<div class="header">
+			<div class="input-box">
+				<el-input v-model="UserKeyword" clearable placeholder="{lang Please_input_name}" @input="UserKeywordInput"></el-input>
+			</div>
+			<!--{if intval($perm)>2}-->
+			<el-popover
+				ref="AddPopoverUser"
+			    placement="bottom"
+				popper-class="addcollection-dialog"
+			    width="300"
+				@show="UserAddPopoverShow"
+				@after-leave="UserAddPopoverHide">
+				<div style="padding: 24px 0;">
+					<el-radio-group v-model="UserAddPopover.perm">
+					    <el-radio :label="1">{lang view_memeber}</el-radio>
+					    <el-radio :label="2">{lang edit_memeber}</el-radio>
+					    <el-radio :label="3">{lang manage_memeber}</el-radio>
+					</el-radio-group>
+				</div>
+				<el-input v-model.trim="UserAddPopover.keyword" placeholder="{lang name_by_search}" @input="UserAddPopoverInput" clearable></el-input>
+				
+				<div style="padding:12px 0;overflow: hidden;">
+					<el-scrollbar class="h400">
+						<div style="padding: 0 24px;">
+							<template v-if="UserAddPopover.loading">
+								<div style="position: relative;width: 100%;height: 100px;">
+									<div class="img-loading center">
+										<el-icon><Loading /></el-icon>
+                                        {lang loading}
+									</div>
+								</div>
+							</template>
+							<template v-else>
+								<el-checkbox-group v-model="UserAddPopover.user">
+									<el-checkbox v-for="item in UserAddPopover.data" :label="item.uid">
+										<div>
+											<div style="display:inline-block" v-html="item.icon"></div>
+											{{item.username}}
+										</div>
+									</el-checkbox>
+								</el-checkbox-group>
+							</template>
+						</div>
+					</el-scrollbar>
+				</div>
+				<el-row :gutter="20">
+					<el-col :span="12">
+						<el-button style="width: 100%;" size="mini" type="info" plain @click="UserAddPopoverHide">{lang cancel}</el-button>
+					</el-col>
+					<el-col :span="12">
+						<el-button style="width: 100%;" type="primary" size="mini" @click="UserAddPopoverSubmit"  :loading="UserAddPopover.btnloading">
+                            {lang confirms}</el-button>
+					</el-col>
+				</el-row>
+				<template #reference>
+					<el-button type="primary" icon="plus" @click="UserAddPopoverClick">{lang add_member}</el-button>
+				</template>
+				
+			</el-popover>
+			<!--{/if}-->	
+		</div>
+		<el-divider></el-divider>
+		<div class="content" v-loading="Userloading">
+			<div class="member-list-item-detail" v-for="(item,index) in UserDataList">
+				<div class="img small" v-html="item.icon"></div>
+				<span class="name">{{item.username}}</span>
+				<div class="operation">
+					<el-row :gutter="5">
+						<el-col :span="12">
+							<template v-if="parseInt(item.adminid)==1">
+								<el-tag effect="plain" color="#a0cfff" style="color:#FFFFFF">
+                                    {lang system_admin}
+								</el-tag>
+							</template>
+							<template v-else-if="parseInt($_G['uid']) == parseInt(item.uid)">
+								<el-tag effect="plain" color="#a0cfff" style="color:#FFFFFF">
+									<template v-if="parseInt(item.perm)==1">{lang view_memeber}</template>
+									<template v-else-if="parseInt(item.perm)==2">{lang edit_memeber}</template>
+									<template v-else-if="parseInt(item.perm)>2">{lang manage_memeber}</template>
+								</el-tag>
+							</template>
+							<template v-else>
+								<!--{if intval($perm)>2}-->
+								<el-dropdown trigger="click" :disabled="item.loading" @command="UserSetPerm">
+									<el-button type="primary" size="small" :disabled="item.loading">
+										<template v-if="parseInt(item.perm)==1">{lang view_memeber}</template>
+										<template v-else-if="parseInt(item.perm)==2">{lang edit_memeber}</template>
+										<template v-else-if="parseInt(item.perm)>2">{lang manage_memeber}</template>
+									</el-button>
+									<template #dropdown>
+										<el-dropdown-menu class="jurisdiction-dropdown">
+											<el-dropdown-item :class="{active:parseInt(item.perm)==1}" :command="UserSetPermBefore(index,1)">
+												<div>
+													<div>{lang view_memeber}</div>
+													<p class="tipTxt" style="margin: 0;margin-bottom: 6px;">{lang perm_for_view}</p>
+												</div>
+											</el-dropdown-item>
+											<el-dropdown-item :class="{active:parseInt(item.perm)==2}" :command="UserSetPermBefore(index,2)">
+												<div>
+													<div>{lang edit_memeber}</div>
+													<p class="tipTxt" style="margin: 0;margin-bottom: 6px;">{lang perm_for_edit}</p>
+												</div>
+											</el-dropdown-item>
+											<el-dropdown-item :class="{active:parseInt(item.perm)==3}" :command="UserSetPermBefore(index,3)">
+												<div>
+													<div>{lang manage_memeber}</div>
+													<p class="tipTxt" style="margin: 0;margin-bottom: 6px;">
+                                                        {lang perm_for_manage}</p>
+												</div>
+											</el-dropdown-item>
+										</el-dropdown-menu>
+									</template>
+									
+								</el-dropdown>
+								<!--{else}-->
+								<el-tag effect="plain" color="#a0cfff" style="color:#FFFFFF">
+									<template v-if="parseInt(item.perm)==1">{lang view_memeber}</template>
+									<template v-else-if="parseInt(item.perm)==2">{lang edit_memeber}</template>
+									<template v-else-if="parseInt(item.perm)>2">{lang manage_memeber}</template>
+								</el-tag>
+								<!--{/if}-->
+							</template>
+							
+						</el-col>
+						<el-col :span="12">
+							<!--{if intval($perm)>2}-->
+							<el-popconfirm width="250px" title="{lang delete_collections_confirm}" cancel-button-type="danger" @confirm="UserOut(index,item.uid)">
+								<template #reference>
+									<el-button type="info" size="small" plain :disabled="item.loading">
+										<template v-if="parseInt($_G['uid']) == parseInt(item.uid)">{lang leave}</template>
+										<template v-else>{lang remove}</template>
+									</el-button>
+								</template>
+								
+							</el-popconfirm>
+							<!--{else}-->
+							<el-popconfirm title="{lang del_collets_user_confirm}" cancel-button-type="danger" @confirm="UserOut(index,item.uid)">
+								<template #reference>
+									<el-button v-if="parseInt('$uid') == parseInt(item.uid)" type="info" size="small" plain :disabled="item.loading">
+                                        {lang leave}</el-button>
+								</template>
+								
+							</el-popconfirm>
+							<!--{/if}-->
+						</el-col>
+					</el-row>
+					
+					
+				</div>
+			</div>
+			
+		</div>
+	</div>
+</el-scrollbar>

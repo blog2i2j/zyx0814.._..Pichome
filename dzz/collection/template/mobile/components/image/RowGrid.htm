@@ -1,0 +1,220 @@
+<script type="text/javascript">
+	var ImageRowGridMixin = {
+		data(){
+			return {
+				ImageRowGrid:{
+					maxNewtop:0,
+					maxNewLeft:0,
+					rowElems:[],
+					perpage : 0,
+					Margin:4,
+					rowWidth:0,
+					OtherHeight:0,
+					SurplusImgdatas:[],
+					StoreImgdatas:[],
+				},
+			}
+		},
+		methods:{
+			ImagesRowGridInit(){
+				var self = this;
+				var ImageRowGrid = self.ImageRowGrid;
+				if(self.ParamImages.type == 'refresh' || !self.ParamImages.data.length){
+					ImageRowGrid.maxNewtop = 0;
+					ImageRowGrid.rowWidth = 0;
+					ImageRowGrid.rowElems = [];
+					ImageRowGrid.maxNewLeft =  0;
+					ImageRowGrid.perpage = 0;
+					ImageRowGrid.SurplusImgdatas = [];
+					ImageRowGrid.StoreImgdatas = [];
+					this.ParamImages.Newdatas = [];
+				}
+				if(!self.ParamImages.data.length){
+					$('#imgContainer').height(0);
+					return false;
+				}
+				var OtherHeight = 0;
+				if(!self.ParamImages.checked){
+					OtherHeight = 30;
+				}
+				if(self.ParamSort.showinformation.value.indexOf('name')>-1 || self.ParamSort.showinformation.value.indexOf('extension')>-1){
+					OtherHeight = 45;
+				}
+				if(self.ParamSort.showinformation.value.indexOf('other')>-1){
+					OtherHeight += 20;
+				}
+				ImageRowGrid.OtherHeight = OtherHeight;
+				var arr = [];
+				if(ImageRowGrid.rowElems.length){
+					for(var s in ImageRowGrid.rowElems){
+						arr.push(JSON.parse(JSON.stringify(ImageRowGrid.rowElems[s])));
+					}
+					ImageRowGrid.rowWidth = 0;
+					ImageRowGrid.rowElems = [];
+					ImageRowGrid.maxNewLeft =  0;
+				}
+				
+				for(var findex = ImageRowGrid.perpage; findex < self.ParamImages.data.length;++findex){
+					var str = JSON.parse(JSON.stringify(self.ParamImages.data[findex]));
+					var w = parseInt(str['width']);
+					var h = parseInt(str['height']);
+					var r = w / h;
+					var r1 = h / w;
+					if (h > 260) {
+						h = 260;
+						w = r * h;
+					} else if (w < 260) {
+						w = 260;
+						h = 260;
+					}
+					str['pwidth'] = w;
+					str['pheight'] = h;
+					arr.push(str);
+				}
+				var documentW = document.body.clientWidth;
+				var boxWidth = documentW-8;
+				$('#imgContainer').width(boxWidth);
+				for(var index in arr){
+					var item = arr[index];
+					ImageRowGrid.rowWidth += item['pwidth'];
+					ImageRowGrid.rowElems.push(item);
+					var fdiiff = ImageRowGrid.rowWidth + ImageRowGrid.Margin * (ImageRowGrid.rowElems.length - 1);
+					var diff = fdiiff - boxWidth;//多出来的宽度
+					if (fdiiff > boxWidth){
+						var widthDiff = 0,maxNewHeight = 0;
+						for(var rowElemIndex in ImageRowGrid.rowElems){
+							var pitem = ImageRowGrid.rowElems[rowElemIndex];
+							var rowElemWidth = pitem['pwidth'];//获取一行每个都宽度
+							var rowElemHeight = pitem['pheight'];//获取一行每个都宽度
+				
+							var newWidth = rowElemWidth - (rowElemWidth / ImageRowGrid.rowWidth) * diff;//新宽度
+							var newHeight = Math.round(rowElemHeight * (newWidth / rowElemWidth));//新高度
+							if (widthDiff + 1 - newWidth % 1 >= 0.5) {
+								widthDiff -= newWidth % 1;
+								newWidth = Math.floor(newWidth);
+							} else {
+								widthDiff += 1 - newWidth % 1;
+								newWidth = Math.ceil(newWidth);
+							}
+							if (newHeight > maxNewHeight){
+								maxNewHeight = newHeight;
+							}
+							pitem['pwidth'] = newWidth;
+							pitem['pheight'] = maxNewHeight;
+							pitem['ptop'] = ImageRowGrid.maxNewtop;
+							pitem['pbottom'] = ImageRowGrid.maxNewtop+maxNewHeight+ImageRowGrid.OtherHeight;
+							if(rowElemIndex > 0){
+								pitem['pleft'] = ImageRowGrid.maxNewLeft;
+							}else{
+								pitem['pleft'] = 0;
+							}
+							ImageRowGrid.maxNewLeft += newWidth + ImageRowGrid.Margin;
+							
+						}
+						
+						for(var frowElemIndex in ImageRowGrid.rowElems){//规整每行的高
+							var rowElem = ImageRowGrid.rowElems[frowElemIndex];
+							var height = rowElem['pheight'];//获取一行每个都宽度
+							
+							if(height<maxNewHeight){
+								for(var a in arr){
+									var aitem = arr[a];
+									if(aitem['lid'] == rowElem['lid']){
+										aitem['pbottom'] += maxNewHeight-height;
+										aitem['pheight'] = maxNewHeight;
+									}
+								}
+							}
+						}
+						
+						ImageRowGrid.maxNewtop += maxNewHeight + ImageRowGrid.Margin +ImageRowGrid.OtherHeight
+						ImageRowGrid.rowElems = [];
+						ImageRowGrid.rowWidth = 0;
+						ImageRowGrid.maxNewLeft = 0;
+					}
+				}
+						
+				var surplusheight = 0;
+						
+				if (ImageRowGrid.rowElems.length) {
+					var maxNewHeight = 0;
+					for(var f in ImageRowGrid.rowElems){
+						var rowElem = ImageRowGrid.rowElems[f];
+						for(var a in arr){
+							var aitem = arr[a];
+							if(parseInt(aitem['lid']) == parseInt(rowElem['lid'])){
+								var rowElemWidth = aitem.pwidth;//获取一行每个都宽度
+								var rowElemHeight = aitem.pheight;//获取一行每个都宽度
+								aitem['pwidth'] = rowElemWidth;
+								aitem['pheight'] = rowElemHeight;
+								aitem['ptop'] = ImageRowGrid.maxNewtop;
+								aitem['pbottom'] = ImageRowGrid.maxNewtop+rowElemHeight+ImageRowGrid.OtherHeight;
+								if (rowElemHeight > maxNewHeight){
+									maxNewHeight = rowElemHeight;
+								}
+								if(f > 0){
+									aitem['pleft'] = ImageRowGrid.maxNewLeft;
+								}else{
+									aitem['pleft'] = 0;
+								}
+								
+								ImageRowGrid.maxNewLeft += rowElemWidth + ImageRowGrid.Margin;
+							}
+						}
+						
+					}
+			
+					for(var ff in ImageRowGrid.rowElems){
+						var rowElem = ImageRowGrid.rowElems[ff];
+						for(var a in arr){
+							var aitem = arr[a];
+							if(aitem['lid'] == rowElem['lid']){
+								ImageRowGrid.SurplusImgdatas.push(rowElem['lid']);
+								var height = aitem['pheight'];
+								if(height<maxNewHeight){
+									aitem['pbottom'] += maxNewHeight-height;
+									aitem['pheight'] = maxNewHeight;
+								}
+							}
+						}
+						
+					}
+					surplusheight = maxNewHeight+ImageRowGrid.OtherHeight+ImageRowGrid.Margin;
+					// ImageRowGrid.maxNewLeft = 0;
+				}
+				// else{
+				// 	ImageRowGrid.SurplusImgdatas = [];
+				// }
+				$('#imgContainer').height(ImageRowGrid.maxNewtop+surplusheight+60);
+				
+				ImageRowGrid.perpage = self.ParamImages.data.length;
+				var newarr = [];
+				for(var n in arr){
+					newarr.push(arr[n]);
+				}
+				if(self.ParamImages.type == 'append'){
+					var StoreImgdatas = JSON.parse(JSON.stringify(ImageRowGrid.StoreImgdatas));
+					if(ImageRowGrid.SurplusImgdatas.length){
+						ImageRowGrid.StoreImgdatas = ImageRowGrid.StoreImgdatas.filter(function(item){
+							return ImageRowGrid.SurplusImgdatas.indexOf(item['lid'])<0;
+						});
+						for(var b in StoreImgdatas){
+							var tindex = ImageRowGrid.SurplusImgdatas.indexOf(StoreImgdatas[b]['lid']);
+							if(tindex>-1){
+								ImageRowGrid.SurplusImgdatas.splice(tindex,1);
+							}
+						}
+					}
+					
+					// for(var y in newarr){
+					// 	ImageRowGrid.StoreImgdatas.push(newarr[y])
+					// }
+					ImageRowGrid.StoreImgdatas.push.apply(ImageRowGrid.StoreImgdatas,newarr);
+				}else{
+					ImageRowGrid.StoreImgdatas = newarr;
+				}
+				self.ImagesLayoutScrollShow()
+			},
+		}
+	};
+</script>

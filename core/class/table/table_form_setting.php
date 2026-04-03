@@ -49,6 +49,14 @@ class table_form_setting extends dzz_table
             //获取选项值id
              $data['options'] = C::t('form_filedvals')->get_options_by_filed($flag);
         }
+        if($data['type']=='tabgroup'){
+            if(!empty($data['extra']['gid'])){
+                if($relationfieldnames=$this->fetch_all_by_gid($data['extra']['gid'])){
+                    $data['relationfieldname']=$data['extra']['relationfieldname']??'';
+                    $data['relationfieldnames']=array_values($relationfieldnames);
+                }
+            }
+        }
         return $data;
     }
 
@@ -80,8 +88,7 @@ class table_form_setting extends dzz_table
     //插入表单数据;
     public function insert_by_flag($flag, $form, $hasnewval = 1)
     {
-
-        $setarr['appid'] = isset($form['appid']) ? intval($form['appid']) : 0;
+        $setarr['appid'] = isset($form['appid']) ? trim($form['appid']) : '';
         if ((!$setarr['appid'] && !$form['tabgroupid']) && empty($flag)) {
             return false;
         } elseif (!$flag) {
@@ -112,6 +119,7 @@ class table_form_setting extends dzz_table
             $setarr['allowsearch'] = ($form['type'] == 'textarea' || $form['type'] == 'input') ? 0 : 1;
         }
         $form['flag'] = $flag;
+        $editoptions = [];
         if ($hasnewval) {
             if (in_array($form['type'], array('multiselect', 'select'))) {
 
@@ -157,9 +165,19 @@ class table_form_setting extends dzz_table
             }
 
         }
-
         switch ($form['type']) {
             case 'input':
+                $setarr['length'] = intval($form['length']);
+                $setarr['regex'] = trim($form['regex']);
+                $extra = array(
+                    'hint' => getstr($form['hint']),
+                );
+                if($form['dw']){
+                    $extra['dw'] = getstr($form['dw']);
+                }
+                $setarr['extra'] = serialize($extra);
+
+                break;
             case 'textarea':
             case 'grade':
                 $setarr['length'] = intval($form['length']);
@@ -172,6 +190,7 @@ class table_form_setting extends dzz_table
             case 'tabgroup':
                 $extra = array(
                     'gid' => $form['ogid'],
+                    'relationfieldname'=>$form['relationfieldname']
                 );
                 $setarr['extra'] = serialize($extra);
                 break;
@@ -201,13 +220,41 @@ class table_form_setting extends dzz_table
                 if($addOptions) C::t('form_filedvals')->insertData($addOptions,$flag,1);
                  //修改的选项
                 if($editOptions) C::t('form_filedvals')->editData($editOptions);
+                $extra = array(
+
+                );
+                if(isset($form['dw'])){
+                    $extra=array(
+                        'dw' => getstr($form['dw'])
+                    );
+                    $setarr['extra'] = serialize($extra);
+                }else{
+                    $setarr['extra']='';
+                }
+
                 break;
             case 'select':
                 if ($form['options']) $setarr['options'] = is_array($form['options']) ? serialize($form['options']) : '';
                 $setarr['multiple'] = 0;
+                if(isset($form['dw'])){
+                    $extra=array(
+                        'dw' => getstr($form['dw'])
+                    );
+                    $setarr['extra'] = serialize($extra);
+                }else{
+                    $setarr['extra']='';
+                }
                 break;
             case 'multiselect':
                 if ($form['options']) $setarr['options'] = is_array($form['options']) ? serialize($form['options']) : '';
+                if(isset($form['dw'])){
+                    $extra=array(
+                        'dw' => getstr($form['dw'])
+                    );
+                    $setarr['extra'] = serialize($extra);
+                }else{
+                    $setarr['extra']='';
+                }
                 break;
             case 'timerange':
                 $setarr['multiple'] = 1;
@@ -229,43 +276,47 @@ class table_form_setting extends dzz_table
                 break;
 
             case 'user':
+            case 'color':
                 break;
             case 'label':
-                $extra = array(
-                    'label' => $form['label'],
-                );
-
-
-                $setarr['extra'] = serialize($extra);
-                break;
             case 'tagcat':
                 $extra = array(
                     'label' => $form['label'],
                 );
                 $setarr['extra'] = serialize($extra);
                 break;
-            case 'color':
 
-                break;
             default:
 
 
         }
 
         if ($oflagdata) {
-            parent::update($flag, $setarr);
+            $ret=parent::update($flag, $setarr);
+
             if ($setarr['tabgroupid']) {
-                C::t('#tab#tab_attr')->update_val_by_flag($flag, $editoptions);
+                if (!empty($editoptions)) {
+                    C::t('#tab#tab_attr')->update_val_by_flag($flag, $editoptions);
+                }
             } else {
-                if (isset($editoptions)) {
+                if (!empty($editoptions)) {
                     C::t('resources_attr')->update_val_by_flag($flag, $editoptions);
                 }
             }
-
             $setarr['flag'] = $flag;
         } else {
             $setarr['flag'] = $flag;
-            parent::insert($setarr, 1);
+            $ret=parent::insert($setarr, 1);
+        }
+        if($ret){
+            //处理被关联的字段的extra
+            if(!empty($form['relationfieldname'])){
+                $extra = array(
+                    'gid' => ''.$form['tabgroupid'],
+                    'relationfieldname'=>$flag
+                );
+                parent::update($form['relationfieldname'], ['extra'=>serialize($extra)]);
+            }
         }
         if ($old_flag && $old_flag != $flag) {
             parent::delete($old_flag);
@@ -293,6 +344,7 @@ class table_form_setting extends dzz_table
     public function fetch_flags_by_appid($appid, $allowsearch = 0, $isnodel = 1)
     {
         $data = array();
+        if(empty($appid)) return $data;
         $param = array($this->_table, $appid);
         $sql = "  appid = %s ";
         if ($allowsearch) {
@@ -474,7 +526,7 @@ class table_form_setting extends dzz_table
 
     public function delete_by_appid($appid)
     {
-        foreach (DB::fetch_all("select flag from %t where appid = %d", array($this->_table, $appid)) as $v) {
+        foreach (DB::fetch_all("select flag from %t where appid = %s", array($this->_table, $appid)) as $v) {
             $this->delete_by_flag($v['flag']);
         }
     }
@@ -605,6 +657,18 @@ class table_form_setting extends dzz_table
 
         }
         return true;
+    }
+    public function fetch_all_by_gid($gid,$type='tabgroup',$onlyfield=true){
+        $data=array();
+
+        foreach (DB::fetch_all("select * from %t where  type=%s and tabgroupid = %d",
+            array($this->_table, $type,$gid)) as $v) {
+            if($onlyfield && $v['flag']=='tab_'.$v['tabgroupid']){
+                continue;
+            }
+            $data[$v['flag']] = $v;
+        }
+        return $data;
     }
     //删除应用字段时，删除库字段
     /*    public function del_filed_toapp_by_flag($flag)

@@ -60,6 +60,51 @@ if ($do == 'addsearch') {//增加关键词搜索次数
 
     }
     exit(json_encode($hotdatas));
+} elseif ($do == 'getsearchkeywordByBid') {//热搜关键词
+    $cachetime = 3600;
+
+    $bid = isset($_GET['id']) ? intval($_GET['id']) : 0;
+    $page = isset($_GET['page']) ? intval($_GET['page']):1;
+    $perpage = isset($_GET['perpage']) ? intval($_GET['perpage']):10;
+    $cachename = 'PICHOMESEARCHHOTKEYWORD_banner_'.$bid.'_'.$page;
+    $banner= C::t('pichome_banner')->fetch($bid);
+    $hotdatas = false;
+    $hotdatas = C::t('cache')->fetch_cachedata_by_cachename($cachename,$cachetime);
+    if (!$hotdatas) {
+        $searchurl='';
+        $banner=C::t('pichome_banner')->fetch($bid);
+        if($banner['btype']=='0'){
+            $idtype = '0';
+            $idval = $banner['bdata'];
+        }elseif($banner['btype']=='1'){//智能数据
+            $bdata=C::t('#intelligent#intelligent')->fetch($banner['bdata']);
+            $idtype = '4';
+            $idval = $banner['bdata'];
+        }elseif($banner['btype']=='6'){//发布
+            $pdata=C::t('#publish#publish_list')->fetch($banner['bdata']);
+            if($pdata['ptype']=='3'){
+                $idtype = '0';
+                $idval = $pdata['pval'];
+            }elseif($pdata['ptype']=='5'){
+                $idtype = '4';
+                $idval = $pdata['pval'];
+            }elseif($pdata['ptype']=='6'){
+                $idtype = '5';
+                $idval = $pdata['id'];
+            }else{
+                exit(json_encode([]));
+            }
+        }else{
+            exit(json_encode([]));
+        }
+        $hotdatas = C::t('keyword_hots')->fetch_by_idtype($idtype,$idval,$page,$perpage);
+        if($hotdatas){
+            $setarr = ['cachekey' => $cachename, 'cachevalue' => serialize($hotdatas), 'dateline' => time()];
+            C::t('cache')->insert_cachedata_by_cachename($setarr,$cachetime,1);
+        }
+
+    }
+    exit(json_encode(['success'=>true,'data'=>$hotdatas]));
 }elseif($do == 'getsearchtag'){//热门标签
 
 } elseif ($do == 'getfolderdata') {
@@ -137,15 +182,7 @@ elseif ($do == 'searchmenu_num') {
         $wheresql .= ' and r.ext in(%n) ';
         $para[] = ['mp3','ogg','wav','wmv','flac','aac','asf','aiff','au','mid','ra','rma'];
     }
-    if(isset($_GET['aid'])){
-        $aid = intval($_GET['aid']);
-        $imageRids = [];
-        Hook::listen('search_condition_filter',$imageRids,['aid'=>$aid]);
-        if(!empty($imageRids['rids'])){
-            $wheresql .= ' and r.rid in(%n)';
-            $para[] = $imageRids['rids'];
-        }
-    }
+
     //用户权限等级
     $para[]= $_G['pichomelevel'];
 
@@ -167,7 +204,19 @@ elseif ($do == 'searchmenu_num') {
             $vappids[] = $v['appid'];
         }
     }
-
+    $imageRids = [];
+    if(isset($_GET['aid'])){
+        $aid = intval($_GET['aid']);
+        $searchparams= array(
+            'appids'=>$vappids,
+            'aid'=>$aid,
+        );
+        Hook::listen('search_condition_filter',$imageRids,$searchparams);
+        if(!empty($imageRids['rids'])){
+            $wheresql .= ' and r.rid in(%n)';
+            $para[] = $imageRids['rids'];
+        }
+    }
     $whererangesql = [];
     //库栏目条件
     if ($vappids) {
@@ -925,7 +974,7 @@ elseif ($do == 'searchmenu_num') {
         //评分统计
         if (!empty($para)) $params = array_merge($params, $para);
         if (!empty($preparams)) $params = array_merge($preparams, $params);
-        //if(!empty($havingsql)) $params = array_merge($params,$havingparams);
+        if(!empty($havingsql)) $params = array_merge($params,$havingpara);
         $pselsql = ($presql) ? "distinct r.rid,r.grade,$presql":"distinct r.rid,r.grade";
         $datas = DB::fetch_all("select $pselsql  from $sql   where $wheresql  group by r.rid $havingsql", $params);
         for($i = 1;$i <= 5;$i++){
@@ -941,7 +990,7 @@ elseif ($do == 'searchmenu_num') {
         //评分统计
         if (!empty($para)) $params = array_merge($params, $para);
         if (!empty($preparams)) $params = array_merge($preparams, $params);
-        //if(!empty($havingsql)) $params = array_merge($params,$havingparams);
+        if(!empty($havingsql)) $params = array_merge($params,$havingpara);
         $pselsql = ($presql) ? "distinct r.rid,r.level,$presql":"distinct r.rid,r.level";
         $datas = DB::fetch_all("select $pselsql  from $sql   where $wheresql  group by r.rid $havingsql", $params);
         for($i = 1;$i <= 5;$i++){
@@ -1209,7 +1258,7 @@ elseif ($do == 'searchmenu_num') {
 
         if (!empty($para)) $params = array_merge($params, $para);
         if (!empty($preparams)) $params = array_merge($preparams, $params);
-        if(!empty($havingsql)) $params = array_merge($params,$havingparams);
+        if(!empty($havingsql)) $params = array_merge($params,$havingpara);
         $pselsql = ($presql) ? "  ps.labelname,count(ps.rid) as num ,$presql":"ps.labelname,count(ps.rid) as num";
         $datas = DB::fetch_all("select $pselsql from $sql   where $wheresql  $havingsql group by labelname $pagelimit", $params);
         $tmpdata = [];
@@ -1276,7 +1325,19 @@ elseif ($do == 'search_menu') {
             $vappids[] = $v['appid'];
         }
     }
-
+    $imageRids = [];
+    if(isset($_GET['aid'])){
+        $aid = intval($_GET['aid']);
+        $searchparams= array(
+            'appids'=>$vappids,
+            'aid'=>$aid,
+        );
+        Hook::listen('search_condition_filter',$imageRids,$searchparams);
+        if(!empty($imageRids['rids'])){
+            $wheresql .= ' and r.rid in(%n)';
+            $para[] = $imageRids['rids'];
+        }
+    }
     $whererangesql = [];
     //库栏目条件
     if ($appid) {

@@ -1,0 +1,226 @@
+<!--{template common/container/pc/header_start}-->
+<link rel="stylesheet" href="static/scss/default/index.css?{VERHASH}">
+<link rel="stylesheet" type="text/css" href="{MOD_PATH}/template/search/assets/css/index.css?{VERHASH}"/>
+<!--{template common/container/pc/header_end}-->
+<div id="dzzoffice">
+    <el-container class="page-main">
+        <el-header style="padding: 0;">
+            <!--{template search/components/header}-->
+        </el-header>
+
+        <el-main style="padding: 0;">
+
+            <div class="search-wrapper container">
+                <div class="input">
+                    <el-input
+                            class="headerkeyword "
+                            v-model="keyword"
+                            size="large"
+                            @clear="handleSearchClear"
+                            @keyup.enter.native="handleSearch"
+                            clearable
+                            placeholder="{lang search}">
+                        <template #prepend v-if="collects && collects.length">
+                            <el-dropdown trigger="click" @command="handleCommand" placement="bottom-start">
+                                    <span class="el-dropdown-link">
+                                    {{current.name}}
+                                    <el-icon class="el-icon--right">
+                                        <arrow-down />
+                                    </el-icon>
+                                    </span>
+                                <template #dropdown>
+                                    <el-dropdown-menu >
+                                        <el-dropdown-item class="search_rec-dropdown" :class="{'is-active':current.id=='0'}" :command="0">{lang all}</el-dropdown-item>
+                                        <el-dropdown-item class="search_rec-dropdown" :class="{'is-active':item.id==current.id}" v-for="item in collects" :command="item.id">{{item.name}}</el-dropdown-item>
+                                    </el-dropdown-menu>
+                                </template>
+                            </el-dropdown>
+                        </template>
+                        <template #append>
+                            <el-button type="primary" @click="handleSearch" icon="Search"></el-button>
+                        </template>
+                    </el-input>
+                    <div class="hot">
+                        <el-button round v-for="item in hots" @click="handlehot(item)">{{item}}</el-button>
+                    </div>
+                </div>
+
+            </div>
+            <div class="list-wrapper container">
+                <div class="latest-title"><el-text size="large">热门发布</el-text></div>
+                <ul v-if="tableData&&tableData.length">
+                    <li class="content-li" v-for="item in tableData">
+                        <el-link :href="item.url" :underline="false" target="_blank">
+                            <el-image class="l-img"  :src="item.img">
+                                <template #error>
+                                    <div class="image—placeholder-error"
+                                         style="width:100%;height:100%;text-align:center;align-content: center;background-color:var(--el-color-info-dark-2);">
+                                    </div>
+                                </template>
+                            </el-image>
+                        </el-link>
+                        <div class="r-c">
+                            <el-link class="title" :underline="false" :href="item.url" target="_blank">{{item.pname}}</el-link>
+                            <el-text tag="p" icon="time" class="time" ><el-icon><Timer /></el-icon> {{item.dateline}}</el-text>
+                            <el-text tag="p" class="message"  line-clamp="3">{{item.metadescription}}</el-text>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <el-footer>
+                <div class="page-footer container">
+
+                    <el-text tag="p" style="display: flex;align-items: center;justify-content: center;margin-top: 0.5em;">
+                        {{sitename}} @ all rights reserved.</el-text>
+                    <div  style="display: flex;align-items: center;justify-content: center;margin-top:0.5em">
+                        <el-link v-if="beian" href="https://beian.miit.gov.cn/" title="{lang beian}" target="_blank">{{beian}}</el-link>
+
+                    </div>
+                </div>
+            </el-footer>
+
+        </el-main>
+
+    </el-container>
+</div>
+<script type="text/javascript">
+    const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch , onUnmounted } = Vue;
+    const dzzoffice = createApp({
+        data() {
+            return {
+                DocumentThemeColor:'',
+                collects:[],
+                hots:[],
+                current:{
+                    id:'0',
+                    name:'{lang all}'
+                },
+                keyword:'',
+                beian: "{$_G['setting']['sitebeian']}",
+                sitename: "{$_G['setting']['sitename']}",
+                tableData:[]
+            }
+        },
+
+        watch:{
+            DocumentThemeColor:{
+                handler(newval){
+                    document.querySelector('html').className = newval
+                },
+                deep:true,
+                // immediate:true
+            }
+        },
+        created() {
+            //主题颜色
+            let theme = localStorage.getItem('theme');
+            if(theme){
+                this.DocumentThemeColor=theme;
+            }else{
+                this.DocumentThemeColor = 'light'
+            }
+            this.getData();
+        },
+        methods: {
+            DocumentThemeChange(){
+                if(this.DocumentThemeColor=='light'){
+                    this.DocumentThemeColor='dark';
+                    localStorage.setItem('theme','dark');
+                }else{
+                    this.DocumentThemeColor='light';
+                    localStorage.setItem('theme','light');
+                }
+            },
+            async getData() {
+
+                let { data: res } = await axios.get('{MOD_URL}&op=search&do=getCollectList');
+                if(res.success){
+                    this.collects = res.data;
+                }
+                let {data:res1}=await axios.get('{MOD_URL}&op=search&do=getsearchkeyword');
+                if(res1.success){
+                    let arr=[];
+                    for (const key in res1.data) {
+                        arr.push(res1.data[key]['keyword']);
+                    }
+                    this.hots=arr;
+                }
+                //获取热门
+                let {data:res2}=await axios.get('{MOD_URL}&op=search&do=getLatest');
+                if(res2.success){
+                    this.tableData=res2.data;
+                }
+
+            },
+            async getSearchkeyword() {
+
+                let {data:res}=await axios.post('{MOD_URL}&op=search&do=getsearchkeyword',{
+                    id:this.current.id
+                });
+                if(res.success){
+                    let arr=[];
+                    for (const key in res.data) {
+                        arr.push(res.data[key]['keyword']);
+                    }
+                    this.hots=arr;
+                }
+            },
+            handleSearchClear(){
+                this.keyword='';
+            },
+            handleSearch(){
+                let hasharr=[];
+                if(this.current.id>0){
+                    hasharr.push('id='+this.current.id);
+                }
+                if(this.keyword!=''){
+                    hasharr.push('keyword='+this.keyword);
+                }
+                location.href='{MOD_URL}&op=search&do=search#'+hasharr.join('&');
+            },
+            handlehot(item){
+                let hasharr=[];
+                if(this.current.id>0){
+                    hasharr.push('id='+this.current.id);
+                }
+                if(item!=''){
+                    hasharr.push('keyword='+item);
+                }
+               location.href='{MOD_URL}&op=search&do=search#'+hasharr.join('&');
+
+            },
+            handleCommand(id){
+               if(id==0){
+                   this.current={
+                       id:'0',
+                       name:'{lang all}'
+                   };
+               }else {
+                   let curr = this.collects.find(item => {
+                       return item.id == id;
+                   });
+                   if (curr) this.current = curr;
+               }
+               this.getSearchkeyword();
+            }
+        },
+        mounted() {
+            dzzoffice.WindowThis = this;
+  
+        }
+    });
+    dzzoffice.use(ElementPlus, {
+        locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+    });
+    for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+        dzzoffice.component(key, component)
+    }
+    dzzoffice.component('comavatar', comavatar);
+    dzzoffice.component('international',international);
+    // 屏蔽警告信息
+    dzzoffice.config.warnHandler = function(){return null};
+    dzzoffice.mount('#dzzoffice');
+</script>
+
+<!--{template common/container/pc/footer}-->

@@ -15,7 +15,7 @@
             parent::__construct();
         }
         
-        public function insert($setarr)
+        public function insert($setarr, $return_insert_id = false, $replace = false, $silent = false)
         {
             $cid = ($setarr['cid']) ? $setarr['cid']:$this->createcid($setarr['appid']);
             if ($taggroup = DB::fetch_first("select * from %t  where cid = %s and appid = %s", array($this->_table, $cid,$setarr['appid']))) {

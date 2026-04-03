@@ -7,6 +7,10 @@ $overt = getglobal('setting/overt');
 if(!$overt && !$overt = C::t('setting')->fetch('overt')){
     Hook::listen('check_login');//检查是否登录，未登录跳转到登录界面
 }
+if(!empty($_GET['robot']) || (!empty($_config['seo']) && !empty(IS_ROBOT))){
+    require MOD_PATH.'/robot/index.php';
+    exit();
+}
 $id = isset($_GET['id']) ? trim($_GET['id']) : '';
 $do = isset($_GET['do']) ? trim($_GET['do']) : '';
 if ($do == 'gettagdata') {//获取标签位文件列表数据
@@ -15,7 +19,6 @@ if ($do == 'gettagdata') {//获取标签位文件列表数据
 
 }else{
     $bannerdata = C::t('pichome_banner')->getBannerTree($id);
-
     $tilebanner = json_encode($bannerdata['tilebanner']);
     $bannerdata = json_encode($bannerdata['bannerlist']);
     // include template('fashion/page/index');
@@ -42,7 +45,8 @@ if ($do == 'gettagdata') {//获取标签位文件列表数据
     }
     $collectlisarr = json_encode($collectlisarr);
     $tabarr = json_encode($tabarr);
-    $PICHOME_LIENCE = PICHOME_LIENCE;
+    $license = defined('PICHOME_LIENCE')?PICHOME_LIENCE:0;
+
     if($ismobile){
         include template('fashion/mobile/page/index');
     }else{

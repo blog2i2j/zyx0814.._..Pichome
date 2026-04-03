@@ -1,0 +1,178 @@
+<!--{template common/container/pc/header_start}-->
+<link rel="stylesheet" type="text/css" href="{MOD_PATH}/css/pc/details.css?{VERHASH}"/>
+<link rel="stylesheet" href="static/scss/default/index.css?{VERHASH}">
+<script type="text/javascript" src="dzz/pichome/template/librarylist/assets/js/common.js?{VERHASH}"></script>
+<!-- spark-md5.js 库-->
+<script type="text/javascript" src="dzz/pichome/template/librarylist/assets/js/spark-md5.min.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/vue_components/HeaderSort/index.js?{VERHASH}"></script>
+<!-- 对象存储上传sdk及上传js-->
+{hook cloudupload}
+<script type="text/javascript" src="static/vue_components/screen/index.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/vue_components/ImageLayout/index.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/vue_components/collectdialog/index.js?{VERHASH}"></script>
+<link rel="stylesheet" type="text/css" href="dzz/pichome/template/librarylist/pc/assets/css/index.css?{VERHASH}"/>
+<link rel="stylesheet" type="text/css" href="dzz/pichome/template/librarylist/pc/assets/css/files.css?{VERHASH}"/>
+<link rel="stylesheet" type="text/css" href="static/scss/layout.css?{VERHASH}"/>
+<script type="text/javascript" src="static/vue_components/locale/index.js?{VERHASH}"></script>
+<script>
+	function CopyTxt(item,text){
+		var input = document.createElement('input'); input.setAttribute('id', 'copyInput');
+		input.setAttribute('value', text);
+		document.getElementsByTagName('body')[0].appendChild(input);
+		document.getElementById('copyInput').select();
+		document.execCommand('copy');
+		item.$message({
+		  message: '{lang copy_clipboard}',
+		  type: 'success'
+		});
+		document.getElementById('copyInput').remove();
+	};
+</script>
+<style>
+	.ImageRightMenu{
+		z-index: 9000 !important;
+	}
+</style>
+<div id="dzzoffice">
+	<el-container>
+        <el-header class="page-header"  height="60px">
+            <!--{template pc/components/details/header}-->
+        </el-header>
+        <el-container>
+			<el-aside class="page-left" :width="DocumentLeftWidth+'px'">
+				<!--{template pc/components/details/left}-->
+			</el-aside>
+            <el-container>
+				<el-header v-if="LeftActiveid!='user'" v-show="Screenshow" height="50px" style="padding: 0px 8px;padding-bottom: 4px;">
+					<dzz-screen
+						ref="ScreenBoxRef"
+						:resize="DocumentResize"
+						:props="ScreenProps"
+						:headerkeyword="HeaderKeyword"
+						:defaultparam="ScreenParam"
+						@submit="CommonGetImageData"
+						@visible="screenvisible"
+						:appid="DocumentAppid"
+						:hassub="ImageDataIsExpanded"
+						@visible="screenvisible">
+					</dzz-screen>
+				</el-header>
+				<el-main 
+					class="dzz-container" 
+					style="overflow: hidden;padding: 0;position: relative;" 
+					ref="onloadCon">
+					<el-scrollbar id="main_scrollbar" ref="MainscrollbarRef" @scroll="HandleElScrollbar">
+						<template v-if="LeftActiveid=='user'">
+							<!--{template pc/components/details/user/index}-->
+						</template>
+						<template v-else>
+							<!--{template pc/components/details/image}-->
+						</template>
+					</el-scrollbar>
+				</el-main>
+			</el-container>
+        </el-container>
+	</el-container>
+	<!--{template pc/components/details/common}-->
+	<!--{template pc/components/details/image_js}-->
+	<!--{template pc/components/details/user/Jsindex}-->
+	<!--分享对话框加载-->
+	<!--{eval  include template('shareAddDialog','./dzz/shares/template/')}-->
+	<div v-if="DocumentOverlay" class="el-overlay" style="z-index: 1001;background: transparent;"></div>
+</div>
+<script>
+
+	const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch, computed, onBeforeUpdate } = Vue;
+	const dzzoffice = createApp({
+		data(){
+			return {
+				DocumentThemeColor:'',//dark,
+				DocumentAdminId:'$_G['adminid']',
+				DocumentPerm:'$perm',
+				DocumentName:'',
+				DocumentLoading:false,
+				DocumentResize:0,
+				DocumentTemplate:2,
+				DocumentLeftWidth:260,
+				OpenDetailType:'new',
+				Screenshow:true,
+				ScreenParam:{
+					appid:'',
+					fids:''
+				},
+				ScreenProps:{
+					optionload:'index.php?mod=collection&op=ajax&operation=getscreen',
+					contentload:'index.php?mod=collection&op=ajax&operation=searchmenu_num',
+				},
+				DocumentOverlay:false,
+			}
+		},
+		watch:{
+			DocumentThemeColor:{
+				handler(newval){
+					document.querySelector('html').className = newval
+				},
+				deep:true,
+				// immediate:true
+			},
+		},
+		created(){
+			//主题颜色
+			let theme = localStorage.getItem('theme');
+			if(theme){
+				this.DocumentThemeColor=theme;
+			}else{
+				this.DocumentThemeColor = 'light'
+			}
+
+			var collectdata = $collectdata;
+			this.editHeaderTitle.langkey = collectdata.langkey || '';
+			this.DocumentName = collectdata['name'];
+			this.LeftCreate();
+		},
+		mixins:[HeaderMixin,LeftMixin,MixinImage,UserMixin,CommonMixin,ShareAddDialogMixin],
+		
+		methods:{
+			screenvisible(status){//弹窗显示/隐藏
+                this.DocumentOverlay = status;
+            },
+			DocumentThemeChange(){
+				if(this.DocumentThemeColor=='light'){
+					this.DocumentThemeColor='dark';
+					localStorage.setItem('theme','dark');
+				}else{
+					this.DocumentThemeColor='light';
+					localStorage.setItem('theme','light');
+				}
+				
+			}
+		},
+		
+		mounted(){
+			const self = this;
+			
+			this.scrollref = self.$refs.MainscrollbarRef;
+			window.onresize = function(){
+				self.DocumentResize += 1;
+			};
+		},
+
+	});
+	dzzoffice.use(ElementPlus, {
+		locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+	});
+	for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+		dzzoffice.component(key, component)
+	}
+	dzzoffice.use(DzzScreen);
+	dzzoffice.component('comavatar', comavatar);
+	dzzoffice.component('international',international);
+	dzzoffice.use(ImageLayout);
+	dzzoffice.use(DzzCollectdialog);
+	dzzoffice.component('comsort', comsort);
+	dzzoffice.component('language', language);
+	// 屏蔽警告信息
+	dzzoffice.config.warnHandler = function(){return null};
+	dzzoffice.mount('#dzzoffice');
+</script>
+<!--{template common/container/pc/footer}-->

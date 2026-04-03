@@ -3,22 +3,27 @@ const Tmpfile_rec = {
         model:{
             required:true,
             type: Object,
-            default:{},
+            default:{}
         },
         field:{
             required:true,
             type: Object,
-            default:{},
+            default:{}
         },
         ParenIndex:{
             required:true,
             type: Number,
-            default:0,
+            default:0
         },
         typecollection:{
             required:true,
             type: Object,
-            default:{},
+            default:{}
+        },
+        licenseversion:{
+            required:true,
+            type: Number,
+            default:0
         }
     },
     template:`
@@ -91,7 +96,7 @@ const Tmpfile_rec = {
                                 <el-option :key="3" label="3" :value="3">
                                     <el-rate model-value="3" disabled></el-rate>
                                 </el-option>
-                                <el-option :key="4" label="4" :value="4">
+                                <el-option  :key="4" label="4" :value="4">
                                     <el-rate model-value="4" disabled></el-rate>
                                 </el-option>
                                 <el-option :key="5" label="5" :value="5">
@@ -190,6 +195,8 @@ const Tmpfile_rec = {
                                         <el-option :label="Lang.text27" value="1"></el-option>
                                         <el-option :label="Lang.text28" value="2"></el-option>
                                         <el-option :label="Lang.text29" value="3"></el-option>
+                                        <el-option v-if="licenseversion>1" :label="Lang.text30" value="4"></el-option>
+                                        <el-option :label="Lang.text31" value="5"></el-option>
                                     </el-select>
                                     <template v-if="parseInt(item.data[0].link) == 0">
                                         <el-input v-model="item.data[0].linkval"></el-input>
@@ -204,7 +211,7 @@ const Tmpfile_rec = {
                                             <el-option v-for="item in typecollection.alonepage" :label="item.pagename" :value="item.id" :key="item.id"></el-option>
                                         </el-select>
                                     </template>
-                                    <template v-else-if="parseInt(item.data[0].link) == 4">
+                                    <template v-else-if="licenseversion>1 && parseInt(item.data[0].link) == 4">
                                         <el-select v-model="item.data[0].linkval" style="width: 100%">
                                             <el-option v-for="item in typecollection.tab" :label="item.name" :value="item.gid" :key="item.gid"></el-option>
                                         </el-select>
@@ -219,6 +226,17 @@ const Tmpfile_rec = {
                                             :props="{value:'id',label:'bannername',checkStrictly:true}" 
                                             clearable></el-cascader>
                                     </template>
+                                    <template v-else-if="parseInt(item.data[0].link) == 5">
+                                        <el-select 
+                                            v-model="item.data[0].linkval" 
+                                            filterable
+                                            remote
+                                            :remote-method="getPublishList"
+                                            :loading="DataLoading"
+                                            style="width: 100%">
+                                            <el-option v-for="item in DataList1" :label="item.name" :value="item.id" :key="item.id"></el-option>
+                                        </el-select>
+                                     </template>
                                 </div>
                                 <el-text size="small" tag="p" type="info">{{Lang.text24}}</el-text>
                             </div>
@@ -280,12 +298,14 @@ const Tmpfile_rec = {
             text27:__lang.library,
             text28:__lang.page,
             text29:__lang.column,
+            text30:__lang.album,
+            text31:__lang.publish
         };
         let Lang1 = {
             text1:__lang.edit_name,
             text2:__lang.name,
             text3:__lang.cancel,
-            text4:__lang.confirms,
+            text4:__lang.confirms
         };
         let editDialog = reactive({
             visible:false,
@@ -299,6 +319,8 @@ const Tmpfile_rec = {
         //记录自能数据数据来源数据
         let AutoDataList = [];
         let tabsvalue = ref(null);
+
+
         if(props.model.data && props.model.data.length){
             props.model.data.forEach((item,index) => {
                 let id = getId();
@@ -312,10 +334,10 @@ const Tmpfile_rec = {
         
         function getId(){  //获取随机数id
             let date = Date.now();
-            let rund = Math.ceil(Math.random()*1000)
+            let rund = Math.ceil(Math.random()*1000);
             let id = date + '' + rund;
             return id;
-        };
+        }
         //tabs的title修改
         function handleTabsItemEdit(data){
             editDialog.data = data;
@@ -337,7 +359,7 @@ const Tmpfile_rec = {
             // }).catch(() => {
 
             // })
-        };
+        }
         function handleTabsEdit(targetName,action){
             if(action == 'add'){
                 ElementPlus.ElMessageBox.prompt('', __lang.title, {
@@ -365,7 +387,7 @@ const Tmpfile_rec = {
                     }
                 }).catch(() => {
 
-                })
+                });
             }else{
                 ElementPlus.ElMessageBox.confirm(
                     __lang.del_library_confirm,
@@ -374,7 +396,7 @@ const Tmpfile_rec = {
                       confirmButtonText: __lang.confirms,
                       cancelButtonText: __lang.cancel,
                       icon:'QuestionFilled',
-                      type: 'warning',
+                      type: 'warning'
                     }).then(async () => {
                         let index = props.model.data.findIndex(function(current){
                             return current.key == targetName;
@@ -402,12 +424,12 @@ const Tmpfile_rec = {
                         
                     }).catch(() => {
 
-                    })
+                    });
             }
         }
         function tabchange(targetName){//tabs改变时触发
             tabsvalue.value = targetName;
-        };
+        }
         //数据来源数据
         let DataList = ref([]);
         foreachData();
@@ -448,7 +470,7 @@ const Tmpfile_rec = {
             }else{
                 ElementPlus.ElMessage.error(res.msg || __lang.get_data_fail);
             }
-        };
+        }
         //数据类型改变
         function handlechange(item){
             item.id = '';
@@ -487,7 +509,7 @@ const Tmpfile_rec = {
             var res = await axios.post('index.php?mod=pichome&op=library&do=ajax&operation=getsearchfolder',param);
             var new_data = res.data.folderdatanum;
             resolve(new_data);
-        };
+        }
         //分类
         function classifyCheck(data,checks){
             let curr = null;
@@ -523,7 +545,7 @@ const Tmpfile_rec = {
                 curr.classify.text = JSON.parse(JSON.stringify(checks.checkedNodes));
                 curr.value = JSON.parse(JSON.stringify(checks.checkedKeys)).join(',');
             }
-        };
+        }
         function handleChangeId(id){
             let curr = null;
             if(props.model.data && props.model.data.length){
@@ -574,7 +596,22 @@ const Tmpfile_rec = {
             if(Tindex > -1){
                 curr.classify.text.splice(Tindex,1);
             }
-        };
+        }
+        let DataList1 = ref([]);
+        let DataLoading = ref(false);
+        async function getPublishList(query){
+            DataLoading.loading = true;
+            const {data: res} = await axios.post(BasicUrl+'getPublishList',{q: query});
+            if(res.success){
+                DataList1.value = res.data;
+            }else{
+                ElementPlus.ElMessage.error(res.msg || __lang.get_data_fail);
+            }
+            DataLoading.loading = false;
+        }
+
+        getPublishList();
+
         onMounted(()=>{
             dragTab();
           });
@@ -588,18 +625,18 @@ const Tmpfile_rec = {
                     props.model.data.splice(newIndex, 0, currTab); 
                     const list = DataList.value.splice(oldIndex, 1)[0];
                     DataList.value.splice(newIndex, 0, list); 
-                },
+                }
             });
-        }
+        };
         function EditTitleSubmit(){
             if(!editDialog.name)return false;
             editDialog.data.name = editDialog.name;
             editDialog.visible = false;
-        };
+        }
         function changeTitle(val){
             editDialog.data.name = val;
             editDialog.name = val;
-        };
+        }
         return {
             Lang1,
             Lang,
@@ -617,8 +654,10 @@ const Tmpfile_rec = {
             handleChangeId,
             classifyClose,
             EditTitleSubmit,
-            changeTitle
-            
-        }
+            changeTitle,
+            DataList1,
+            DataLoading,
+            getPublishList
+        };
     }
 }

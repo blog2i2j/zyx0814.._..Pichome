@@ -77,7 +77,11 @@ class db_driver_mysqli
 	}
 
 	function _dbconnect($dbhost, $dbuser, $dbpw, $dbcharset, $dbname, $pconnect,$port='3306',$unix_socket='', $halt = true) {
-		$link = new mysqli();
+        try{
+            $link = new mysqli();
+        } catch (\mysqli_sql_exception $e) {
+            $this->halt('notconnect', $e->getMessage());
+        }
 		if(!$link->real_connect($dbhost, $dbuser, $dbpw, $dbname, $port, $unix_socket)) {
 			$halt && $this->halt('notconnect', $this->errno());
 		} else {

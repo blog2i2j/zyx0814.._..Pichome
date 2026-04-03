@@ -52,7 +52,7 @@ foreach ($vappdatas as $val) {
     }
     $val['path'] = str_replace('dzz::', '', $val['path']);
     $url = 'index.php?mod=pichome&op=fileview#appid=' . $val['appid'];
-    if ($setting['pathinfo']) $path = C::t('pichome_route')->feth_path_by_url($url);
+    if ($setting['pathinfo']) $path = C::t('pichome_route')->fetch_path_by_url($url);
     else $path = '';
     if ($path) {
         $val['url'] = $path;

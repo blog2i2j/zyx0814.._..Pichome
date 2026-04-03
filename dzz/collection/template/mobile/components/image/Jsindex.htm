@@ -1,0 +1,248 @@
+<!--{template mobile/components/image/Waterfall}-->
+<!--{template mobile/components/image/RowGrid}-->
+<!--{template mobile/components/image/List}-->
+<!--{template mobile/components/image/table}-->
+<!--{template mobile/components/details/image/more}-->
+<!--{template mobile/components/details/image/classify}-->
+<!--{template mobile/components/JsDetails}-->
+<script type="text/javascript">
+	var ImagesMixin = {
+		data(){
+			return {
+				ParamImages:{
+					resize:0,
+					data:[],
+					Newdatas:[],
+					type:'refresh',
+					loading:true,
+					valloading:false,
+					checked:false,
+					operation:{
+						type:'',
+						lids:[]
+					}
+				},
+			}
+		},
+		watch:{
+			'ParamImages.resize':debounce(function(val){
+				var self = this;
+				self.ImagesLayoutInit();
+			},500),
+			'ParamImages.data':{
+				handler(val){
+					var self = this;
+					self.ImagesLayoutInit();
+					if(self.ParamImages.type == 'append'){
+						self.ParamImages.valloading = false;
+					}else{
+						self.ParamImages.loading = false;
+					}
+				},
+				deep:true,
+				// immediate:true
+			},
+			'ParamImages.checked':{
+				handler(val){
+					if(val){
+						this.ParamFooter.data.clear.show = false;
+						this.ParamFooter.data.search.show = false;
+						this.ParamFooter.data.screen.show = false;
+						this.ParamFooter.data.sort.show = false;
+						this.ParamFooter.data.user.show = false;
+						<!--{if $_GET['op'] != 'all'}-->
+						if(parseInt(this.DocumentPerm)>1){
+							this.ParamFooter.data.movecheck.show = true;
+						}
+						<!--{/if}-->
+						this.ParamFooter.data.collectcheck.show = true;
+						this.ParamFooter.data.outcheck.show = true;
+					}else{
+						this.CommonSetFooterBadge();
+						this.ParamFooter.data.search.show = true;
+						this.ParamFooter.data.screen.show = true;
+						this.ParamFooter.data.sort.show = true;
+						this.ParamFooter.data.user.show = true;
+						<!--{if $_GET['op'] != 'all'}-->
+						this.ParamFooter.data.movecheck.show = false;
+						<!--{/if}-->
+						this.ParamFooter.data.collectcheck.show = false;
+						this.ParamFooter.data.outcheck.show = false;
+					}
+					this.ParamImages.type = 'refresh';
+					this.ImagesLayoutInit();
+				},
+				deep:true,
+				// immediate:true
+			},
+			'ParamImages.loading':{
+				handler(val){
+					var self = this;
+					if(val){
+						self.$toast.loading({
+							message: '{lang loading}',
+							className:'conter-toast',
+							duration: 0,
+							forbidClick: true,
+							loadingType: 'spinner',
+						});
+					}else{
+						self.$toast.clear();
+					}
+				},
+				deep:true,
+				immediate:true
+			}
+		},
+		mixins:[ImageListMixin,ImageRowGridMixin,ImgageTableMixin,ImageWaterfallMixin,ImagesMoreMixin,ImagesClassifyMixin,JsDetailsMixin],
+		methods:{
+			ImagesMoreClick(item){
+				this.ParamImages.operation.lids = [item.lid];
+				this.ImagesMore.data = [];
+				<!--{if $_GET['op'] == 'all'}-->
+				this.ImagesMore.data = [
+					{ name: '{lang collect}',type:'collect' },
+					{ name: '{lang share}',type:'share' },
+					{ name: '{lang download}',type:'down' },
+				];
+				<!--{else}-->
+					if(parseInt(this.DocumentPerm)>1){
+						this.ImagesMore.data.push({ name: '{lang move}',type:'move' });
+					}
+					if(parseInt(this.DocumentPerm)>1){
+						this.ImagesMore.data.push({ name: '{lang collect}',type:'collect' });
+					}
+					if(parseInt(item.share)){
+						this.ImagesMore.data.push({ name: '{lang share}',type:'share' });
+					}
+					if(parseInt(item.download)){
+						this.ImagesMore.data.push({ name: '{lang download}',type:'down' });
+					}
+					if(parseInt(this.DocumentPerm)>1){
+						this.ImagesMore.data.push({ name: '{lang set_cover}',type:'cove' });
+					}
+				<!--{/if}-->
+				this.ImagesMore.dpath = item.dpath;
+				this.ImagesMore.visible = true;
+			},
+			ImagesDetailClick(dpath,index,lid){
+				var self = this;
+				// this.ParamDetail.ridIndex = index;
+				// this.ParamDetail.rid = rid;
+				// this.ParamDetail.PopupVisible = true;
+				if(self.ParamImages.checked){
+					var index = self.ParamImages.operation.lids.indexOf(lid);
+					if(index > -1){
+						self.ParamImages.operation.lids.splice(index,1);
+					}else{
+						self.ParamImages.operation.lids.push(lid);
+					}
+				}else{
+					var arr = [];
+					for(var i in self.ParamImages.data){
+						arr.push(self.ParamImages.data[i].dpath);
+					}
+					let curr = this.ParamImages.data.find(function(current){
+						return parseInt(current.lid) == parseInt(lid);
+					});
+					let index = this.ParamImages.data.findIndex(function(current){
+						return parseInt(current.lid) == parseInt(lid);
+					});
+					sessionStorage.setItem('imgs',arr.join(','));
+					sessionStorage.setItem('selectindex',index);
+
+                    let div = document.createElement("div");
+                    div.className = 'Details-Iframe';
+                    let div1 = document.createElement("div");
+                    div1.className = 'Details-Iframe-wrapper';
+                    div.onclick=function(){
+                        let div2 = document.querySelector('.Details-Iframe');
+                        document.body.removeChild(div2);
+                    }
+                    div.append(div1);
+                    document.body.appendChild(div);
+                    let iframe = document.createElement("iframe");
+                    iframe.style.opacity=0;
+                    div1.append(iframe);
+                    iframe.src =  'index.php?mod=details&opentype=current#path='+curr.dpath;
+				}
+				
+			},
+			ImagesMounted(){
+				var self = this;
+				var ParamBasic = self.ParamBasic;
+				var beforeScrollTop = document.body.scrollTop,fn = fn || function() {};  
+				$('.pic-container-scroll').scroll(function(e){
+					
+					var afterScrollTop = $(this).scrollTop(),
+					updown = afterScrollTop - beforeScrollTop;
+					if( updown === 0 ) return false;            
+					beforeScrollTop = afterScrollTop;
+					self.ParamFooter.IsShow = updown > 0 ? "down" : "up";  //判断往上还是往下
+					self.ImagesLayoutScrollShow();
+					if($(this).scrollTop()+$(this).outerHeight()>=this.scrollHeight-80){
+						if(ParamBasic.page>=ParamBasic.totalpage || self.ParamImages.loading || self.ParamImages.valloading){
+							return false;
+						}
+						self.CommonhandleHash('scroll');
+					}
+				});
+				window.addEventListener('resize',function(){
+					self.ParamImages.resize += 1;
+				});
+			},
+			ImagesImgDelete(lid){
+				var self = this;
+				for(var i in self.ParamImages.data){
+					var fdata = self.ParamImages.data[i];
+					if(parseInt(fdata.lid) == parseInt(lid)){
+						self.ParamImages.data.splice(i,1);
+					}
+				}
+			},
+			ImagesImgload(lid){
+				var self = this;
+				var item = $(self.$refs['ref_'+lid]);
+				item.removeClass('opacity');
+				item.parents('.imgbox-border').css('background','').removeClass('radius');
+			
+			},
+			ImagesLayoutInit(){
+				var self = this;
+				if(self.ParamSort.layout.value == 'waterFall'){
+					self.ImagesWaterfallInit();
+				}else if(self.ParamSort.layout.value == 'rowGrid'){
+					self.ImagesRowGridInit();
+				}else if(self.ParamSort.layout.value == 'table'){
+					self.ImagesTablelayoutCompute();
+				}else{
+					self.ImagesListInit();
+				}
+			},
+			ImagesLayoutScrollShow(){
+				var self = this;
+				var H = jQuery('.pic-container-scroll')[0].clientHeight;//获取可视区域高度
+				var S = jQuery('.pic-container-scroll')[0].scrollTop;
+				var arr = [];
+				
+				if(self.ParamSort.layout.value == 'waterFall'){
+					var StoreImgdatas = JSON.parse(JSON.stringify(self.ImageWaterfall.StoreImgdatas));
+				}else if(self.ParamSort.layout.value == 'rowGrid'){
+					var StoreImgdatas = JSON.parse(JSON.stringify(self.ImageRowGrid.StoreImgdatas));
+				}else if(self.ParamSort.layout.value == 'table'){
+					var StoreImgdatas = JSON.parse(JSON.stringify(self.imgageTable.StoreImgdatas));
+				}else{
+					var StoreImgdatas = JSON.parse(JSON.stringify(self.ImageList.StoreImgdatas));
+				}
+				self.ParamImages.Newdatas = [];
+				for(var o in StoreImgdatas){
+					var item = JSON.parse(JSON.stringify(StoreImgdatas[o]));
+					if ((H+S) >= item.ptop && S<item.pbottom) {
+						item['index'] = parseInt(o);
+						self.ParamImages.Newdatas.push(item);
+					}
+				}
+			}
+		}
+	};
+</script>

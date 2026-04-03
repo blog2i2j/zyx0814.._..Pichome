@@ -227,9 +227,9 @@ class ImagePalette implements IteratorAggregate
                 $this->loadedImage = imagecreatefromwebp($this->file);
                 break;
 			default:
-                throw new Exception("The file type .$extension is not supported.");
+                throw new Exception("The file type extension is not supported.");
         }
-		return ture;
+		return true;
     }
 
 	/**

@@ -1,0 +1,36 @@
+<?php
+
+$lang = array(
+    'appname' => '阿里百炼',
+    'key_configuration' => '基本设置',
+    'key_models' => '百炼模型',
+    'tag_prompt' => '标签Prompt',
+    'desc_prompt' => '描述Prompt',
+    'filename_prompt' => '文件名Prompt',
+    'status_tip' => '开启后，系统中能够使用AI标签，AI描述功能，密钥信息填写后可以开启',
+    'prompt_tip' => '注：排序第一个的Prompt为默认Prompt，如果开启自动获取，会自动使用第一个Prompt',
+    'apikey'=>'APIKEY',
+    'apikey_tips'=>'阿里云百炼 apikey <a href="https://bailian.console.aliyun.com/cn-beijing/?spm=5176.29597918.J_SEsSjsNv72yRuRFS2VknO.2.46b47b08ujMGh3&tab=model#/api-key" target="_blank">获取地址</a>',
+    'apiurl'=>'API地址',
+    'apiurl_tips'=>'阿里云百炼 api地址,默认为：https://dashscope.aliyuncs.com/compatible-mode/v1',
+    'model0'=>'识图模型',
+    'model0_tips'=>'识图模型必选,请选择支持识图功能的模型',
+    'model1'=>'优化模型',
+    'model1_tips'=>'优化模型,请选择语言模型；可选，留空不使用优化模型',
+    'prompt0'=>'识图提示词',
+    'prompt1'=>'优化提示词',
+    'fold_tip_1'=>'点击展开所有',
+    'fold_tip_2'=>'点击折叠所有',
+    'chatModel'=>'图片理解模型',
+    'chatModel_tip'=>'图片理解模型',
+    'modelName'=>'模型名称',
+    'modelName_empty'=>'模型名称不能为空',
+
+    'modelCodeName'=>'模型代码名',
+    'modelCodeName_empty'=>'模型代码名称不能为空',
+    'description'=>'模型描述',
+    'description_placeholder'=>'模型描述',
+    'vendor'=>'供应商',
+    'modelType'=>'模型类型',
+    'model_add'=>'添加模型'
+    );

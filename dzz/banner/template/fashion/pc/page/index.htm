@@ -8,7 +8,7 @@
 <script type="text/javascript" src="static/vue_components/ImageLayoutlimit/index.js?{VERHASH}"></script>
 <link rel="stylesheet" type="text/css" href="static/scss/layout.css?{VERHASH}"/>
 <script type="text/javascript" src="static/vue_components/HeaderSort/index.js?{VERHASH}"></script>
-<!--{if PICHOME_LIENCE == 2}-->
+<!--{if defined('PICHOME_VERSION') && PICHOME_VERSION=='Enterprise'}-->
 <script type="text/javascript" src="static/vue_components/TabMessage/index.js?{VERHASH}"></script>
 <link rel="stylesheet" media="noexist" onload="this.media='all'" href="static/vue_components/TabMessage/index.css?{VERHASH}">
 <link rel="stylesheet" media="noexist" onload="this.media='all'" href="static/vue_components/TabExport/index.css?{VERHASH}">
@@ -46,7 +46,9 @@
 	};
 	function obtainData(arr,realurl){
 		if(!arr.length)return false;
-		if(arr[0].realurl == realurl) return arr[0];
+		if(arr[0].realurl == realurl) {
+			return arr[0];
+		}
 		return obtainData(arr.slice(1), realurl) || obtainData(arr[0].children, realurl);
 	}
 	function CopyTxt(item,text){
@@ -72,6 +74,7 @@
 			<!--{template fashion/pc/components/header}-->
         </el-header>
 		<el-container class="page-main is-vertical">
+
 			<!-- <el-scrollbar 
 				id="main_scrollbar" 
 				ref="scrollref" 
@@ -87,8 +90,8 @@
 					@handlepreference="handlepreference"
 					@clearkeyword="clearkeyword"
 					:keyword="headerkeyword"
-					issearchimage="{$_G['setting']['imageSearch_setting']['status']}"
 					:headeralldata="headeralldata"
+					:issearchimage="{$_G['setting']['imageSearchFlag']}"
 					:searchdata="searchdata"></theme-default>
 			<!-- </el-scrollbar> -->
 		</el-container>
@@ -96,7 +99,7 @@
 
 </div>
 <script>
-	const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch,defineAsyncComponent, onBeforeUpdate } = Vue;
+	const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch,defineAsyncComponent, onBeforeUpdate, onUnmounted  } = Vue;
 	var dzzoffice = createApp({
 		data(){
 			return {
@@ -106,18 +109,24 @@
 					item:'',
 					show:false
 				}, 
-				PICHOME_LIENCE:"$PICHOME_LIENCE",
+				license:"$license",
 				PageType:'',
 				DocumentThemeColor:'',
 				ContentData:[],
 				headeralldata:{
 					data:[],
 					message:{
-						sitebeiantxt:'{$_G[setting][sitebeiantxt]}',
-						sitebeian:'{$_G[setting][sitebeian]}',
+						sitebeiantxt:'{$_G['setting']['sitebeiantxt']}',
+						sitebeian:'{$_G['setting']['sitebeian']}',
 					}
 				},
-				tilebanner:[]
+				tilebanner:[],
+				issearchimage:"{$_G['setting']['imageSearchFlag']}",
+				searchdata:{
+					aid:0,
+					img:'',
+					loading:false
+				}
 				// scrollref:'',
 				// rollingdire:'up',
 				// beforeScrollTop:0
@@ -176,9 +185,7 @@
 				if(btype == 0){//库
 					this.ContentData = [];
 					this.PageType = 'ku';
-				}else if(btype == 1){//智能数据
-					this.ContentData = [];
-					this.PageType = 'sources';
+
 				}else if(btype == 4){//专辑
 					this.ContentData = [];
 					this.PageType = 'tab';
@@ -187,6 +194,12 @@
 					this.PageType = 'page';
 					this.GetContentData();
 				}else{
+
+					if(data.url){
+						location.href = data.url;
+					}else{
+						location.href = data.realurl;
+					}
 					return false;
 				}
 			},
@@ -197,8 +210,8 @@
 				let reg1 = new RegExp(SITEURL.replace('[','\\[').replace(']','\\]'),"g");
 				let active = href.replace(reg1,"");
 				if(active){
-					<!--{if intval($_G[setting][pathinfo])}-->
-					let param = '{$_GET[hashparams]}';
+					<!--{if intval($_G['setting']['pathinfo'])}-->
+					let param = '{$_GET['hashparams']}';
 					if(param){
 						param = JSON.parse(param);
 						let url = 'index.php?mod=banner&op=index&id='+param.id+'#id='+param.id;
@@ -208,6 +221,7 @@
 						}
 					}else{
 						let curr = obtainData(this.bannerData.data.top,active);
+						
 						if(curr){
 							this.banncomplete(curr);
 						}else{
@@ -223,6 +237,7 @@
 					}
 					<!--{else}-->
 					let curr = obtainData(this.bannerData.data.top,active);
+					
 					if(curr){
 						this.banncomplete(curr);
 					}else{
@@ -283,15 +298,12 @@
 			//获取哈希参数
 			GetUrlParam(name,url){
 				if(!url){
-					var hash=location.hash;
-					var url=hash.replace(/&.+$/i,'').replace('#','');
-				}else{
-					var url=location.hash;
+					url=location.hash;
 				}
 				if (!name) {
 					return '';
 				}
-				var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+				var reg = new RegExp("(^#|&)" + name + "=([^&]*)(&|$)");
 				if (!url) {
 					return '';
 				}
@@ -325,6 +337,29 @@
 			if(parseInt(showscreen) > -1){
 				this.Screenshow = parseInt(showscreen)?true:false;
 			}
+			document.addEventListener('keydown', (e) => {
+				if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+					if(!self.searchImagePropover)return false;
+					// 确保页面已加载完成
+					setTimeout(() => {
+						// 获取剪贴板内容
+						if (window.isSecureContext && navigator.clipboard) {
+							navigator.clipboard.read().then(clipboardItems => {
+								for (const clipboardItem of clipboardItems) {
+									for (const type of clipboardItem.types) {
+										if (type.startsWith('image/')) {
+											clipboardItem.getType(type).then(blob => {
+												// 处理图片文件...
+												self.SearchUploadChange({raw: blob})
+											});
+										}
+									}
+								}
+							});
+						}
+					}, 100);
+				}
+			});
 		},
 		components:{
 			comavatar,
@@ -333,7 +368,7 @@
 	});
 	
 	dzzoffice.use(ElementPlus, {
-		locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+		locale: {eval echo $_G['language_list'][$_G['language']]['elementflagCamel'];},
 	});
 	for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 		dzzoffice.component(key, component)
@@ -348,7 +383,7 @@
 	dzzoffice.use(ImageLayoutlimit);
 	dzzoffice.use(DzzCollectdialog);
 	dzzoffice.use(DzzShareDialog);
-	<!--{if PICHOME_LIENCE == 2}-->
+	<!--{if defined('PICHOME_VERSION') && PICHOME_VERSION=='Enterprise'}-->
 	dzzoffice.component('fulltext', fulltext);
 	dzzoffice.component('tab_message', tab_message);
 	dzzoffice.component('tabExport', tabExport);

@@ -422,8 +422,8 @@ if($operation == 'save'){
                 }
             }elseif($flag == 'sys'){//保存摄影师的值
                 $olddata = C::t('pichome_sys')->fetch_by_rid($rid);
-                if($oldata){
-                    $oldvalues = array_keys($oldata);
+                if($olddata){
+                    $oldvalues = array_keys($olddata);
                 }else{
                     $oldvalues = [];
                 }
@@ -501,8 +501,10 @@ if($operation == 'save'){
                     $attrs['isdelete']= 0;
                     $ofids=array_unique(array_diff($datafolders,$nfolders));
                     $ofids = array_diff($datafolders,$dfolders);
-                    $rfidarr = explode(',', $ofids);
-                    C::t('pichome_folder')->add_filenum_by_fid($rfidarr, 1);
+                    if(!empty($ofids) && is_array($ofids)){
+                        C::t('pichome_folder')->add_filenum_by_fid($ofids, 1);
+                    }
+
                 }else{
                     $attrs['isdelete'] = $resourcesdata['isdelete'];
                 }
@@ -660,13 +662,14 @@ if($operation == 'save'){
             if($value['initial'])$tags_all[$value['initial']][$value['tid']]=$value;
 
         }
-        if(count($tags_all['#']) > 0){
+        if(is_array($tags_all['#']) && count($tags_all['#']) > 0){
             $all_new=array_shift($tags_all);
             $tags_all['#'] = $all_new;
         }
         //最近使用数据
         $renctentdata = C::t('pichome_searchrecent')->fetch_recent_tag_by_appid($appid);
-        $recenttids = array_keys($renctentdata);
+        if(is_array($renctentdata)) $recenttids= array_keys($renctentdata);
+        else $recenttids = array();
         foreach($tags_all as $key => $val){
             foreach($val as $k => $v){
                 if(in_array($v['tid'],$oneself_tid)){

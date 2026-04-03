@@ -336,6 +336,30 @@
 					self.DocumentDropActive = false;
 				}
 			}, false);
+			document.addEventListener('keydown', (e) => {
+				if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+					if(!self.searchImagePropover)return false;
+					// 确保页面已加载完成
+
+					setTimeout(() => {
+						// 获取剪贴板内容
+						if (window.isSecureContext && navigator.clipboard) {
+							navigator.clipboard.read().then(clipboardItems => {
+								for (const clipboardItem of clipboardItems) {
+									for (const type of clipboardItem.types) {
+										if (type.startsWith('image/')) {
+											clipboardItem.getType(type).then(blob => {
+												// 处理图片文件...
+												self.SearchUploadChange({raw: blob})
+											});
+										}
+									}
+								}
+							});
+						}
+					}, 100);
+				}
+			});
 			dzzoffice.WindowThis = this;
 		}
 	});

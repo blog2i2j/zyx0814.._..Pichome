@@ -115,6 +115,8 @@ class table_pichome_banner extends dzz_table
                 } else {
                     $npathkey = (!$fpathkey) ? $ofdata['pathkey'].'-'.$v['pathkey']:str_replace($fpathkey,$ofdata['pathkey'],$v['pathkey']);
                 }
+                $npatharr=explode('-',$npathkey);
+                $npathkey = implode('-',array_unique($npatharr));
                 parent::update($v['id'], ['pathkey' => $npathkey]);
 
             }
@@ -170,7 +172,17 @@ class table_pichome_banner extends dzz_table
                 Hook::listen('lang_parse', $vappdata, ['getVappLangData']);
                 $v['soucresname'] = $vappdata['appname'];
             } elseif ($v['btype'] == 1) {
-                $v['soucresname'] = DB::result_first("select name from %t where id = %d", ['pichome_smartdata', $v['bdata']]);
+                $bdata=C::t('#intelligent#intelligent')->fetch($v['bdata']);
+
+                if($bdata){
+                    $v['soucresname']=$bdata['title'];
+                }
+            } elseif ($v['btype'] == 6) {
+                $bdata=C::t('#publish#publish_list')->fetch($v['bdata']);
+                if($bdata){
+                    $v['soucresname']=$bdata['pname'];
+                    $v['ptype']=$bdata['ptype'];
+                }
             } elseif ($v['btype'] == 2) {
                 $pagedata = C::t('pichome_templatepage')->fetch($v['bdata']);
                 Hook::listen('lang_parse', $pagedata, ['getTabgrouplangData']);
@@ -180,6 +192,10 @@ class table_pichome_banner extends dzz_table
             }
             if ($v['btype'] == 3) {
                 $url = $v['bdata'];
+            } elseif ($v['btype'] == 1) {
+                $url = 'index.php?mod=intelligent&tid=' . $bdata['tid'] ;
+            } elseif ($v['btype'] == 6) {
+                $url = 'index.php?mod=publish&id=' . $bdata['id'] ;
             } elseif ($v['btype'] == 4) {
                 $tabdata = C::t('#tab#tab_group')->fetch($v['bdata']);
                 Hook::listen('lang_parse', $tabdata, ['getTabgrouplangData']);
@@ -189,7 +205,7 @@ class table_pichome_banner extends dzz_table
                 $url = 'index.php?mod=banner&op=index&id=' . $v['bdata'] . '#id=' . $v['bdata'];
             }
             $v['realurl'] = $url;
-            if ($pathinfo) $path = C::t('pichome_route')->feth_path_by_url($url);
+            if ($pathinfo) $path = C::t('pichome_route')->fetch_path_by_url($url);
             else $path = '';
             if ($path) {
                 $v['url'] = $path;
@@ -223,7 +239,7 @@ class table_pichome_banner extends dzz_table
         else $pathinfo = $_G['pathinfo'];
         $cachename = 'BANNERTREELIST';
         $bannerlist = [];
-        if ( $cachedata = C::t('cache')->fetch_cachedata_by_cachename($cachename)) {
+        if (0 &&  $cachedata = C::t('cache')->fetch_cachedata_by_cachename($cachename)) {
             $bannerlist = $cachedata;
         } else {
             foreach (DB::fetch_all("select * from %t where isshow = %d order by disp asc", [$this->_table, 1]) as $v) {
@@ -238,7 +254,16 @@ class table_pichome_banner extends dzz_table
                     Hook::listen('lang_parse', $vappdata, ['getVappLangData']);
                     $v['soucresname'] = $vappdata['appname'];
                 } elseif ($v['btype'] == 1) {
-                    $v['soucresname'] = DB::result_first("select name from %t where id = %d", ['pichome_smartdata', $v['bdata']]);
+                    $bdata=C::t('#intelligent#intelligent')->fetch($v['bdata']);
+                    if($bdata){
+                        $v['soucresname']=$bdata['title'];
+                    }
+                } elseif ($v['btype'] == 6) {
+                    $bdata=C::t('#publish#publish_list')->fetch($v['bdata']);
+                    if($bdata){
+                        $v['soucresname']=$bdata['pname'];
+                        $v['ptype']=$bdata['ptype'];
+                    }
                 } elseif ($v['btype'] == 2) {
                     $pagedata = C::t('pichome_templatepage')->fetch($v['bdata']);
                     Hook::listen('lang_parse', $pagedata, ['getAlonepageLangData']);
@@ -248,6 +273,10 @@ class table_pichome_banner extends dzz_table
                 }
                 if ($v['btype'] == 3) {
                     $url = $v['bdata'];
+                } elseif ($v['btype'] == 1) {
+                    $url = 'index.php?mod=intelligent&tid=' . $bdata['tid'] ;
+                } elseif ($v['btype'] == 6) {
+                    $url = 'index.php?mod=publish&id=' . $bdata['id'] ;
                 } elseif ($v['btype'] == 4) {
                     $url = 'index.php?mod=banner&op=index&id=tb_' . $v['bdata'] . '#id=tb_' . $v['bdata'];
                 } else {
@@ -255,12 +284,12 @@ class table_pichome_banner extends dzz_table
                 }
                 $v['realurl'] = $url;
 
-                if ($pathinfo) $path = C::t('pichome_route')->feth_path_by_url($url);
+                if ($pathinfo) $path = C::t('pichome_route')->fetch_path_by_url($url);
                 else $path = '';
                 if ($path) {
                     $v['url'] = $path;
                 } else {
-                    $v['url'] = '';
+                    $v['url'] = $url;
                 }
                 if($v['btype'] == 5) $v['url'] =$v['realurl']= '';
                 Hook::listen('lang_parse', $v, ['getBannerLangData']);
@@ -312,8 +341,7 @@ class table_pichome_banner extends dzz_table
         foreach ($bannerlist as $key=>$item) {
             if($item['isbottom']) continue;
             if($item['btype'] != 3 && !$item['pid']){
-                // if($item['showchildren'])
-                $showchildrenbanners[$key]  = $item;
+                 if($item['showchildren'])  $showchildrenbanners[$key]  = $item;
                 $topbanners[$key] = $item;
             }
         }
@@ -417,5 +445,15 @@ class table_pichome_banner extends dzz_table
 
         }
         return ['bannerlist'=>$result,'tilebanner'=>$bannerl];
+    }
+    public static function getFistBanner($bannerlist){
+        foreach($bannerlist as $k=>$v){
+            if($v['btype']==5){
+                return self::getFistBanner($v['children']);
+            }else{
+                return $v;
+            }
+        }
+        return false;
     }
 }

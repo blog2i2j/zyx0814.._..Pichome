@@ -95,7 +95,7 @@ $lang = array (
     'file_server_address'=>'File server address',
     'file_server_address_msg'=>'File server address, e.g. http://oaooa.com/, according to your pichome server address fill in, leave blank to use the current address.<br>tips: Set the internal network address can improve file transfer speed',
     'office_thumb_exts'=>'Thumbnail suffix list',
-    'office_thumb_exts_msg'=>'Support for generating a list of thumbnails with lowercase letters. Multiple ones are separated by commas, such as: pdf, doc, docx, ppt, pptx, xls, xlsx',
+    'office_thumb_exts_msg'=>'Support for generating a list of thumbnails with lowercase letters. Multiple ones are separated by commas, such as: pdf,wps,doc,docx,rtf,odt,htm,html,mht,txt,ppt,pptx,pps,ppsx,ppsm,dps,dpt,odp,xls,xlsx,et,ots,ods,csv,md,vsdm,vsdx,vssm,vssx,vstm,vstx,epub',
     'set_success'=>'Set up successfully',
     'set_failer'=>'Set up failed',
     'params_error_and_reloading'=>'Parameter error, please refresh and try again',
@@ -183,6 +183,17 @@ $lang = array (
     'import_tag'=>'Import tags',
     'download_tag'=>'Download tags',
     'del_all_tag'=>'Delete all current tags',
-    'del_all_tag_tip'=>'Are you sure to delete all current tags? This operation cannot be restored!'
+    'del_all_tag_tip'=>'Are you sure to delete all current tags? This operation cannot be restored!',
+
+    'imagesearch_stats'=>'Image Search Task',
+
+    'importednum'=>'Imported number',
+    'library_state'=>'Library Status',
+    'library_state_0'=>'Not Imported',
+    'library_state_1'=>'Prepareing',
+    'library_state_2'=>'Importing',
+    'library_state_3'=>'Verifying',
+    'library_state_4'=>'Completed',
+    'library_state_-1'=>'Update Failed',
 );
 ?>

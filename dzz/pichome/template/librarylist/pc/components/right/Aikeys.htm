@@ -1,11 +1,38 @@
-<template v-if="RightData.Aikey.type == 'files'">
-	<div style="padding: 8px 18px;">
-		<el-button plain style="width: 100%;" @click="Aikeys.visible=true">AI批量标注</el-button>
+<template v-if="RightData.Aikey.length>0 && RightData.Aikey[0]['type'] == 'files'">
+    <div style="padding: 8px 18px;">
+        <template v-if="RightData.Aikey.length>1">
+            <el-dropdown placement="top-start" @command="handleAIBatch">
+                <el-button plain style="width: 100%;">AI批量标注</el-button>
+                <template #dropdown>
+                    <el-dropdown-menu>
+                        <el-dropdown-item v-for="aitem in RightData.Aikey" :command="aitem.key">{{aitem.name}}</el-dropdown-item>
+                    </el-dropdown-menu>
+                </template>
+            </el-dropdown>
+
+        </template>
+        <template v-else>
+            <el-button plain style="width: 100%;" @click="Aikeys.visible=true;Aikeys.key=RightData.Aikey[0].key">AI批量标注</el-button>
+        </template>
 	</div>
 </template>
-<template v-if="RightData.Aikey.type == 'folder' || RightData.Aikey.type == 'vapp'">
+<template v-if="(RightData.Aikey.length>0 && RightData.Aikey[0]['type'] == 'folder') || (RightData.Aikey.length>0 && RightData.Aikey[0]['type'] == 'vapp')">
 	<div style="padding: 8px 18px;">
-		<el-button  plain style="width: 100%;" @click="Aikeys.visible=true">AI批量标注整个文件夹图片</el-button>
+        <template v-if="RightData.Aikey.length>1">
+            <el-dropdown placement="top-start" @command="handleAIBatch">
+                <el-button plain style="width: 100%;">AI批量标注整个文件夹图片</el-button>
+                <template #dropdown>
+                    <el-dropdown-menu>
+                        <el-dropdown-item v-for="aitem in RightData.Aikey" :command="aitem.key">{{aitem.name}}</el-dropdown-item>
+                    </el-dropdown-menu>
+                </template>
+            </el-dropdown>
+
+        </template>
+        <template v-else>
+            <el-button plain style="width: 100%;" @click="Aikeys.visible=true;Aikeys.key=RightData.Aikey[0].key">AI批量标注整个文件夹图片</el-button>
+        </template>
+
 	</div>
 </template>
 
@@ -14,15 +41,15 @@
     title="{lang ai_notes}"
     width="500"
     @open="AikeysOpen">
-    <p class="tipTxt" v-if="RightData.Aikey.type == 'files'" style="margin: 0;margin-bottom: 12px;">
+    <p class="tipTxt" v-if="RightData.Aikey.length>0 && RightData.Aikey[0].type == 'files'" style="margin: 0;margin-bottom: 12px;">
         {lang selected}
         <el-text type="warning" size="large" tag="b">{{RightActiveRid.length}}</el-text>
         {lang seleced_img_num}</p>
     <el-form 
-        :model="AikeysForm" 
+        :model="AikeysForm[Aikeys.key]"
         style="max-width: 600px" 
         label-position="top">
-        <template v-for="item in this.AikeysForm">
+        <template v-for="item in this.AikeysForm[Aikeys.key]">
             <el-form-item :label="item.title">
                 <el-select v-model="item.value" placeholder="{lang empty_not_edit}" style="width: 100%">
                     <el-option

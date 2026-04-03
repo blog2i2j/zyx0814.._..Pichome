@@ -1,0 +1,184 @@
+<!--{template common/container/pc/header_start}-->
+<link rel="stylesheet" href="static/scss/default/index.css?{VERHASH}">
+<script type="text/javascript" src="static/vue_components/theme/default/index.js?{VERHASH}"></script>
+<link rel="stylesheet" href="dzz/banner/template/fashion/pc/assets/css/index.css?{VERHASH}">
+<script type="text/javascript" src="{MOD_PATH}/template/library/default/view/mobile/assets/js/menu.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/vue_components/ImageLayout/index.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/vue_components/ImageLayoutlimit/index.js?{VERHASH}"></script>
+<link rel="stylesheet" type="text/css" href="static/scss/layout.css?{VERHASH}"/>
+<script type="text/javascript" src="static/vue_components/HeaderSort/index.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/vue_components/collectdialog/index.js?{VERHASH}"></script>
+<link href="static/prismjs/index.css?{VERHASH}" rel="stylesheet">
+<script src="static/prismjs/index.js?{VERHASH}"></script>
+<script src="static/prismjs/prism-autoloader.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/js/sortable.min.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/jszip/jszip.min.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/jszip/FileSaver.min.js?{VERHASH}"></script>
+<style>
+    .el-footer.mobile {
+        height: auto;
+        padding: 0;
+    }
+    .el-footer.mobile .page-footer{
+        border: 1px solid var(--el-border-color);
+        background-color: var(--el-bg-color);
+        border-radius: var(--el-border-radius-base);
+        padding: 15px;
+    }
+</style>
+<script src="static/vue-cropper/index.js?{VERHASH}"></script>
+<!--{template common/container/pc/header_end}-->
+<div id="dzzoffice">
+    <el-container class="page-main">
+        
+        <el-header class="page-header"  height="60px" style="--el-header-padding: 0 10px;border: 0;">
+            <!--{template alonepage/default/view/mobile/componets/header}-->
+        </el-header>
+        <el-main style="padding: 0;" class="dzz-container">
+            <el-scrollbar ref="MainscrollbarRef" @scroll="HandleElScrollbar">
+                <theme-default
+                        pagetype="page"
+                        :contentdata="ContentData"
+                        :keyword="headerkeyword"
+                        :issearchimage="{$_G['setting']['imageSearchFlag']}"
+                        :urlparams="{pid: '$id' }"
+                        :headeralldata="headeralldata"></theme-default>
+                <div style="padding:0 10px;margin-bottom: 20px;" v-if="pageset.bottomEnable">
+                    <el-footer class="mobile">
+                        <div class="page-footer block" >
+                            <el-text v-if="pageset._textarea_bottomtitle" v-html="pageset._textarea_bottomtitle" tag="p" style="display: flex;align-items: center;justify-content: center;margin-top: 0.5em;"></el-text>
+                            <div  style="display: flex;align-items: center;justify-content: center;margin-top:0.5em" v-if="pageset.beian || pageset.beianmps">
+                                <el-link v-if="pageset.beian" href="https://beian.miit.gov.cn/" title="{lang beian}" target="_blank">{{pageset.beian}}</el-link>
+                                <el-link v-if="pageset.beianmps" title="{lang beianmps}" style="margin-left:1em;" href="https://beian.mps.gov.cn/" target="_blank">{{pageset.beianmps}}</el-link>
+                            </div>
+                        </div>
+                    </el-footer>
+                </div>
+                
+            </el-scrollbar>
+        </el-main>
+        <el-footer class="page-header" id="footer_header"  height="60px" style="padding: 0px 10px;border: 0;border-top:1px solid var(--el-border-color);" v-if="pageset.topNavigation">
+            <!--{template alonepage/default/view/mobile/componets/footer}-->
+        </el-footer>
+    </el-container>
+</div>
+<script type="text/javascript">
+    const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch,defineAsyncComponent, onBeforeUpdate , onUnmounted } = Vue;
+    const dzzoffice = createApp({
+        data() {
+            return {
+                DocumentThemeColor:'',
+                keyword:'',
+                scrollref:'',
+                ContentData:[],
+                pageset:{
+                    _file_logo:{src:'',aid:0},
+                    bottomEnable:0,
+                    bottomNavigation:0,
+                    topNavigation:0,
+                    bottomtitle:'',
+                    beian:'',
+                },
+                headeralldata:{
+                    data:[],
+                    message:{
+                        sitebeiantxt:'',
+                        sitebeian:'',
+                    }
+                },
+            }
+        },
+        mixins:[FooterMixin,HeaderMixins],
+        watch:{
+			DocumentThemeColor:{
+				handler(newval){
+					document.querySelector('html').className = newval;
+				},
+				deep:true,
+				// immediate:true
+			}
+		},
+        created() {
+            this.getBannerData();
+            this.GetData();
+
+
+        },
+        methods: {
+            async GetData(){
+                let self = this;
+                let {data: res} = await axios.post('{MOD_URL}&operation=basic',{
+                    id:'$id'
+                });
+                this.pageset.bottomEnable = parseInt(res.pageset.bottomEnable);
+                this.pageset.bottomNavigation = parseInt(res.pageset.bottomNavigation);
+                this.pageset.topNavigation = parseInt(res.pageset.topNavigation);
+                this.pageset._textarea_bottomtitle = res.pageset._textarea_bottomtitle_html?res.pageset._textarea_bottomtitle_html:'';
+                this.pageset.beian = res.pageset.beian?res.pageset.beian:'';
+                this.pageset.beianmps = res.pageset.beianmps?res.pageset.beianmps:'';
+                this.pageset._file_logo = res.pageset._file_logo&&res.pageset._file_logo.length?res.pageset._file_logo[0].src:'';
+                this.GetContentData(res.pval);
+            },
+            HandleElScrollbar(data){
+				var self = this;
+				// self.$refs.RefImageLayout.HandleElScrollbar();
+                if(self.$refs.domchild && self.$refs.domchild.length){
+                    for (let index = 0; index < self.$refs.domchild.length; index++) {
+                        const element = self.$refs.domchild[index];
+                        if(element.HandleElScrollbar){
+                            element.HandleElScrollbar();
+                        }
+                    }
+                }
+			},
+            async GetContentData(pval){
+                let self = this;
+				const {data: res} = await axios.get('index.php?mod=alonepage&op=view&do=getdata&id='+pval);
+				this.ContentData = res.data;
+			},
+            DocumentThemeChange(){
+				if(this.DocumentThemeColor=='light'){
+					this.DocumentThemeColor='dark';
+					localStorage.setItem('theme','dark');
+				}else{
+					this.DocumentThemeColor='light';
+					localStorage.setItem('theme','light');
+				}
+				
+			},
+        },
+        mounted() {
+            let self = this;
+            
+            this.scrollref = self.$refs.MainscrollbarRef;
+            dzzoffice.WindowThis = this;
+            //主题颜色
+			let theme = localStorage.getItem('theme');
+			if(theme){
+				this.DocumentThemeColor=theme;
+			}else{
+				this.DocumentThemeColor = 'light'
+			}
+        },
+        components: {
+            comavatar,
+            menuitem
+		},
+    });
+    dzzoffice.use(ElementPlus, {
+        locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+    });
+    for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+        dzzoffice.component(key, component)
+    }
+    dzzoffice.use(ImageLayout);
+    dzzoffice.use(ImageLayoutlimit);
+    dzzoffice.use(ThemeDefault);
+    dzzoffice.use(DzzCollectdialog);
+    dzzoffice.component('international',international);
+    // 屏蔽警告信息
+    dzzoffice.config.warnHandler = function(){return null};
+    dzzoffice.mount('#dzzoffice');
+</script>
+
+<!--{template common/container/pc/footer}-->

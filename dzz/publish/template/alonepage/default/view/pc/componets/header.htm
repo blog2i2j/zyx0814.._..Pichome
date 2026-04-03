@@ -1,0 +1,109 @@
+<el-header class="page-header"  height="60px">
+    <template v-if="pageset.topNavigation">
+        <a  href="{$_G['siteurl']}" class="h-left" style="text-decoration: none;margin-right: 20px;">
+            <el-image class="logo" src="data/attachment/sitelogo/sitelogo.png?{VERHASH}" title="$_G['setting']['sitename']" fit="contain">
+                <template #error><div class="el-image__placeholder"></div></template>
+            </el-image>
+            <el-text class="sitename" tag="b" size="large" style="color:var(--el-text-color-primary);white-space: nowrap;">{$_G['setting']['sitename']}</el-text>
+        </a>
+    </template>
+    <template v-else>
+        <a  href="{$data['url']}" class="h-left" style="text-decoration: none;margin-right: 20px;">
+            <template v-if="pageset._file_logo && pageset._file_logo[0] && pageset._file_logo[0]['src']">
+                <el-image  class="logo" :src="pageset._file_logo[0]['src']" title="$_G['setting']['sitename']" fit="contain">
+                    <template #error><div class="el-image__placeholder"></div></template>
+                </el-image>
+            </template>
+            <template v-else>
+                <el-image class="logo" src="data/attachment/sitelogo/sitelogo.png?{VERHASH}" title="$_G['setting']['sitename']" fit="contain">
+                    <template #error><div class="el-image__placeholder"></div></template>
+                </el-image>
+            </template>
+
+            <el-text class="sitename" tag="b" size="large" style="color:var(--el-text-color-primary);white-space: nowrap;">{$data['pname']}</el-text>
+        </a>
+    </template>
+    <div class="h-center" style="overflow: hidden;padding: 0;">
+        <template v-if="pageset.topNavigation">
+            <navigationmenu
+                    position="top"
+                    @handleselect="handleNavigationSelect"
+                    dataurl="{MOD_URL}&op=ajax&do=bannerlist&pid=$id"
+            ></navigationmenu>
+        </template>
+    </div>
+    <div class="h-right">
+        <el-tooltip content="{lang change_page_color}" placement="bottom">
+            <el-button
+                    text
+                    :icon="DocumentThemeColor=='light'?'Sunny':'Moon'"
+                    style="font-size: var(--el-font-size-extra-large);margin-left: 12px;"
+                    circle
+                    size="large"
+                    @click="DocumentThemeChange">
+            </el-button>
+        </el-tooltip>
+
+        <international current="$_G['language']"></international>
+        <comavatar
+                :level="parseInt($_G['pichomelevel'])"
+                iscollect="<!--{if defined('PICHOME_LIENCE') && (!$_G['config']['pichomeclosecollect'] || $_G['adminid'])}--><!--{/if}-->"
+                :adminid="parseInt($_G['adminid'])"
+                PICHOME_LIENCE="PICHOME_LIENCE"
+                :uid="parseInt($_G['uid'])"
+                upgrade="<!--{if $_G['setting']['upgrade']}--><!--{/if}-->"
+                version="$_G['setting']['version']"
+                formhash="{FORMHASH}">
+            <el-avatar size="40">
+                {eval echo avatar_block($_G['uid']);}
+            </el-avatar>
+        </comavatar>
+
+    </div>
+</el-header>
+<script>
+    const HeaderMixins = {
+        data(){
+            return {
+
+            }
+        },
+        created(){
+
+        },
+        methods:{
+
+            handleNavigationSelect(data){
+                let self = this;
+                if(parseInt(data.btype) == 3){
+                    if(data.realurl){
+                        window.open(data.realurl)
+                    }else if(data.url){
+                        window.open(data.url)
+                    }else{
+                        self.$message.error('{lang no_link_address}');
+                    }
+                    return false;
+                }
+
+                if(data.url){
+                    window.location.href = data.url;
+                }else{
+                    window.location.href = data.realurl;
+
+                }
+
+            },
+            DocumentThemeChange(){
+                if(this.DocumentThemeColor=='light'){
+                    this.DocumentThemeColor='dark';
+                    localStorage.setItem('theme','dark');
+                }else{
+                    this.DocumentThemeColor='light';
+                    localStorage.setItem('theme','light');
+                }
+            }
+
+        }
+    }
+</script>

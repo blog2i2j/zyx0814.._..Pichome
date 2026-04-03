@@ -60,4 +60,23 @@ class table_keyword_hots extends dzz_table
         }
         return $hotsdata;
     }
+    public function fetch_by_idtype($idtype=0,$idval='',$page=1,$perpage=10){
+        $hotsdata = [];
+        $limitsql = 'limit '.($page - 1)*$perpage.','.$perpage;
+        $sql="1";
+        $params=array($this->_table);
+        if($idval){
+            $sql.=" and idval = %s";
+            $params[]=$idval;
+        }
+        if($idtype){
+            $sql.=" and idtype = %d";
+            $params[]=$idtype;
+        }
+        foreach(DB::fetch_all("select keyword,nums from %t where $sql order by nums desc $limitsql ",
+            $params) as $v){
+            $hotsdata[] = ['keyword'=>$v['keyword'],'num'=>$v['nums']];
+        }
+        return $hotsdata;
+    }
 }

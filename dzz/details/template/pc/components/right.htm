@@ -29,6 +29,7 @@
 				</template>
 				<span v-cloak>{{imagesData.name}}.{{imagesData.ext}}</span>
 			</div>
+
 			<div class="operation clearfix" >
 				<el-button 
 					plain 
@@ -82,27 +83,55 @@
 						</li>
 					</ul>
 				</div>
-				
-				<div class="thesis-wrap" v-if="imagesData.tag && imagesData.tag.length">
-					<el-text v-cloak truncated tag="b" class="tip-title" size="large" style="color: var(--el-text-color-primary);">
-                        {lang label}</el-text>
+
+				<div class="thesis-wrap" v-if="(imagesData.tag && imagesData.tag.length) || parseFloat(imagesData.edit)">
+					<div class="between">
+						<el-text v-cloak truncated tag="b" class="tip-title" size="large" style="color: var(--el-text-color-primary);">{lang label}</el-text>
+
+						<tem_tag v-if="!HtmlLoading && parseFloat(imagesData.edit)" :appid="imagesData.appid" :dpath="imagesData.dpath" :value="imagesData.tag" :lang="{All_labels:'{lang All_labels}',search:'{lang search}'}" @change="RightTagChange"></tem_tag>
+					</div>
 					<div v-if="imagesData.tag" class="label clearfix" v-cloak>
-						<el-tag v-for="item in imagesData.tag" size="large" effect="light" type="info" @click="rightClickTag(item.key)">{{item.val}}</el-tag>
+						<el-tag 
+						v-for="item in imagesData.tag" 
+						:closable="parseFloat(imagesData.edit)"  
+						size="large" 
+						effect="light" 
+						type="info" 
+						@click="rightClickTag(item.tid)"
+						@close.stop="RightFileTagDelete(item.tid)">{{item.tagname}} </el-tag>
 					</div>
 				</div>
-				<div class="thesis-wrap" v-if="imagesData.desc" v-cloak>
+				<div class="thesis-wrap" v-if="parseInt(imagesData.edit)">
+					<el-text  truncated tag="b" class="tip-title" size="large" style="color: var(--el-text-color-primary);">
+						{lang name}</el-text>
+						<el-input v-model="imagesData.name" @change="handleRightFieldChange('name')" type="text" placeholder="{lang name}"   style="width: 100%;"></el-input>
+
+				</div>
+				<div class="thesis-wrap" v-if="imagesData.desc || parseInt(imagesData.edit)">
 					<el-text v-cloak truncated tag="b" class="tip-title" size="large" style="color: var(--el-text-color-primary);">
                         {lang desc}</el-text>
-					<div v-if="imagesData.desc" class="notes" style="white-space: pre-wrap;">{{imagesData.desc}}</div>
+					<template v-if="parseInt(imagesData.edit)">
+						<el-input v-model="imagesData.desc" @change="handleRightFieldChange('desc')" type="textarea" rows="4" placeholder="{lang desc}" :autosize="{ minRows: 2, maxRows: 20 }" style="width: 100%;"></el-input>
+					</template>
+					<template v-else>
+						<div v-if="imagesData.desc" class="notes" style="white-space: pre-wrap;">{{imagesData.desc}}</div>
+					</template>
+
 				</div>
 			
-				<div class="thesis-wrap" v-if="imagesData.link" v-cloak>
+				<div class="thesis-wrap" v-if="imagesData.link || parseInt(imagesData.edit)">
 					<el-text v-cloak truncated tag="b" size="large" class="tip-title" style="color: var(--el-text-color-primary);">
                         {lang link}</el-text>
-					<p class="link">
-						<el-link :underline="false" :href="imagesData.link" truncated style="font-size: 12px;" target="_blank">{{imagesData.link}}</el-link>
-						<el-icon @click="rightcopyText(imagesData.link)"><Copy-Document /></el-icon>
-					</p>
+					<template v-if="parseInt(imagesData.edit)">
+						<el-input v-model="imagesData.link" @change="handleRightFieldChange('link')" type="text"  placeholder="{lang link}"  style="width: 100%;"></el-input>
+					</template>
+					<template v-else-if="imagesData.link">
+						<p class="link">
+							<el-link :underline="false" :href="imagesData.link" truncated style="font-size: 12px;" target="_blank">{{imagesData.link}}</el-link>
+							<el-icon @click="rightcopyText(imagesData.link)"><Copy-Document /></el-icon>
+						</p>
+					</template>
+
 				</div>
 				<div class="thesis-wrap" v-if="imagesData.realfianllypath" v-cloak>
 					<el-text v-cloak truncated tag="b" size="large" class="tip-title" style="color: var(--el-text-color-primary);">
@@ -140,6 +169,14 @@
 								</span>
 							</div>
 						</div>
+					</el-col>
+				</el-row>
+				<el-row type="flex" class="field">
+					<el-col :span="12">
+						<el-text v-cloak truncated size="small">{lang fs_username}</el-text>
+					</el-col>
+					<el-col :span="12" style="text-align: right;">
+						<el-text size="small" style="color: var(--el-text-color-primary);">{{imagesData.username}}</el-text>
 					</el-col>
 				</el-row>
 				<el-row type="flex" class="field">
@@ -206,10 +243,28 @@
 				ImageCollect:{
 					visible:false,
 					rid:[],
-				}
+				},
 			}
 		},
 		methods:{
+			RightTagChange(data){
+				this.imagesData.tag = data.data;
+			},
+			async handleRightFieldChange(flag){
+				let param = {
+					flag:flag,
+					val:this.imagesData[flag],
+					appid:this.imagesData.appid,
+					path:this.imagesData.dpath
+				}
+				let {data: res} = await axios.post(MOD_URL+'&op=fileinterface&operation=save',param);
+
+				if(res.success){
+					this.imagesData[flag] = res.data[0][flag];
+				}else{
+					self.$message.error(res.data.msg);
+				}
+			},
 			rightShowPopoverColor(val) {
 				var rgb = this.rightColorHexToRgb('#' + val);
 				var hsl = this.rightColorRgbToHsl(rgb.r, rgb.g, rgb.b);
@@ -261,8 +316,9 @@
 				var self = this;
 				self.shareDialog.title=self.imagesData.name;
 				self.shareDialog.visible=true;
-				self.shareDialog.id=self.imagesData.rid;
+				self.shareDialog.filepaths=[self.imagesData.rid];
 				self.shareDialog.stype=0;
+				self.shareDialog.sperm=self.imagesData.perm;
 			},
 			rightCollection(){
 				this.ImageCollect.rid = [this.imagesData.rid]
@@ -303,6 +359,30 @@
 				<!--{else}-->
 				window.location.href = this.DocumentHref+'&tag=' + tid;
 				<!--{/if}-->
+			},
+			async RightFileTagDelete(tid){//标签删除
+				var self = this;
+				let data = JSON.parse(JSON.stringify(this.imagesData.tag));
+				let currIndex = this.imagesData.tag.findIndex(function(item){
+					return parseInt(item.tid) == parseInt(tid);
+				})
+				data.splice(currIndex,1);
+				let vals = [];
+				for(var n in data){
+					vals.push(data[n].tid);
+				}
+				let param = {
+					flag:'tag',
+					val:vals.join(','),
+					appid:self.imagesData.appid,
+					path:self.imagesData.dpath
+				}
+				let {data: res} = await axios.post(MOD_URL+'&op=fileinterface&operation=save',param);
+				if(res.success){
+					this.imagesData.tag = data;
+				}else{
+					self.$message.error(res.data.msg || '{lang delete_unsuccess}');
+				}
 			},
 			async rightClickClass(cid){
 				var self = this;

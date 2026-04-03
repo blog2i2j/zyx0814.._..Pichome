@@ -310,11 +310,11 @@ if ($operation == 'patch' || $operation == 'cross') {
                 $unupgrade = 1;
             }
             if ($unupgrade) {
-                $flist['title'] = 'oaooa PicHome ' . $upgrade['latestversion'] . '_' . $locale . '_' . $charset;
+                $flist['title'] = 'FilePress ' . $upgrade['latestversion'] . '_' . $locale . '_' . $charset;
                 $flist['msg'] = lang('founder_upgrade_require_config') . ' php v' . PHP_VERSION . 'MYSQL v' . $dbversion;
                 $flist['update'] = false;
             } else {
-                $flist['title'] = 'oaooa PicHome ' . $upgrade['latestversion'] . '_' . $locale . '_' . $charset;
+                $flist['title'] = 'FilePress ' . $upgrade['latestversion'] . '_' . $locale . '_' . $charset;
                 $flist['update'] = true;
                 $flist['version'] = $upgrade['latestversion'];
                 $flist['locale'] = $locale;

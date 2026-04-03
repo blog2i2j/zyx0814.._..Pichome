@@ -110,7 +110,7 @@ function html_login_form() {
              </div>
              
 		 </form>
-		<div class="copyright">Powered by <a href="https://www.oaooa.com/" target="_blank">Pichome</a> &copy; 2012-$year</div>
+		<div class="copyright">Powered by <a href="https://www.oaooa.com/" target="_blank">FilePress</a> &copy; 2012-$year</div>
 EOT;
 }
 ?>

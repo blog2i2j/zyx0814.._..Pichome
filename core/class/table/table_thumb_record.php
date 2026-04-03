@@ -40,13 +40,13 @@
                 }
             }
         }
-        public function delete($id){
+        public function delete($id,$unbuffered = false){
             if(parent::delete($id)){
                 $this->clear_cache('r_'.$id);
             }
             return true;
         }
-        public function update($id,$setarr){
+        public function update($id,$setarr,$unbuffered = false, $low_priority = false){
             if(parent::update($id,$setarr)){
                 $this->clear_cache('r_'.$id);
             }
@@ -65,7 +65,7 @@
             return $data;
         }
         
-        public function fetch_all($ids)
+        public function fetch_all($ids,$force_from_db = false)
         {
             $rdata = [];
             if (!is_array($ids)) $ids = (array)$ids;

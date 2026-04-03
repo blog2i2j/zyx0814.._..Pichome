@@ -1,0 +1,16 @@
+<style>
+.question-wrapper{
+    background-color: var(--el-bg-color);
+}
+.question-item{
+   margin-bottom: 20px;
+}
+</style>
+<div class="question-wrapper mb20">
+    <!--{loop $tdata['tdata']  $item}-->
+        <div class="question-item">
+            <h3 class="title">$item['title']</h3>
+            <div class="answer editor-content">$item['answer']</div>
+        </div>
+    <!--{/loop}-->
+</div>

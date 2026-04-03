@@ -1,0 +1,90 @@
+<!--{template common/robot/header_simple_start_none}-->
+<style>
+    .label-title {
+        font-weight: bold;
+        margin-right: 5px;
+        min-width: 80px;
+        display: inline-block;
+    }
+
+    .value {
+        display: inline-block;
+
+    }
+
+    .editor-content {
+        margin-bottom: 20px;
+    }
+
+    .file-content {
+        margin-bottom: 20px;
+    }
+
+    img {
+        max-width: 100%;
+    }
+
+    .footer {
+        margin-top: 20px;
+    }
+</style>
+<!--{template common/robot/header_simple_end_none}-->
+<!--{template common/robot/commer_header_none}-->
+<div class="container">
+    <h3 class="title">$resourcesdata['name']</h3>
+    <div class="fileinfo ">
+
+        <p><span class="label-title">{lang filename}:</span> <span class="value"> {$resourcesdata['name']}{eval echo $resourcesdata['ext']?'.'.$resourcesdata['ext']:''}</span>
+        </p>
+        <p><span class="label-title"> {lang file_size}: </span> <span
+                class="value">$resourcesdata['fsize']</span></p>
+        <!--{if $resourcesdata['width'] && $resourcesdata['height']}-->
+        <p><span class="label-title">{lang size}: </span> <span class="value">$resourcesdata['width'] x $resourcesdata['height']</span>
+        </p>
+        <!--{/if}-->
+        <p><span class="label-title">{lang create_time}:</span> <span
+                class="value"> $resourcesdata['dateline']</span></p>
+        <p><span class="label-title">{lang modify_time}:</span> <span
+                class="value"> $resourcesdata['mtime']</span></p>
+        <!--{if $resourcesdata['username']}-->
+        <p><span class="label-title">{lang fs_username}:</span> <span
+                class="value"> $resourcesdata['username']</span></p>
+        <!--{/if}-->
+
+        <!--{if $resourcesdata['desc']}-->
+        <p><span class="label-title">{lang description}:</span> <span
+                class="value"> $resourcesdata['desc']</span></p>
+        <!--{/if}-->
+        <!--{if intval($resourcesdata['duration'])>0}-->
+        <p><span class="label-title">{lang duration}: </span> <span
+                class="value">$resourcesdata['duration']</span></p>
+        <!--{/if}-->
+        <!--{if $resourcesdata['tags']}-->
+        <p><span class="label-title">{lang tags}: </span> <span class="value">{eval echo implode(',',$resourcesdata['tags']);}</span>
+        </p>
+        <!--{/if}-->
+        <!--{if $data['download']}-->
+        <p><span class="label-title">{lang download}: </span> <span class="value"><a href="index.php?mod=io&op=download&path=$resourcesdata['dpath']" type="download">{lang download}</a></span>
+        </p>
+        <!--{/if}-->
+    </div>
+    <!--{if $data['pageset']['_html_desc']}-->
+    <h3>{lang description}</h3>
+    <div class="editor-content">
+        $data['pageset']['_html_desc']
+    </div>
+    <!--{/if}-->
+    <div class="file-content">
+        <!--{if $resourcesdata['iniframe']}-->
+        <h3><a href="$resourcesdata['iniframe']" target="_blank">{lang preview}</a></h3>
+        <!--{elseif $resourcesdata['previews']}-->
+        <!--{loop $resourcesdata['previews'] $preview}-->
+        <p><img src="$prevew['lpath']"/></p>
+        <!--{/loop}-->
+        <!--{else}-->
+        <img src="$resourcesdata['originalimg']"/>
+        <!--{/if}-->
+    </div>
+
+</div>
+<!--{template common/robot/footer_none}-->

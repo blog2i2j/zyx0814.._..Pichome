@@ -1,5 +1,6 @@
 <?php
 $lang = array(
+    'appname'=>'Alone page',
     'Image_address'=>'Image address',
     'Link_address'=>'Link address',
     'page'=>'Page',
@@ -18,5 +19,13 @@ $lang = array(
     'data_source'=>'Source',
     'search_cat'=>'Categories',
     'default_groupname'=>'Default category',
-    'index'=>'Index'
+    'index'=>'Index',
+    'image_mix'=>'Mixed text and graphics layout',
+    'title_color'=>'Title color',
+    'message_color'=>'Describe color',
+    'file_search'=>'Search Files',
+    'alignment'=>'Alignment',
+    'alignment_left'=>'Left-align',
+    'alignment_center'=>'Center-align',
+    'alignment_right'=>'Right-align',
 );

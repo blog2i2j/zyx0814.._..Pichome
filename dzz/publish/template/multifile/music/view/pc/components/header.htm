@@ -1,0 +1,209 @@
+<template v-if="DataPageset.topNavigation">
+	<a  href="{$_G['siteurl']}" class="h-left" style="justify-content: start;text-decoration: none;margin-right: 20px;">
+		<el-image class="logo" src="data/attachment/sitelogo/sitelogo.png?{VERHASH}" title="$_G['setting']['sitename']" fit="contain">
+			<template #error><div class="el-image__placeholder"></div></template>
+		</el-image>
+		<el-text class="sitename" tag="b" size="large" style="color:var(--el-text-color-primary);white-space: nowrap;">{$_G['setting']['sitename']}</el-text>
+	</a>
+</template>
+<template v-else>
+	<a  href="{$data['url']}" class="h-left" style="text-decoration: none;margin-right: 20px;">
+		<template v-if="DataPageset._file_logo && DataPageset._file_logo[0] && DataPageset._file_logo[0]['src']">
+			<el-image  class="logo" :src="DataPageset._file_logo[0]['src']" title="$_G['setting']['sitename']" fit="contain">
+				<template #error><div class="el-image__placeholder"></div></template>
+			</el-image>
+		</template>
+		<template v-else>
+			<el-image class="logo" src="data/attachment/sitelogo/sitelogo.png?{VERHASH}" title="$_G['setting']['sitename']" fit="contain">
+				<template #error><div class="el-image__placeholder"></div></template>
+			</el-image>
+		</template>
+
+		<el-text class="sitename" tag="b" size="large" style="color:var(--el-text-color-primary);white-space: nowrap;">{$data['pname']}</el-text>
+	</a>
+</template>
+<div class="h-center" style="display: flex;align-items: center;justify-content: flex-end;">
+	<template v-if="DataPageset.topNavigation">
+		<navigationmenu
+				position="top"
+				@handleselect="handleNavgationSelect"
+				dataurl="{MOD_URL}&op=ajax&do=bannerlist&pid=$id"
+		></navigationmenu>
+	</template>
+        <el-input
+				v-if="parseInt(DataPageset.search)"
+            ref="headerkeyword"
+			class="headerkeyword"
+			v-model="HeaderKeyword"
+			@keydown.enter="HeaderKeywordInput"
+            style="z-index: 100;position: relative;width: 250px;"
+            placeholder="{lang search}"
+			size="large">
+            <template #suffix>
+				<el-button v-if="HeaderKeyword" link icon="Close" style="font-size: 20px;" @click.stop="clearkeyword"></el-button>
+			</template>
+			<template #append>
+				<el-button 
+					@click="HeaderKeywordInput" 
+					type="primary" 
+					icon="Search" 
+					style="font-size: 20px;padding-top: 0;padding-bottom: 0;display: flex;align-items: center;justify-content: center;"></el-button>
+			</template>
+        </el-input>
+</div>
+<div class="h-right"> 
+	<el-popover
+		placement="bottom"
+		trigger="click"
+		popper-class="isdropdown header-dropdown-menu">
+		<ul class="el-dropdown-menu notpadding">
+			<el-radio-group 
+				:size="size"
+				style="width:100%;"
+				v-model="HeaderRightBtnShow.order"
+				@change="HeaderShowChange('order')">
+				<template v-for="item in SortData">
+					<li class="el-dropdown-menu__item" style="width:100%;">
+						<el-radio :label="item.key" >{{ item.val }}</el-radio>
+					</li>
+				</template>
+			</el-radio-group>
+			<li class="el-dropdown-menu__item--divided"></li>
+			<li class="el-dropdown-menu__item">
+				<el-radio 
+					:size="size"
+					v-model="HeaderRightBtnShow.sort" 
+					@change="HeaderShowChange('sort')"
+					label="asc" >{lang sort_asc}</el-radio>
+			</li>
+			<li class="el-dropdown-menu__item">
+				<el-radio 
+					:size="size"
+					v-model="HeaderRightBtnShow.sort" 
+					@change="HeaderShowChange('sort')"
+					label="desc" >{lang sort_desc}</el-radio>
+			</li>
+		</ul>
+		
+		<template #reference>
+			<div style="margin-left: 12px;">
+				<el-tooltip content="{lang sort}" placement="bottom">
+					<el-button text icon="Sort" style="font-size: var(--el-font-size-extra-large);" circle  size="large"></el-button>
+				</el-tooltip>
+			</div>
+		</template>
+	</el-popover>
+	<el-tooltip content="{lang theme_color}" placement="bottom">
+		<el-button
+				text
+				:icon="DocumentThemeColor=='light'?'Sunny':'Moon'"
+				style="font-size: var(--el-font-size-extra-large);"
+				circle
+				size="large"
+				@click="DocumentThemeChange">
+		</el-button>
+	</el-tooltip>
+    <international current="$_G['language']"></international>
+    <comavatar
+        :level="parseInt($_G['pichomelevel'])"
+        iscollect="<!--{if defined('PICHOME_LIENCE') && (!$_G['config']['pichomeclosecollect'] || $_G['adminid'])}--><!--{/if}-->"
+        :adminid="parseInt($_G['adminid'])"
+        PICHOME_LIENCE="<!--{if defined('PICHOME_LIENCE')}--><!--{/if}-->"
+        :uid="parseInt($_G['uid'])"
+        upgrade="<!--{if $_G['setting']['upgrade']}--><!--{/if}-->"
+        version="$_G['setting']['version']"
+        formhash="{FORMHASH}">
+        <el-avatar size="40">
+            {eval echo avatar_block($_G['uid']);}
+        </el-avatar>
+    </comavatar>
+    
+</div>
+
+<script>
+    const HeaderMixin = {
+        data(){
+            return {
+                HeaderKeyword:'',
+                keywordpopper:false,
+                searchdata:{
+					aid:0,
+					loading:false,
+					img:'',
+				},
+				HeaderRightBtnShow:{
+					order:'btime',//排序方式
+					sort:'desc',//升序、降序
+				},
+				searchImagePropover:false,
+				SortData:[
+					{val:__lang.add_time,key:'btime'},
+					{val:__lang.title,key:'name'},
+					{val:__lang.filesize,key:'filesize'},
+					{val:__lang.grade,key:'grade'},
+					{val:__lang.duration,key:'duration'},
+				]
+            }
+        },
+        watch:{
+
+        },
+        methods:{
+			HeaderShowChange(flag){
+				if(flag == 'order'){
+					sessionStorage.setItem('order',this.HeaderRightBtnShow.order);
+				}else{
+					sessionStorage.setItem('sort',this.HeaderRightBtnShow.sort);
+				}
+				this.CommonGetImageData();
+			},
+			handleNavgationSelect(data){
+				let self = this;
+				if(parseInt(data.btype) == 3){
+					if(data.realurl){
+						window.open(data.realurl)
+					}else if(data.url){
+						window.open(data.url)
+					}else{
+						self.$message.error('{lang no_link_address}');
+					}
+					return false;
+				}else if(parseInt(data.btype) == 5){
+					return;
+				}
+
+				if(data.url){
+					window.location.href = data.url;
+				}else{
+					window.location.href = data.realurl;
+
+				}
+
+			},
+	
+
+            HeaderKeywordInput(val){
+				this.CommonGetImageData();
+			},
+            
+
+            clearkeyword(){
+                let self = this;
+                this.HeaderKeyword = '';
+				self.$nextTick(() => {
+					self.CommonGetImageData();
+				})
+            },
+            HeaderRightBtnGetParam(){
+				var param = {
+					order:this.HeaderRightBtnShow.order,
+					asc:this.HeaderRightBtnShow.sort,
+				};
+				return param;
+			},
+        },
+        mounted(){
+            const self = this;
+        }
+    }
+</script>

@@ -111,7 +111,7 @@ class table_form_setting_filedcat extends dzz_table
         return $data;
     }
 
-    public function delete($ids)
+    public function delete($ids,$unbuffered = false)
     {
         if (!is_array($ids)) $ids = (array)$ids;
         Hook::listen('lang_parse', $ids, ['delFiledcatLangData']);

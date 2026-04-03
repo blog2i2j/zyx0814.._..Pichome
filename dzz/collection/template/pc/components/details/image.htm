@@ -1,0 +1,127 @@
+<Image-Layout 
+	ref="RefImageLayout"
+	:layout="ImageProps.layout"
+	:props="ImageProps.operation"
+	:showmessage="ImageProps.ShowMessage"
+	url="index.php?mod=collection&op=filelist&operation=filelist"
+	:urlparam="ImageProps.urlparam"
+	@dblclick="ImageDetails"
+	@returnparam="Imagereturnparam"
+	:scrollref="scrollref"
+	nodekey="lid"
+	:ischecked="false"
+	:screenshow="Screenshow">
+	<template v-slot:collect="{ data }">
+		<el-button-group>
+			<el-button @click.stop.prevent="ImageQuickChangeCollect(data.lid)">{lang collect}</el-button>
+			<el-tooltip  v-if="ImageCollect.quick" class="item" effect="dark" :content="ImageCollect.name?'{lang collect_to}:'+ImageCollect.name:''"  placement="top">
+				<el-button @click.stop.prevent="ImageQuickAddCollect(data.lid)" style="padding: 8px 4px;" icon="Position"></el-button>
+			</el-tooltip>
+		</el-button-group>
+	</template>
+    <template v-slot:operation="{ data }">
+		<template v-if="data.share || data.down">
+			<template v-if="ImageProps.layout=='rowGrid' || ImageProps.layout=='imageList' || ImageProps.layout=='waterFall'">
+				<div class="operation-box">
+					<el-dropdown @command="ImageOperation">
+						<span class="operation-btn">
+							<el-icon><More-Filled /></el-icon>
+						</span>
+						<template #dropdown>
+							<el-dropdown-menu>
+								<el-dropdown-item 
+									v-if="data.share" 
+									:command="ImageOperationVal('share',data)">
+									<el-icon><Share /></el-icon>
+									{lang share}
+								</el-dropdown-item>
+								<el-dropdown-item v-if="data.download" 
+									:command="ImageOperationVal('down',data.dpath)" 
+									class="circulars">
+									<el-icon><Download /></el-icon>
+									{lang download}
+								</el-dropdown-item>
+								
+								<el-dropdown-item 
+									v-if="parseInt(DocumentPerm)>1" 
+									:command="ImageOperationVal('move',data.lid)" 
+									class="circulars">
+									<el-icon><Rank /></el-icon>
+									{lang move}
+								</el-dropdown-item>
+								<el-dropdown-item 
+									v-if="parseInt(DocumentPerm)>1" 
+									:command="ImageOperationVal('cove',data.lid)" 
+									class="circulars">
+									<el-icon><Picture-Filled /></el-icon>
+									{lang set_cover}
+								</el-dropdown-item>
+								<el-dropdown-item 
+									v-if="parseInt(DocumentPerm)>1" 
+									:command="ImageOperationVal('delcollect',data.lid)" 
+									class="circulars">
+									<el-icon><Star /></el-icon>
+									{lang cancle_collectfile}
+								</el-dropdown-item>
+							</el-dropdown-menu>
+						</template>
+					</el-dropdown>
+				</div>
+			</template>
+			<template v-else>
+				<el-dropdown @command="ImageOperation">
+					<el-button :plain="active" style="margin-left: 12px;" icon="MoreFilled"></el-button>
+					<template #dropdown>
+						<el-dropdown-menu>
+							<el-dropdown-item 
+								v-if="data.share" 
+								:command="ImageOperationVal('share',data)">
+								<el-icon><Share /></el-icon>
+								{lang share}
+							</el-dropdown-item>
+							<el-dropdown-item v-if="data.download" 
+								:command="ImageOperationVal('down',data.dpath)" 
+								class="circulars">
+								<el-icon><Download /></el-icon>
+								{lang download}
+							</el-dropdown-item>
+							
+							<el-dropdown-item 
+								v-if="parseInt(DocumentPerm)>1" 
+								:command="ImageOperationVal('move',data.lid)"
+								class="circulars">
+								<el-icon><Rank /></el-icon>
+								{lang move}
+							</el-dropdown-item>
+							<el-dropdown-item 
+								v-if="parseInt(DocumentPerm)>1" 
+								:command="ImageOperationVal('cove',data.lid)"
+								class="circulars">
+								<el-icon><Picture-Filled /></el-icon>
+								{lang set_cover}
+							</el-dropdown-item>
+							<el-dropdown-item 
+								v-if="parseInt(DocumentPerm)>1" 
+								:command="ImageOperationVal('delcollect',data.lid)" 
+								class="circulars">
+								<el-icon><Star /></el-icon>
+								{lang cancle_collectfile}
+							</el-dropdown-item>
+						</el-dropdown-menu>
+					</template>
+				</el-dropdown>
+				</el-dropdown>
+			</template>
+		</template>
+        
+    </template>
+</Image-Layout>
+<Dzz-Collectdialog 
+    :visible="ImageCollect.visible" 
+    :rids="ImageCollect.rid" 
+	:isadd="false"
+    @success="ImageCollectSuccess"
+    @close="ImageCollectClose"
+	:btntxt="ImageCollect.type=='add'?'{lang collect}':'{lang Move_in}'"
+	:url="ImageCollect.url"
+	></Dzz-Collectdialog>

@@ -7,7 +7,10 @@
             <el-text tag="b" size="large" truncated style="color: var(--el-text-color-primary)">{lang goback}</el-text>
         </template>
         <template #content>
-            <el-text tag="b" size="large" truncated style="color: var(--el-text-color-primary);vertical-align: bottom;">{{rightTitle}}</el-text>
+            <div style="display: flex;align-items: center;">
+                <el-text tag="b" size="large" truncated style="color: var(--el-text-color-primary);vertical-align: bottom;">{{rightTitle}}</el-text>
+                <el-icon style="margin-left: 12px;cursor: pointer;" @click="RightEditTitle"><Edit-Pen /></el-icon>
+            </div>
         </template>
     </el-page-header>
     <el-scrollbar style="padding: 10px;">
@@ -30,23 +33,56 @@
                 rightTitle:'',
                 rightData:[
                     {name:'{lang slide_show}',flag:'slide'},
+                    {name:'{lang image_mix}',flag:'image_mix'},
                     {name:'{lang full_text}',flag:'rich_text'},
                     {name:'{lang link}',flag:'link'},
+                    {name:'{lang banner_ads}',flag:'banner'},
                     // {name:'联系方式',flag:'contact'},
                     {name:'{lang faqs}',flag:'question'},
                     {name:'{lang manual_recommend}',flag:'manual_rec'},
                     {name:'{lang file_recommend}',flag:'file_rec'},
                     // {name:'图组推荐',flag:'picture_rec'},
                     // {name:'矩行推荐',flag:'rectangle_rec'},
-                    {name:'{lang banner_ads}',flag:'banner'},
-                    {name:'{lang library}',flag:'db_ids'},
-                    // {name:'{lang tab_recommend}',flag:'tab_rec'},
-                    {name:'{lang search}',flag:'search_rec'},
+                    {name:'{lang library_show}',flag:'db_ids'},
+                    {name:'{lang file_search}',flag:'search_rec'},
+                    {name:'{lang publish_search}',flag:'search_pub'},
+                    {name:'{lang publish_recommend}',flag:'collect_rec'},
+                    {name:'{lang publish_collect_show}',flag:'collect_ids'},
+                    <!--{if defined('LICENSE_VERSION') && LICENSE_VERSION == 'Enterprise'}-->
+                    {name:'{lang tab_recommend}',flag:'tab_rec'},
+                    <!--{/if}-->
                 ],
                 rightdb_idsStatus:false
             }
         },
         methods:{
+            RightEditTitle(){
+                let self = this;
+                ElementPlus.ElMessageBox.prompt('', __lang.title, {
+                    confirmButtonText: __lang.confirms,
+                    inputPlaceholder: __lang.please_input,
+                    inputValue:self.rightTitle,
+                    cancelButtonText: __lang.close,
+                    inputValidator: (value) => {       // 点击按钮时，对文本框里面的值进行验证
+                        if(!value) {
+                            return __lang.conetnt_not_null;
+                        }
+                    },
+                    inputErrorMessage: __lang.conetnt_not_null,
+                }).then(async ({ value }) => {
+                    const {data: res} = await axios.post(BasicUrl+'pageRename',{
+                        id:$id,
+                        newname:value
+                    });
+                    if(res.success){
+                        self.rightTitle = value;
+                    }else{
+                        self.$message.error(res.msg || __lang.edit_error)
+                    }
+                }).catch(() => {
+
+                })
+            },
             RightgoBack(){
                 window.location.href = 'index.php?mod=alonepage';
             },

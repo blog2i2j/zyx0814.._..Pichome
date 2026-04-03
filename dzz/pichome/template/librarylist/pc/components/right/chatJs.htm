@@ -6,8 +6,11 @@
                 answer:'',
                 answerBox:false,
                 answerloading:false,
-                answerdisabled:true,
+                answerdisabled:false,
+
                 answerParam:{
+                    name:'',
+                    key:'',
                     params:'',
                     recordurl:'',
                     type:'',
@@ -37,6 +40,7 @@
                 let param = {
                     type:this.answerParam.type
                 };
+                this.answerData=[];
                 param[this.answerParam.params] = this.RightActiveRid.join(',');
                 let {data :res} = await axios.post(this.answerParam.recordurl,param);
                 if(res.success){
@@ -139,12 +143,14 @@
 
                 eventSource.addEventListener("error", (event) => {
                     console.error("An error occurred:", JSON.stringify(event));
+                    this.answerdisabled=false;
                 });
 
                 eventSource.addEventListener("close", (event) => {
                     console.log("Connection closed", JSON.stringify(event.data));
                     eventSource.close();
                     this.Chatparameter.contentEnd = true;
+                    this.answerdisabled=false;
                 });
             },
             typingWords(){
@@ -209,7 +215,7 @@
             answerScrollbar(){
                 let self = this;
                 self.$nextTick(function(){
-                    let H = self.$refs.rightscrollbar.offsetHeight;
+                    let H = self.$refs.rightscrollbar.scrollHeight;
                     self.$refs.rightscrollbar.scrollTop = H;
                 });
             },
@@ -238,6 +244,29 @@
                 }else{
                     self.$message.error(res.msg || '{lang Clearing_failed}');
                 }
+            },
+            handleAIchatChange(key){
+                let self = this;
+                console.log(this.answerdisabled);
+                if( this.answerdisabled) return;
+                let item=self.RightData.Aichat.find(function(current){
+                    return current.key == key;
+                });
+                if(!item){
+                   return;
+                }
+
+                self.answerParam = {
+                    name:item.name?item.name:'',
+                    key:item.key?item.key:'',
+                    params:item.params?item.params:'',
+                    recordurl:item.recordurl?item.recordurl:'',
+                    type:item.type?item.type:'',
+                    url:item.url?item.url:'',
+                    delhistoryurl:item.delhistoryurl?item.delhistoryurl:''
+                }
+                this.answerloading=false;
+                this.answerFocus();
             },
             answerFocus(){
                 this.answerBox = true;

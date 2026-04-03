@@ -1,0 +1,234 @@
+<!--{template common/robot/header_simple_start_none}-->
+<style>
+    /* 轮播容器（核心：固定宽高、溢出隐藏） */
+    .slider-container {
+        width: 100%;
+
+        height: 450px;
+        margin: 50px auto;
+        position: relative;
+        overflow: hidden;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    /* 图片列表容器（核心：弹性布局、过渡动画） */
+    .slider-wrapper {
+        display: flex;
+        height: 100%;
+        transition: transform 0.5s ease; /* 切换动画 */
+    }
+
+    /* 轮播图片样式（统一尺寸） */
+    .slider-item {
+
+        flex: 0 0 100%; /* 每张图片占满容器宽度 */
+        height: 100%;
+    }
+    .slider-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* 保持比例填充容器，裁剪超出部分 */
+    }
+
+    /* 左右切换箭头 */
+    .slider-arrow {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 40px;
+        height: 40px;
+        background-color: rgba(0, 0, 0, 0.5);
+        color: #fff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 20px;
+        z-index: 10;
+        transition: background-color 0.3s;
+    }
+    .slider-arrow:hover {
+        background-color: rgba(0, 0, 0, 0.8);
+    }
+    .arrow-left {
+        left: 15px;
+    }
+    .arrow-right {
+        right: 15px;
+    }
+
+    /* 指示器（小圆点） */
+    .slider-indicators {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 8px;
+        z-index: 10;
+    }
+    .indicator-item {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: rgba(255, 255, 255, 0.5);
+        cursor: pointer;
+        transition: background-color 0.3s, transform 0.3s;
+    }
+    .indicator-item.active {
+        background-color: #fff;
+        transform: scale(1.2); /* 激活态放大 */
+    }
+    .indicator-item:hover {
+        background-color: rgba(255, 255, 255, 0.8);
+    }
+</style>
+<div class="slider-container slider-container_{$key0} ">
+    <!-- 图片列表容器 -->
+    <div class="slider-wrapper">
+        <!--{loop $tdata['tdata'] $item}-->
+        <!--{if !empty($item['img'])}-->
+        <a class="slider-item" href="{eval echo !empty($item['url'])?$item['url']:'javascript:;'}" target="_blank">
+            <img src="{$item['img']}" alt=""/>
+        </a>
+        <!--{/if}-->
+       <!--{/loop}-->
+    </div>
+
+    <!-- 左右切换箭头 -->
+    <div class="slider-arrow arrow-left">&lt;</div>
+    <div class="slider-arrow arrow-right">&gt;</div>
+
+    <!-- 指示器（小圆点） -->
+    <div class="slider-indicators"></div>
+</div>
+<script>
+    // 轮播核心配置
+    const config_{$key0} = {
+        autoPlay: false, // 是否自动轮播
+        interval: 3000, // 自动轮播间隔（毫秒）
+        initialIndex: 0, // 初始显示索引
+        loop: true // 是否循环轮播
+    };
+
+    // 获取DOM元素
+    const sliderContainer = document.querySelector('.slider-container_{$key0}');
+    const sliderWrapper = document.querySelector('.slider-container_{$key0} .slider-wrapper');
+    const sliderItems = document.querySelectorAll('.slider-container_{$key0} .slider-item');
+    const arrowLeft = document.querySelector('.slider-container_{$key0} .arrow-left');
+    const arrowRight = document.querySelector('.slider-container_{$key0} .arrow-right');
+    const indicatorsContainer = document.querySelector('.slider-container_{$key0} .slider-indicators');
+
+    // 初始化变量
+    let currentIndex = config_{$key0}.initialIndex;
+    const itemCount = sliderItems.length;
+    const itemWidth = sliderContainer.offsetWidth; // 每张图片宽度 = 容器宽度
+    let autoPlayTimer = null;
+
+    // 1. 初始化指示器（根据图片数量动态生成小圆点）
+    function initIndicators_{$key0}() {
+        indicatorsContainer.innerHTML = '';
+        for (let i = 0; i < itemCount; i++) {
+            const indicator = document.createElement('div');
+            indicator.className = `indicator-item ${i === currentIndex ? 'active' : ''}`;
+            // 绑定指示器点击事件
+            indicator.addEventListener('click', () => {
+                goTo_{$key0}(i);
+            });
+            indicatorsContainer.appendChild(indicator);
+        }
+    }
+
+    // 2. 切换到指定索引的图片
+    function goTo_{$key0}(index) {
+        // 边界处理（循环轮播）
+        if (config_{$key0}.loop) {
+            // 若索引小于0，切换到最后一张；若大于最大索引，切换到第一张
+            currentIndex = index < 0 ? itemCount - 1 : index >= itemCount ? 0 : index;
+        } else {
+            // 非循环轮播：限制索引在0 ~ itemCount-1之间
+            currentIndex = Math.max(0, Math.min(index, itemCount - 1));
+            // 非循环时，隐藏超出边界的箭头（可选）
+            arrowLeft.style.display = currentIndex === 0 ? 'none' : 'flex';
+            arrowRight.style.display = currentIndex === itemCount - 1 ? 'none' : 'flex';
+        }
+
+        // 移动图片容器（核心：通过transform实现偏移）
+        sliderWrapper.style.transform = `translateX(-${currentIndex * itemWidth}px)`;
+
+        // 更新指示器激活状态
+        updateIndicators_{$key0}();
+    }
+
+    // 3. 更新指示器激活状态
+    function updateIndicators_{$key0}() {
+        const indicators = document.querySelectorAll('.slider-container_{$key0} .slider-indicators');
+        indicators.forEach((indicator, i) => {
+            indicator.classList.toggle('active', i === currentIndex);
+        });
+    }
+
+    // 4. 下一张图片
+    function next_{$key0}() {
+        goTo_{$key0}(currentIndex + 1);
+    }
+
+    // 5. 上一张图片
+    function prev_{$key0}() {
+        goTo_{$key0}(currentIndex - 1);
+    }
+
+    // 6. 启动自动轮播
+    function startAutoPlay_{$key0}() {
+        if (!config_{$key0}.autoPlay) return;
+        // 先清除已有定时器，避免重复创建
+        stopAutoPlay_{$key0}();
+        autoPlayTimer = setInterval(next_{$key0}, config_{$key0}.interval);
+    }
+
+    // 7. 停止自动轮播
+    function stopAutoPlay_{$key0}() {
+        if (autoPlayTimer) {
+            clearInterval(autoPlayTimer);
+            autoPlayTimer = null;
+        }
+    }
+
+    // 8. 绑定事件（箭头、鼠标悬浮/离开）
+    function bindEvents_{$key0}() {
+        // 左箭头点击
+        arrowLeft.addEventListener('click', prev_{$key0});
+        // 右箭头点击
+        arrowRight.addEventListener('click', next_{$key0});
+
+        // 鼠标悬浮容器：暂停自动轮播
+        sliderContainer.addEventListener('mouseenter', stopAutoPlay_{$key0});
+        // 鼠标离开容器：恢复自动轮播
+        sliderContainer.addEventListener('mouseleave', startAutoPlay_{$key0});
+
+        // 窗口大小变化时，重新计算图片宽度并调整位置
+        window.addEventListener('resize', () => {
+            const newWidth = sliderContainer.offsetWidth;
+            sliderWrapper.style.transform = `translateX(-${currentIndex * newWidth}px)`;
+        });
+    }
+
+    // 初始化轮播
+    function initSlider_{$key0}() {
+        // 设置图片容器总宽度
+       // sliderWrapper.style.width = `${itemCount * 100}%`;
+        // 初始化指示器
+        initIndicators_{$key0}();
+        // 绑定事件
+        bindEvents_{$key0}();
+        // 启动自动轮播
+        startAutoPlay_{$key0}();
+        // 初始定位到指定索引
+        goTo_{$key0}(config_{$key0}.initialIndex);
+    }
+
+    // 页面加载完成后初始化轮播
+    window.addEventListener('DOMContentLoaded', initSlider_{$key0});
+</script>

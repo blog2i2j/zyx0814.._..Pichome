@@ -6,10 +6,12 @@
  * @link        https://www.oaooa.com
  * @author      zyx(zyx@oaooa.com)
  */
-
-    
 if (!defined('IN_OAOOA')) {//所有的php文件必须加上此句，防止被外部调用
 	exit('Access Denied');
+}
+if(!empty($_GET['robot']) || (!empty($_config['seo']) && !empty(IS_ROBOT))){
+    require MOD_PATH.'/robot/index.php';
+    exit();
 }
 updatesession();
 global $_G;
@@ -30,23 +32,23 @@ if($operation == 'fetch'){
         exit(json_encode(array('status'=>2,'error'=>lang('no_perm'))));
 	}
 
-	$resourcesdata = C::t('pichome_resources')->fetch_by_rid($rid,$isshare,1);
-
+	$resourcesdata = C::t('pichome_resources')->fetch_by_rid($rid,$isshare,1,$perm);
     $appdata = C::t('pichome_vapp')->fetch($resourcesdata['appid']);
-    $viewperm = unserialize($appdata['view']);
-    $overt = getglobal('setting/overt');
-
-    if ($viewperm !== '1' && !$overt && !$overt = C::t('setting')->fetch('overt')) {
-        Hook::listen('check_login');//检查是否登录，未登录跳转到登录界面
-    }
     if($perm){
         $resourcesdata['download'] =perm::check('download2',$perm)?1:0;
         $resourcesdata['share'] =perm::check('share',$perm)?1:0;
         $resourcesdata['view'] =perm::check('read2',$perm)?1:0;
+        $resourcesdata['edit'] =perm::check('edit2',$perm)?1:0;
+        //if($resourcesdata['edit']) $resourcesdata['dpath']=$_GET['path'];
+        $resourcesdata['dpath']=Pencode(array('path' => $resourcesdata['rid'], 'perm' => $perm, 'ishare' => $isshare, 'isadmin' => $isadmin), 7200);
+        if($resourcesdata['realfianllypath']){
+            $resourcesdata['realfianllypath']=$_G['siteurl'].'index.php?mod=io&op=getStream&path='.$resourcesdata['dpath'];
+        }
     }
    if((!isset($resourcesdata['view']) || !$resourcesdata['view']) && !$isshare && !C::t('pichome_vapp')->getpermbypermdata($appdata['view'],$resourcesdata['appid'])){
        exit(json_encode(array('status'=>2,'error'=>lang('no_perm'))));
    }
+    $resourcesdata['preview']=array();
     if(!$resourcesdata['iniframe']){
         $resourcesdata['preview'] = C::t('thumb_preview')->fetchPreviewByRid($rid);
         $resourcesCover = ['spath'=>$resourcesdata['icondata'],'lpath'=>$resourcesdata['originalimg']];
@@ -87,7 +89,10 @@ if($operation == 'fetch'){
 
 
 }else{
-
+    $overt = getglobal('setting/overt');
+    if(!$overt && !$overt = C::t('setting')->fetch('overt')){
+        Hook::listen('check_login');//检查是否登录，未登录跳转到登录界面
+    }
     updatesession();
     $isadmin = $_GET['isadmin'] ? intval($_GET['isadmin']):0;
 	$ismobile = helper_browser::ismobile();

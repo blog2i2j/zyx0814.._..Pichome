@@ -13,8 +13,6 @@ if(!defined('IN_OAOOA')) {
 global $_G;
 Hook::listen('adminlogin');
 $uid = $_G['uid'];
-include libfile('function/filerouterule');
-require libfile('function/code');
 $operation = $_GET['operation'] ? trim($_GET['operation']) : '';
 if($operation == 'getApp'){//获取当前用户应用
 	$config = array();
@@ -136,7 +134,7 @@ if($operation == 'getApp'){//获取当前用户应用
 		}
 	$userData['username'] = $udata['username'];
 	$userData['uid'] = $uid;
-	$userData['language'] = $_G[language];
+	$userData['language'] = $_G['language'];
 	$userData['upgrade'] = $_G['setting']['upgrade'];
 	$userData['version'] = $_G['setting']['version'];
 	$userData['PICHOME_LIENCE'] = defined('PICHOME_LIENCE');

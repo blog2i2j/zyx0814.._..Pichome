@@ -1,0 +1,327 @@
+<div class="favorites-box" v-if="!FileGatherLoading">
+	<div class="collects-move-btn-box">
+		<el-tooltip class="item" effect="dark" content="{lang add}" placement="top">
+			<div class="item" @click="FileGatherAdd">
+				<el-icon><Plus /></el-icon>
+			</div>
+		</el-tooltip>
+	</div>
+	<div class="favorites-list">
+		<div class="own-gather Sortable-item" v-if="!HeaderKeyword">
+			<a class="img-box" href="{MOD_URL}&op=all">
+				<div class="slice" style="z-index: 1;">
+					<el-image v-if="FileGatherCover.cover0" style="width: 100%; height: 100%" :src="FileGatherCover.cover0" fit="cover" >
+						<template #error><div class="el-image__placeholder"></div></template>
+					</el-image>
+				</div>
+				<div class="slice" style="z-index: -1;">
+					<el-image v-if="FileGatherCover.cover1" style="width: 100%; height: 100%" :src="FileGatherCover.cover1" fit="cover" >
+						<template #error><div class="el-image__placeholder"></div></template>
+					</el-image>
+				</div>
+				<div class="slice" style="z-index: -2;">
+					<el-image v-if="FileGatherCover.cover2" style="width: 100%; height: 100%" :src="FileGatherCover.cover2" fit="cover" >
+						<template #error><div class="el-image__placeholder"></div></template>
+					</el-image>
+				</div>
+				<div class="slice" style="z-index: -3;">
+					<el-image v-if="FileGatherCover.cover3" style="width: 100%; height: 100%" :src="FileGatherCover.cover3" fit="cover" >
+						<template #error><div class="el-image__placeholder"></div></template>
+					</el-image>
+				</div>
+				<div class="slice" style="z-index: -4;">
+					<el-image v-if="FileGatherCover.cover4" style="width: 100%; height: 100%" :src="FileGatherCover.cover4" fit="cover" >
+						<template #error><div class="el-image__placeholder"></div></template>
+					</el-image>
+				</div>
+			</a>
+			<div class="information">
+				<div class="title">{lang all_collect}</div>
+				<div class="message" v-cloak>{{FileGatherCover.total}}{lang collect_picture}</div>
+			</div>
+		</div>
+		<div class="own-single Sortable-item" v-for="(item,index) in FileGatherDataList" :key="index">
+			<a :href="'index.php?mod=collection&op=detail&clid='+item.clid" class="img-checked">
+				<div class="left">
+					<el-image v-if="item.covert" style="width: 100%; height: 100%" :src="item.covert" fit="cover" >
+						<template #error><div class="el-image__placeholder"></div></template>
+					</el-image>
+				</div>
+				<div class="right">
+					<div class="right-block">
+						<el-image v-if="item.covert1" style="width: 100%; height: 100%" :src="item.covert1" fit="cover" >
+							<template #error><div class="el-image__placeholder"></div></template>
+						</el-image>
+					</div>
+					<div class="right-block">
+						<el-image v-if="item.covert2" style="width: 100%; height: 100%" :src="item.covert2" fit="cover" >
+							<template #error><div class="el-image__placeholder"></div></template>
+						</el-image>
+					</div>
+				</div>
+				<div class="circulars" @click.stop.prevent="FileGatherEdit(item)">
+					<el-icon><More /></el-icon>
+				</div>
+			</a>
+			<div class="information" v-cloak>
+				<div class="title">{{ item.name }}</div>
+				<div class="message">{{ item.filenum }}{lang collect_picture}</div>
+			</div>
+			
+		</div>
+	</div>
+</div>
+<el-dialog
+	v-cloak
+	:title="FileGatherformdata.id? '{lang edit_collect}':'{lang add_collect}'"
+	v-model="FileGatherdialogVisible"
+	:close-on-press-escape="false"
+	:show-close="false"
+	@submit.native.prevent="FileGatherSubmit"
+	@close="FileGatherdialogClose">
+	<el-form ref="FormFileGather" :model="FileGatherformdata">
+		<el-form-item 
+		label="{lang name}："
+		prop="name"
+		:rules="[
+		  { required: true, message: __lang, trigger: 'blur' }
+		]">
+			<div class="language-box">
+				<el-input v-model.trim="FileGatherformdata.name"></el-input>
+				<template v-if="FileGatherformdata.langkey">
+					<language 
+						:langkey="FileGatherformdata.langkey.name"
+						@change="FileGatherformdataName"></language>
+				</template>
+			</div>
+		</el-form-item>
+	</el-form>
+	<template #footer>
+		<span class="dialog-footer">
+			<el-popconfirm v-if="FileGatherformdata.id" title="{lang delete_collect_confirm}" cancel-button-type="danger" @confirm="FileGatherDelete">
+				<template #reference>
+					<el-button style="float: left;" type="danger">{lang delete}</el-button>
+				</template>
+			</el-popconfirm>
+			<el-button @click="FileGatherdialogVisible = false">{lang cancel}</el-button>
+			<el-button type="primary" @click="FileGatherSubmit">{lang confirms}</el-button>
+		</span>
+	</template>
+	
+</el-dialog>
+<script type="text/javascript">
+	var FileGathermixin = {
+		data(){
+			return {
+				FileGatherLoading:true,
+				FileGatherdialogVisible:false,
+				FileGatherDataList:[],
+				FileGatherDataStoreList:[],
+				FileGatherCover:{
+					cover0:'',
+					cover1:'',
+					cover2:'',
+					cover3:'',
+					cover4:'',
+					total:0,
+				},
+				FileGatherformdata:{
+					id:'',
+					name:'',
+					langkey:'',
+					loading:false
+				}
+			}
+		},
+		created() {
+			this.FileGatherCreate();
+		},
+		methods:{
+			FileGatherCreate(){
+				var FileGatherDataList = $collects;
+				for(var i in FileGatherDataList){
+					this.FileGatherDataStoreList.push(FileGatherDataList[i]);
+				}
+				this.FileGatherDataList = JSON.parse(JSON.stringify(this.FileGatherDataStoreList));
+				this.FileGatherLoading = false;
+				this.FileGatherGetCoverFive();
+			},
+			FileGatherAdd(){
+				this.FileGatherdialogVisible = true;
+				this.FileGatherformdata.id = '';
+			},
+			FileGatherEdit(item){
+				this.FileGatherformdata.id = item.clid;
+				this.FileGatherformdata.name = item.name;
+				this.FileGatherformdata.langkey = item.langkey || '';
+				this.FileGatherdialogVisible = true;
+			},
+			FileGatherformdataName(value){
+				let self = this;
+				this.FileGatherformdata.name = value;
+				let curr = this.FileGatherDataList.find(current => {
+					return current.clid == self.FileGatherformdata.id;
+				});
+				if(curr){
+					curr.name = value;
+				}
+			},
+			async FileGatherDelete(){
+				var self = this;
+				if(!self.FileGatherformdata.id){
+					self.$message.error(__lang.params_error)
+					return false;
+				}
+				var param = {
+					clid:self.FileGatherformdata.id
+				};
+				this.LoginFunc = this.FileGatherDelete;
+				this.LoginParam = null;
+				var res = await axios.post(MOD_URL+'&op=collect&do=delcollect',param)
+				if(res == 'intercept'){
+					return false;
+				}
+				var json = res.data;
+				if(json.success){
+					var index = 0;
+					for(var i in self.FileGatherDataList){
+						if(parseInt(self.FileGatherformdata.id) == parseInt(self.FileGatherDataList[i].clid)){
+							index = i;
+						}
+					}
+					self.$message({
+						message: __lang.delete_success,
+						type: 'success'
+					});
+					self.FileGatherdialogVisible = false;
+					self.FileGatherDataList.splice(index,1);
+				}else{
+					self.$message.error(json.error);
+				}
+			},
+			async FileGatherSubmit(){
+				var self = this;
+				if(!self.FileGatherformdata.name){
+					self.$message.error(__lang.name_cannot_empty)
+					return false;
+				}
+				if(self.FileGatherformdata.id){
+					var param = {
+						clid:self.FileGatherformdata.id,
+						name:self.FileGatherformdata.name
+					}
+				}else{
+					var param = {
+						name:self.FileGatherformdata.name
+					}
+				}
+				this.LoginFunc = this.FileGatherSubmit;
+				this.LoginParam = null;
+				var res = await axios.post(MOD_URL+'&op=collect&do=addcollect',param)
+				if(res == 'intercept'){
+					return false;
+				}
+				var json = res.data;
+				if(json.success){
+					if(self.FileGatherformdata.id){
+						for(var i in self.FileGatherDataList){
+							if(parseInt(self.FileGatherformdata.id) == parseInt(self.FileGatherDataList[i].clid)){
+								if(self.FileGatherDataStoreList[i]){
+									self.FileGatherDataStoreList[i].name = param.name;
+								}
+								self.FileGatherDataList[i].name = self.FileGatherformdata.name;
+							}
+						}
+						self.$message({
+							message: __lang.save_success,
+							type: 'success'
+						});
+					}else{
+						var str = {
+							filenum:0,
+							name:json.success.name,
+							covert:'',
+							covert1:'',
+							covert2:'',
+							clid:json.success.clid,
+						}
+						self.FileGatherDataList.unshift(str);
+						self.FileGatherDataStoreList.unshift(str);
+						self.$message({
+							message: __lang.add_success,
+							type: 'success'
+						});
+					}
+					
+					self.FileGatherdialogVisible = false;
+				}else{
+					self.$message.error(__lang.add_unsuccess);
+				}
+			},
+			FileGatherdialogClose(){
+				var self = this;
+				self.$refs['FormFileGather'].resetFields();
+			},
+			async FileGatherSortableSubmit(clid){
+				var self = this;
+				this.LoginFunc = this.FileGatherSortableSubmit;
+				this.LoginParam = clid;
+				var res = await axios.post(MOD_URL+'&op=collect&do=collectlist',{clid:clid});
+				if(res == 'intercept'){
+					return false;
+				}
+				var json = res.data;
+				if(json.success){
+					self.$message({
+						message:__lang.sort_success,
+						type:'success'
+					});
+				}else{
+					self.$message.error(__lang.sort_failer);
+				}
+			},
+			async FileGatherGetCoverFive(){
+				this.LoginFunc = this.FileGatherGetCoverFive;
+				this.LoginParam = null;
+				var res = await axios.post(MOD_URL+'&do=getallcovert');
+				if(res == 'intercept'){
+					return false;
+				}
+				var json = res.data;
+				this.FileGatherCover.cover0 = json.data[0];
+				this.FileGatherCover.cover1 = json.data[1];
+				this.FileGatherCover.cover2 = json.data[2];
+				this.FileGatherCover.cover3 = json.data[3];
+				this.FileGatherCover.cover4 = json.data[4];
+				this.FileGatherCover.total = json.data.total;
+			}
+		},
+		mounted() {
+			var self = this;
+			var tbody = document.querySelector('.favorites-list');
+			Sortable.create(tbody, {
+				filter:".own-gather" ,
+				draggable:".own-single",
+				onEnd ({ newIndex, oldIndex }) {
+					var newIndex = newIndex-1;
+					var oldIndex = oldIndex-1;
+					var FileGatherDataList = JSON.parse(JSON.stringify(self.FileGatherDataList));
+					self.FileGatherDataList = [];
+					var currRow = FileGatherDataList.splice(oldIndex, 1)[0];
+					FileGatherDataList.splice(newIndex, 0, currRow);
+					self.$nextTick(function(){
+						self.FileGatherDataList = FileGatherDataList;
+						var clid = [];
+						for(var i in FileGatherDataList){
+							var item = FileGatherDataList[i];
+							clid.push(item.clid);
+						}
+						clid = clid.join(',');
+						self.FileGatherSortableSubmit(clid);
+					});
+				}
+			});
+			
+		},
+	};
+</script>

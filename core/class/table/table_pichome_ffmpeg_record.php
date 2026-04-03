@@ -13,7 +13,7 @@ class table_pichome_ffmpeg_record extends dzz_table
         $this->_cache_ttl = 3600;
         parent::__construct();
     }
-    public function insert($setarr,$isforce = 0){
+    public function insert($setarr,$isforce = 0,$replace = false, $silent = false){
         $rid = $setarr['rid'];
         if(DB::result_first("select rid from %t where rid = %s",array($this->_table,$rid))){
            if(!$isforce) return $rid;

@@ -58,7 +58,7 @@ class table_thumb_cache extends dzz_table
         else $id = md5($thumbarr['width'].$thumbarr['height'].$thumbarr['aid'].$thumbarr['thumbtype'].$thumbarr['watermd5']);
         return parent::fetch($id);
     }
-    public function insert($setarr,$isreturn = false)
+    public function insert($setarr,$isreturn = false,$replace = false,$silent= false)
     {
         $aid = $setarr['aid'];
         if ($returndata = DB::fetch_first("select * from %t where aid = %d",array($this->_table,$aid))) {
@@ -89,13 +89,13 @@ class table_thumb_cache extends dzz_table
             }
         }
     }
-    public function delete($aid){
+    public function delete($aid,$unbuffered = false){
         if(parent::delete($aid)){
             $this->clear_cache('r_'.$aid);
         }
         return true;
     }
-    public function update($aid,$setarr){
+    public function update($aid,$setarr, $unbuffered = false, $low_priority = false){
         if(parent::update($aid,$setarr)){
             $this->clear_cache('r_'.$aid);
         }
@@ -114,7 +114,7 @@ class table_thumb_cache extends dzz_table
         return $data;
     }
 
-    public function fetch_all($aids)
+    public function fetch_all($aids,$extraparams=array())
     {
         $rdata = [];
         if (!is_array($aids)) $aids = (array)$aids;
@@ -135,12 +135,33 @@ class table_thumb_cache extends dzz_table
         }
     }
 
-    public function fetch_datas_by_aid($aid){
-        return DB::fetch_all("select * from %t  where aid = %d  and thumbstatus = 1",array($this->_table,$aid));
-    }
 
-    public function fetch_path_by_aid($aid){
-        return DB::fetch_first("select path from %t  where aid = %d  and thumbstatus = 1 ",array($this->_table,$aid));
+    public function fetch_thumb_by_aid($aid,$extraparams){
+        global $_G;
+        $watermd5 = '';
+        if($extraparams['watermarkstatus']){
+            $watermd5 = !$extraparams['watermarktext'] ? $_G['setting']['watermd5']:($extraparams['watermarktext'] ? $extraparams['watermarktext']:$_G['setting']['watermarktext']);
+        }
+        $thumbparam = [
+            'aid'=>$aid,
+            'thumbtype'=>$extraparams['thumbtype'] ? $extraparams['thumbtype']:1,
+            'watermd5'=>$watermd5,
+            'width'=>$extraparams['width'],
+            'height'=>$extraparams['height'],
+        ];
+        $id = md5($thumbparam['width'].$thumbparam['height'].$thumbparam['aid'].$thumbparam['thumbtype'].$thumbparam['watermd5']);
+        $data = parent::fetch($id);
+
+        if($data && isset($data['path'])){
+
+            $bz = io_remote::getBzByRemoteid($data['remoteid']);
+            $filepath = $bz.$data['path'];
+            return IO::getFileUri($filepath);
+        }else{
+           
+            return getglobal('siteurl').'index.php?mod=io&op=getThumb&size=small&path='.dzzencode('attach::'.$aid);
+        }
+
     }
 
 }

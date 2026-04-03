@@ -1,13 +1,44 @@
-<a  href="{$_G[siteurl]}" class="h-left" style="text-decoration: none;">
-	<el-image class="logo" src="data/attachment/sitelogo/sitelogo.png?{VERHASH}" fit="contain">
-		<template #error><div class="el-image__placeholder"></div></template>
-	</el-image>
-	<el-text tag="b" size="large" style="color:var(--el-text-color-primary);white-space: nowrap;">{$_G[setting][sitename]}</el-text>
-</a>
-<div class="h-center" style="overflow: hidden;">
-</div>
-<div class="h-right"> 
-	<el-tooltip content="{lang theme_color}" placement="bottom">
+<template v-if="ispc">
+	<a  href="{$_G['siteurl']}" class="h-left" style="text-decoration: none;">
+		<el-image class="logo" src="data/attachment/sitelogo/sitelogo.png?{VERHASH}" fit="contain">
+			<template #error><div class="el-image__placeholder"></div></template>
+		</el-image>
+		<el-text tag="b" size="large" style="color:var(--el-text-color-primary);white-space: nowrap;">{$_G['setting']['sitename']}</el-text>
+	</a>
+	<div class="h-center" style="overflow: hidden;">
+	</div>
+	<div class="h-right"> 
+		<el-tooltip content="{lang theme_color}" placement="bottom">
+			<el-button 
+				text 
+				:icon="DocumentThemeColor=='light'?'Sunny':'Moon'" 
+				style="font-size: var(--el-font-size-extra-large);" 
+				circle  
+				size="large"
+				@click="DocumentThemeChange">
+			</el-button>
+		</el-tooltip>
+		<international current="$_G['language']"></international>
+		<comavatar
+			:level="parseInt($_G['pichomelevel'])"
+			iscollect="<!--{if defined('PICHOME_LIENCE') && (!$_G['config']['pichomeclosecollect'] || $_G['adminid'])}--><!--{/if}-->"
+			:adminid="parseInt($_G['adminid'])"
+			PICHOME_LIENCE="<!--{if defined('PICHOME_LIENCE')}--><!--{/if}-->"
+			:uid="parseInt($_G['uid'])"
+			upgrade="<!--{if $_G['setting']['upgrade']}--><!--{/if}-->"
+			version="$_G['setting']['version']"
+			formhash="{FORMHASH}">
+			<el-avatar size="40">
+				{eval echo avatar_block($_G['uid']);}
+			</el-avatar>
+		</comavatar>
+	</div>
+</template>
+<template v-else>
+	<a href="{$_G['siteurl']}" class="h-left" style="justify-content: start;padding-right: 20px;overflow: hidden;">
+		<el-text tag="b" size="large" truncated style="color:var(--el-text-color-primary);">{{ContentData.pagename}}</el-text>
+	</a>
+	<div class="h-right" style="min-width: 52px;"> 
 		<el-button 
 			text 
 			:icon="DocumentThemeColor=='light'?'Sunny':'Moon'" 
@@ -16,22 +47,22 @@
 			size="large"
 			@click="DocumentThemeChange">
 		</el-button>
-	</el-tooltip>
-	<international current="$_G['language']"></international>
-	<comavatar
-		:level="parseInt($_G[pichomelevel])"
-		iscollect="<!--{if defined('PICHOME_LIENCE') && (!$_G[config][pichomeclosecollect] || $_G[adminid])}--><!--{/if}-->"
-		:adminid="parseInt($_G[adminid])"
-		PICHOME_LIENCE="<!--{if defined('PICHOME_LIENCE')}--><!--{/if}-->"
-		:uid="parseInt($_G[uid])"
-		upgrade="<!--{if $_G['setting']['upgrade']}--><!--{/if}-->"
-		version="$_G[setting][version]"
-		formhash="{FORMHASH}">
-		<el-avatar size="40">
-			{eval echo avatar_block($_G[uid]);}
-		</el-avatar>
-	</comavatar>
-</div>
+		<comavatar
+			:level="parseInt($_G['pichomelevel'])"
+			iscollect="<!--{if defined('PICHOME_LIENCE') && (!$_G['config']['pichomeclosecollect'] || $_G['adminid'])}--><!--{/if}-->"
+			:adminid="parseInt($_G['adminid'])"
+			PICHOME_LIENCE="<!--{if defined('PICHOME_LIENCE')}--><!--{/if}-->"
+			:uid="parseInt($_G['uid'])"
+			upgrade="<!--{if $_G['setting']['upgrade']}--><!--{/if}-->"
+			version="$_G['setting']['version']"
+			formhash="{FORMHASH}">
+			<el-avatar size="40">
+				{eval echo avatar_block($_G['uid']);}
+			</el-avatar>
+		</comavatar>
+	</div>
+</template>
+
 <script>
 	const HeaderMixins = {
 		data(){

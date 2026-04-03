@@ -57,7 +57,7 @@
 					</a>
 				</div>
 			</div>
-			<el-button style="margin-top: 20px;width: 100%;font-size:var(--el-font-size-medium);" size="large" @click="OutLogin">退出登录</el-button>
+			<el-button style="margin-top: 20px;width: 100%;font-size:var(--el-font-size-medium);" size="large" @click="OutLogin">{lang logout}</el-button>
 		</el-main>
 		<el-header class="page-header page-footer_m"  height="50px" style="border:0;border-top: var(--el-border);">
 			<a class="tabbar-item" href="{$_G['siteurl']}">
@@ -72,11 +72,11 @@
 					
 				</div>
 				<div class="tabbar-item__text">
-					<el-text size="small">首页</el-text>
+					<el-text size="small">{lang homepage}</el-text>
 				</div>
 			</a>
 			
-			
+			<!--{if defined('PICHOME_LIENCE') && PICHOME_LIENCE>0 }-->
 			<a class="tabbar-item" href="index.php?mod=collection&op=view" target="_blank">
 				<div class="tabbar-item__icon">
 					<el-icon size="24">
@@ -86,9 +86,11 @@
 					
 				</div>
 				<div class="tabbar-item__text">
-					<el-text size="small">收藏夹</el-text>
+					<el-text size="small">{lang favorites}</el-text>
 				</div>
 			</a>
+			<!--{/if}-->
+			<!--{if defined('LICENSE_VERSION') && LICENSE_VERSION == 'Enterprise' }-->
 			<div class="tabbar-item" v-if="(tabarr && tabarr.length) || (collectlisarr && collectlisarr.length)">
 				<div style="display: flex;align-items: center;justify-content: center;flex-direction: column;" @click="headerCollect.visble = true">
 					<div class="tabbar-item__icon">
@@ -98,13 +100,14 @@
 								<path stroke-linejoin="round" stroke-linecap="square" stroke-width="2" stroke="currentColor" d="M24 16v16M16 24h16" data-follow-stroke="currentColor"/>
 							</svg>
 						</el-icon>
-						
+
 					</div>
 					<div class="tabbar-item__text">
 						<el-text size="small">归档文件</el-text>
 					</div>
 				</div>
 			</div>
+			<!--{/if}-->
 			<a class="tabbar-item active" href="user.php?mod=my">
 				<div class="tabbar-item__icon">
 					<el-icon size="24">
@@ -117,7 +120,7 @@
 					
 				</div>
 				<div class="tabbar-item__text">
-					<el-text size="small">我的</el-text>
+					<el-text size="small">{lang my}</el-text>
 				</div>
 			</a>
 			
@@ -246,7 +249,7 @@
 				}).then(async function() {
 					let {data: res} = await axios.post('user.php?mod=login&op=logging&inajax=1&action=logout&formhash={FORMHASH}&t='+new Date().getTime());
 					if(res.success){
-						window.location.href = '$_G[siteurl]'
+						window.location.href = '$_G['siteurl']'
 					}else{
 						self.$message.error(res.msg || '退出登录失败')
 					}

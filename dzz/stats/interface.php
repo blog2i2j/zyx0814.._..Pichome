@@ -621,6 +621,100 @@ elseif($do == 'uploads'){//上传统计
     }
     exit(json_encode(array('data'=>$returndata,'total'=>$count,'uploadtotal'=>$uploadtotal,'next'=>$next,'page'=>$page,'isadmin'=>$isadmin,'navtitle'=>lang('uploadfiletitle').'-'.$navtitle)));
 }
+elseif($do == 'uploadbyuser'){//用户上传文件列表
+    $next = false;
+    $uid = isset($_GET['uid']) ? intval($_GET['uid']):0;
+    $keyword = isset($_GET['keyword']) ? trim($_GET['keyword']):'';
+    $page = isset($_GET['page']) ? intval($_GET['page']):1;
+    $limit = isset($_GET['limit']) ? intval($_GET['limit']):50;
+    $keytype = isset($_GET['keytype']) ? trim($_GET['keytype']):'filename';
+    $sparams = array('stats_view','pichome_resources',3,$uid);
+    $swheresql = ' up.idtype = %d and up.uid = %d  ';
+    $cwheresql = ' up.idtype = %d and up.uid = %d ';
+    $cparams =  array('stats_view','pichome_resources',3,$uid);
+    if($start){
+        $sparams[] = $start;
+        $cparams[] = $start;
+        $swheresql .= " and up.dateline >= %d";
+        $cwheresql .= " and up.dateline >= %d";
+    }
+    if($end){
+        $sparams[] = $end;
+        $cparams[] = $end;
+        $cwheresql .= " and up.dateline < %d";
+        $swheresql .= " and up.dateline < %d";
+    }
+    if($keyword){
+        switch($keytype){
+            case 'filename':
+                $swheresql .= ' and r.name like %s';
+                $cwheresql .= ' and r.name like %s';
+                $sparams[] = '%'.$keyword.'%';
+                $cparams[] = '%'.$keyword.'%';
+                break;
+            case 'username':
+                $swheresql .= ' and up.username like %s';
+                $cwheresql .= ' and up.username like %s';
+                $sparams[] = '%'.$keyword.'%';
+                $cparams[] = '%'.$keyword.'%';
+                break;
+            case 'ip':
+                $swheresql .= ' and up.ip = %s';
+                $cwheresql .= ' and up.ip = %s';
+                $sparams[] = $keyword;
+                $cparams[] = $keyword;
+                break;
+            default:
+                $swheresql .= ' and r.name like %s';
+                $cwheresql .= ' and r.name like %s';
+                $sparams[] = '%'.$keyword.'%';
+                $cparams[] = '%'.$keyword.'%';
+        }
+    }
+    $limitstart = ($page - 1)*$limit;
+    $limitsql = ' limit '.$limitstart.','.$limit;
+    $data = array();
+    $count = DB::result_first("select count(*) as num from %t up left join %t r on up.idval=r.rid where $cwheresql",$cparams);
+    $udata = $uids =array();
+
+    foreach(DB::fetch_all("select up.idval as rid,up.uid,up.ip,up.dateline,up.name,r.ext,r.isdelete,r.appid
+      from %t up left join %t r on up.idval=r.rid
+      where $swheresql order by up.dateline desc $limitsql  ",$sparams) as $v){
+        if(!$v['ext']){
+            $v['foldernames'] = [['path'=>lang('is_deleted')]];
+            $v['img']='';
+            $v['fileurl'] = '';
+           $v['name'] = $v['name'] ;
+        }else{
+            
+            if(!$v['isdelete']){
+                 $v['foldernames'] = C::t('pichome_folderresources')->get_folderpath_by_rid($v['rid']);
+                 $v['img'] = C::t('pichome_resources')->geticondata_by_rid($v['rid'],1);
+                 $v['dpath'] =  Pencode(array('path'=>$v['rid'],'perm'=>278784,'ishare'=>0,'isadmin'=>1),3600);
+                 $v['fileurl'] = getglobal('siteurl').'index.php?mod=details&isadmin=1#path='.$v['dpath'];
+            }elseif($v['isdelete'] == 1){
+                $v['foldernames'] = [['path'=>lang('recycle'),'url'=>getglobal('siteurl').'index.php?mod=pichome&op=library&do=filelist#appid='.$v['appid'].'&type=recycle&order=btime&asc=desc']];
+                $v['img'] = C::t('pichome_resources')->geticondata_by_rid($v['rid'],1);
+                $v['fileurl'] = '';
+            }else{
+                $v['foldernames'] = [];
+                $v['img']='';
+                $v['fileurl'] = '';
+            }
+             $v['name'] = $v['name'].'.'.$v['ext'] ;
+        }
+       
+        $v['dateline'] = dgmdate($v['dateline'],'Y-m-d H:i:s');
+         $data[] = $v;
+
+    }
+   
+   
+    if($count >= $limitstart+$limit){
+        $next = true;
+    }
+    exit(json_encode(array('data'=>$data,'total'=>$count,'next'=>$next,'page'=>$page,'isadmin'=>$isadmin,'navtitle'=>lang('uploadfiletitle').'-'.$navtitle)));
+}
 elseif($do == 'files'){//文件统计
     $next = false;
     $page = isset($_GET['page']) ? intval($_GET['page']):1;

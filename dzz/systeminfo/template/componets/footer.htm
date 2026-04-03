@@ -1,0 +1,4 @@
+<div class="page-footer" >
+    <el-text tag="p" style="display: flex;align-items: center;justify-content: center;"> Powered By&nbsp;<el-link href="https://www.oaooa.com" target="_blank" >FilePress</el-link>&nbsp;{$version_name} {$version}</el-text>
+    <el-text v-if="'{$_G['setting']['sitebeiantxt']}' || '{$_G['setting']['sitebeian']}'" tag="p" style="display: flex;align-items: center;justify-content: center;margin-top: 10px;">{$_G['setting']['sitebeiantxt']} <el-link href="https://beian.miit.gov.cn/" target="_blank">{$_G['setting']['sitebeian']}</el-link></el-text>
+</div>

@@ -15,7 +15,7 @@ class table_pichome_folderresources extends dzz_table
         parent::__construct();
     }
 
-    public function insert($setarr)
+    public function insert($setarr,$return_insert_id = false, $replace = false, $silent = false)
     {
         if (!isset($setarr['pathkey'])) {
             $setarr['pathkey'] = DB::result_first("select pathkey from %t where fid = %s", array('pichome_folder', $setarr['fid']));
@@ -35,7 +35,7 @@ class table_pichome_folderresources extends dzz_table
             }
             C::t('pichome_resources_attr')->update_attrs_by_ridFid($setarr['rid'], $setarr['fid'], $setarr['appid']);
             $fids = implode(',', $ofidarr);
-            C::t('pichome_resources')->update_by_rids($setarr['appid'], $setarr['rid'], ['fids' => $fids, 'lastdate' => TIMESTMP]);
+            C::t('pichome_resources')->update_by_rids($setarr['appid'], $setarr['rid'], ['fids' => $fids, 'lastdate' => TIMESTAMP]);
             C::t('pichome_folder')->add_filenum_by_fid($setarr, 1);
         }
 
@@ -58,7 +58,7 @@ class table_pichome_folderresources extends dzz_table
             $ofidarr = explode(',', $ofids);
             $fidarr = array_diff($ofids, $fids);
             $fids = implode(',', $fidarr);
-            C::t('pichome_resources')->update_by_rids($v['appid'], $v['rid'], ['fids' => $fids, 'lastdate' => TIMESTMP]);
+            C::t('pichome_resources')->update_by_rids($v['appid'], $v['rid'], ['fids' => $fids, 'lastdate' => TIMESTAMP]);
             parent::delete($v['id']);
         }
     }
@@ -76,7 +76,7 @@ class table_pichome_folderresources extends dzz_table
             $dindex = array_search($v['fid'], $fidarr);
             unset($fidarr[$dindex]);
             $fids = implode(',', $fidarr);
-            C::t('pichome_resources')->update_by_rids($v['appid'], $v['rid'], ['fids' => $fids, 'lastdate' => TIMESTMP]);
+            C::t('pichome_resources')->update_by_rids($v['appid'], $v['rid'], ['fids' => $fids, 'lastdate' => TIMESTAMP]);
             //减少目录文件数
             if (!$rdata['isdelete']) C::t('pichome_folder')->add_filenum_by_fid($v['fid'], -1);
 
@@ -127,6 +127,25 @@ class table_pichome_folderresources extends dzz_table
         }
         Hook::listen('lang_parse', $foldernames, ['getFolderLangData', 1]);
         return $foldernames;
+    }
+
+    public function get_folderpath_by_rid($rid){
+        $folderpaths = [];
+        foreach (DB::fetch_all("select f.fid,f.fname,f.pathkey,f.appid from %t  fr left join %t f on f.fid=fr.fid and !isnull(fr.id) where rid = %s", array($this->_table, 'pichome_folder', $rid)) as $v) {
+            if (isset($v['fname'])) {
+                $fidarr = str_split($v['pathkey'],19);
+                $folernames = [];
+                foreach(DB::fetch_all("select fname,fid,pathkey from %t where fid in(%n)",array('pichome_folder',$fidarr)) as $fv){
+                    $foldernames[$fv['fid']] =['fname'=>$fv['fname'],'pathkey'=>$fv['pathkey']];
+                    Hook::listen('lang_parse', $foldernames, ['getFolderLangData', 1]);
+                }
+                $folernamearr = array_column($foldernames,'fname');
+                $appdata = C::t('pichome_vapp')->fetchByAppid($v['appid']);
+                $folderpaths[] = ['path'=>$appdata['appname'].'/'.implode('/',$folernamearr),'url'=>getglobal('siteurl').'index.php?mod=pichome&op=library&do=filelist#appid='.$v['appid'].'&fid='.$v['fid'].'&order=btime&asc=desc'];
+            
+            }
+        }
+        return $folderpaths;
     }
 
     public function fetch_rid_by_fids($fids, $limit = 6, $rid = '')

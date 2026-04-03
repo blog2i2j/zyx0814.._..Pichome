@@ -11,7 +11,13 @@ const menuitem = {
                             <template #error><div class="el-image__placeholder"></div></template>
                         </el-image>
                         {{item.bannername}}
-                        <div class="title-text" @click.stop="handleSelect(item)"></div>
+                       
+                        <template  v-if="parseInt(item.btype) != 5">
+                               <el-link class="title-text" :href="item.url" :underline="false" @click.stop="handleSelect(item)"  ></el-link>
+                        </template>
+                        <template v-else>
+                            <div class="title-text"></div>
+                        </template>
                     </template>
                     <menuitem 
                         :datalist="item.children"
@@ -29,7 +35,12 @@ const menuitem = {
                             <template #error><div class="el-image__placeholder"></div></template>
                         </el-image>
                         {{item.bannername}}
-                        <div class="title-text" @click.stop="handleSelect(item)"></div>
+                         <template  v-if="parseInt(item.btype) != 5">
+                               <el-link class="title-text" :href="item.url" :underline="false" @click.stop="handleSelect(item)"  ></el-link>
+                        </template>
+                        <template v-else>
+                            <div class="title-text"></div>
+                        </template>
                     </template>
                 </el-menu-item>
             </template>

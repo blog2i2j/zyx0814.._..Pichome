@@ -1,0 +1,76 @@
+<van-action-sheet
+	style="padding-top: 10px;"
+	v-model="ImagesMore.visible"
+	:actions="ImagesMore.data"
+	cancel-text="{lang cancel}"
+	@select="ImagesMoreSheetChange"
+	@close="ImagesMoreSheetClose">
+</van-action-sheet>
+<script type="text/javascript">
+	var ImagesMoreMixin = {
+		data(){
+			return {
+				ImagesMore:{
+					visible:false,
+					dpath:'',
+					data:[]
+				}
+			}
+		},
+		methods:{
+			async ImagesMoreSheetChange(data){
+				var self = this;
+				switch(data.type){
+					case 'share':
+						var res = await axios.post(MOD_URL+'&op=collect&do=addshare',{lid:self.ParamImages.operation.lids.join(',')});
+						if(res == 'intercept'){
+							return false;
+						}
+						var data = res.data;
+						if(data.success){
+							self.$dialog.confirm({
+								title: '',
+								confirmButtonText:'{lang copy_link}',
+								message: data.success,
+							}).then(function(){
+								self.CommonCopyTxt(data.success)
+							}).catch(function(){
+								// on cancel
+							});
+						}else{
+							self.$toast.fail('{lang get_data_fail}');
+						}
+					break;
+					case 'down':
+						window.open(SITEURL+MOD_URL+'&op=download&dpath='+self.ImagesMore.dpath);
+					break;
+					case 'cove':
+						var res = await axios.post(MOD_URL+'&op=collect&do=setcovert',{
+							clid:self.ParamBasic.clid,
+							lid:self.ParamImages.operation.lids.join(',')
+						});
+						if(res == 'intercept'){
+							return false;
+						}
+						var json = res.data;
+						if(json.success){
+							self.$notify({ type: 'success', message: '{lang set_cover_success}' });
+						}else{
+							self.$notify({ type: 'warning', message: json.error });
+						}
+					break;
+					case 'move':
+					case 'collect':
+						self.ParamImages.operation.type = data.type;
+						self.ImagesClassify.PopupVisible = true;
+					break;
+				}
+				self.ImagesMore.visible = false;
+			},
+			ImagesMoreSheetClose(){
+				this.ParamImages.operation.lids = [];
+				this.ImagesMore.data = [];
+			}
+		}
+	};
+</script>

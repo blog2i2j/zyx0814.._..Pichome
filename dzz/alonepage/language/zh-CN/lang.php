@@ -1,9 +1,11 @@
 <?php
 $lang = array(
+    'appname'=>'单页管理',
     'Image_address'=>'图片地址',
     'Link_address'=>'链接地址',
     'page'=>'单页',
     'column'=>'栏目',
+    'publish_collect'=>'合集',
     'tip1'=>'数量0或者不填为不限数量',
     'tip2'=>'数据缓存时间间隔，单位秒；0：不使用缓存',
     'tip3'=>'更多链接',
@@ -19,4 +21,14 @@ $lang = array(
     'search_cat'=>'搜索分类',
     'default_groupname'=>'默认分类',
     'index'=>'序号',
+    'image_mix'=>'图文混排',
+    'title_color'=>'标题颜色',
+    'message_color'=>'描述颜色',
+    'file_search'=>'文件搜索',
+    'publish_search'=>'搜索',
+    'alignment'=>'对齐方式',
+    'alignment_left'=>'左对齐',
+    'alignment_center'=>'居中对齐',
+    'alignment_right'=>'右对齐',
+
 );

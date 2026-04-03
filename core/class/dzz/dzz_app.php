@@ -180,7 +180,6 @@ class dzz_app extends dzz_base{
             $sitepath = preg_replace("/\/archiver/i", '', $sitepath);
         }
         $_G['isHTTPS'] = $this->is_HTTPS();//($_SERVER['HTTPS'] && strtolower($_SERVER['HTTPS']) != 'off') ? true : false;
-
         if(strpos($_SERVER['HTTP_HOST'],':')!==false){
             list($host,$siteport) = explode(':',$_SERVER['HTTP_HOST']);
             $_G['siteport']=':'.intval($siteport);
@@ -385,7 +384,7 @@ class dzz_app extends dzz_base{
         if($this->config['output']['forceheader']) {
             @header('Content-Type: text/html; charset='.CHARSET);
         }
-		if($this->config['localurl']){
+		if(isset($this->config['localurl'])){
 			 setglobal('localurl', $this->config['localurl']);
 		}
 

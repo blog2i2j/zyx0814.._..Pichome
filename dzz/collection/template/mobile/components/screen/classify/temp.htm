@@ -1,0 +1,29 @@
+<div class="screen-item ">
+<!-- 	<template v-if="ParamScreen.value.classify.loading">
+		<van-loading class="custom-load" size="24px" type="spinner" color="var(--header-text)" vertical>加载中...</van-loading>
+	</template> -->
+	<!-- <template v-else> -->
+			<div class="screen-classify-collapse">
+				<classify-all  
+					v-if="ParamScreen.value.classify.isshowloading"
+					:parammodel="ParamScreen.value.classify" 
+					:paramdata="ParamScreen.value.classify.data" 
+					@select="screenclassifychange" 
+					:expandedkeys="ParamScreen.value.classify.DefaultExpandedKeysInit" 
+					:clid="ParamBasic.clid" 
+					:shareid="Documentshareid"
+					:ischeckedchild="true" 
+					@append="ScreenClassifysAppenddata"
+					:level="0"></classify-all>
+			</div>
+		<template  v-if="ParamScreen.value.classify.data && !ParamScreen.value.classify.data.length">
+			<div class="notScreen">
+				<div>
+					<img src="dzz/pichome/image/notScreen.png" >
+					<div>{lang No_filtering_criteria}</div>
+				</div>
+			</div>
+		</template>
+		
+	<!-- </template> -->
+</div>

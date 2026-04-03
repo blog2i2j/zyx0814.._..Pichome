@@ -31,6 +31,7 @@ if($do=='checkpassword'){
 }
 
 if($do=='delete') {
+
     $id = intval($_GET['id']);
     if (!$data = C::t('pichome_share')->fetch($id)) {
         exit(json_encode(array('success' => false, 'msg' => lang("share_file_iscancled"))));
@@ -45,6 +46,7 @@ if($do=='delete') {
         exit(json_encode(array('success' => false, 'msg' => lang("delete_unsuccess"))));
     }
 } elseif ($do == 'getShareUser') {//获取分享用户列表
+
     $q=trim($_GET['q']);
     $params=['pichome_share'];
     $sql='1';
@@ -74,65 +76,98 @@ if($do=='delete') {
         'password'=>$data['password'],
         'fendtime'=>$data['fendtime'],
         'perm'=>perm::check('download2',intval($data['perm']))?true:false,
+        'sperm'=>intval($data['sperm']),
+
     );
+    if($ret['sperm'] && !perm::check('download2',$ret['sperm'])){
+        $ret['allowdownload']=0;
+    }else{
+        $ret['allowdownload']=1;
+    }
     exit(json_encode(['success' => true, 'data' => $ret]));
 } elseif ($do == 'getShareDataById') {//获取分享数据
-    $id=trim($_GET['id']);
+    $sid=trim($_GET['sid']);
+    $filepaths=($_GET['filepaths']);
     $stype=intval($_GET['stype']);
+    $sperm=intval($_GET['sperm']);
     $uid=$_G['uid'];
+
     $sharedata=array();
-    if(!$data=DB::fetch_first("select * from %t where uid=%d and stype=%d and filepath=%s",array('pichome_share',$uid,$stype,$id))){
-
-        switch ($stype){
-            case 0://文件
-                if($resourcedata= C::t('pichome_resources')->fetch($id)){
-                    Hook::listen('lang_parse', $resourcedata,['getResourcesLangData']);
-                    $data['title']=$resourcedata['name'];
-                }
-            break;
-            case 1://收藏夹文件
-                if($cdata = C::t('pichome_collectlist')->fetch($id) ){
-                    $resource= C::t('pichome_resources')->fetch($cdata['rid']);
-                    Hook::listen('lang_parse', $resource,['getResourcesLangData']);
-                    $data['title']=$resource['name'];
-                }
-
-                break;
-            case 2://收藏夹
-                if($cdata = C::t('pichome_collect')->fetch($id)){
-                    Hook::listen('lang_parse', $cdata,['getCollectcatLangData']);
-                    $data['title']=$cdata['name'];
-                }
-
-                break;
-            case 3: //专辑
-                $tabstatus = 0;
-                Hook::listen('checktab', $tabstatus);
-                if($tabstatus){
-                    if($cdata = C::t('#tab#tab')->fetch($id)){
-                        Hook::listen('lang_parse', $cdata,['getTablangData']);
-                        $data['title']=$cdata['tabname'];
-                    }
-                }
-
-
-                break;
-        }
-        $data['perm']=7;
-        $sharedata['sid']=0;
-    }else{
-
-        $sharedata=C::t('pichome_share')->fetch_by_sid($data['id']);
+    if($sid){
+        $sharedata=C::t('pichome_share')->fetch_by_sid($sid);
         $sharedata['sid']=$sharedata['id'];
         $sharedata['perm']=intval($sharedata['perm']);
-
-        $data['title']=$sharedata['title'];
-        $data['password']=$sharedata['password'];
-        $data['endtime']=$sharedata['endtime'];
-        $data['perm']=intval($sharedata['perm']);
-        $data['sid']=$sharedata['id'];
-
+        $sharedata['sperm']=intval($sharedata['sperm']);
     }
+    elseif($filepaths) {
+
+        if (!$sharedata = DB::fetch_first("select * from %t where uid=%d and stype=%d and filepath=%s", array('pichome_share', $uid, $stype, implode(',', $filepaths)))) {
+
+            switch ($stype) {
+                case 0://文件
+
+                    if ($resourcedata = C::t('pichome_resources')->fetch($filepaths[0])) {
+                        Hook::listen('lang_parse', $resourcedata, ['getResourcesLangData']);
+                        $resourcedata['name']=preg_replace("/\.".$resourcedata['ext']."$/i", "", $resourcedata['name']);
+                        if($resourcedata['ext']){
+                            $resourcedata['title']=$resourcedata['name'].".".$resourcedata['ext'];
+                        }
+                        $sharedata['title']=$resourcedata['title'];
+                    }
+                    break;
+                case 1://收藏夹文件
+                    if($cdata = C::t('pichome_collectlist')->fetch($filepaths[0]) ){
+                        $resource= C::t('pichome_resources')->fetch($cdata['rid']);
+                        Hook::listen('lang_parse', $resource,['getResourcesLangData']);
+                        $sharedata['title']=$resource['name'];
+                    }
+
+                    break;
+
+                case 2://收藏夹
+                    if ($cdata = C::t('pichome_collect')->fetch($filepaths[0])) {
+                        Hook::listen('lang_parse', $cdata, ['getCollectcatLangData']);
+                        $sharedata['title'] = $cdata['name'];
+                    }
+
+                    break;
+                case 3: //专辑
+                    $tabstatus = 0;
+                    Hook::listen('checktab', $tabstatus);
+                    if ($tabstatus) {
+                        if ($cdata = C::t('#tab#tab')->fetch($filepaths[0])) {
+                            Hook::listen('lang_parse', $cdata, ['getTablangData']);
+                            $sharedata['title'] = $cdata['tabname'];
+                        }
+                    }
+                    break;
+            }
+            if(count($filepaths)>1){
+                $sharedata['title'].=' '.lang('deng');
+            }
+            $sharedata['perm'] = 7;
+            $sharedata['sperm'] = $sperm;
+            $sharedata['sid'] = 0;
+            $sharedata['id'] = 0;
+        }else{
+            $sharedata=C::t('pichome_share')->fetch_by_sid($sharedata['id']);
+            $sharedata['perm']=intval($sharedata['perm']);
+            $sharedata['sperm']=intval($sharedata['sperm']);
+
+        }
+    }
+    $data=array();
+    $data['title']=$sharedata['title'];
+    $data['password']=$sharedata['password']?$sharedata['password']:'';
+    $data['endtime']=$sharedata['endtime'];
+    $data['times']=intval($sharedata['times']);
+    $data['perm']=$sharedata['perm'];
+    if(isset($_GET['sperm'])){
+        $data['sperm']=intval($_GET['sperm']);
+    }else{
+        $data['sperm']=$sharedata['sperm'];
+    }
+    $data['sid']=$sharedata['id'];
 
     $fendtime='';
 
@@ -140,18 +175,25 @@ if($do=='delete') {
         $fendtime=dgmdate($data['endtime'], 'Y-m-d');
     }
     $ret=array(
-        'sid'=>$data['id'],
-        'id'=>$id,
+        'sid'=>$data['sid'],
         'stype'=>$stype,
         'title'=>$data['title'],
-        'times'=>intval($data['times']),
+        'times'=>$data['times'],
         'password'=>$data['password'],
         'fendtime'=>$fendtime,
-        'perm'=>perm::check('download2',intval($data['perm']))?true:false,
+        'perm'=>perm::check('download2',$data['perm'])?true:false,
+        'sperm'=>$data['sperm']
     );
+    if($ret['sperm'] && !perm::check('download2',$ret['sperm'])){
+        $ret['perm']=false;
+        $ret['allowdownload']=0;
+    }else{
+        $ret['allowdownload']=1;
+    }
     exit(json_encode(['success' => true, 'data' => $ret,'sharedata'=>$sharedata]));
 } elseif ($do == 'shareEditSubmit') {//编辑分享提交
     $sid = intval($_GET['sid']);
+    $share=C::t('pichome_share')->fetch($sid);
     $title = isset($_GET['title']) ? getstr($_GET['title']) : '';
     $password = isset($_GET['password']) ? trim($_GET['password']) : '';
     $endtime = isset($_GET['fendtime']) ? strtotime($_GET['fendtime']) : 0;
@@ -162,7 +204,24 @@ if($do=='delete') {
         'password' => $password,
         'endtime' => $endtime,
         'perm' => $perm?perm::setPerm(['read1','read2','download1','download2'],1):7,
+
     );
+    if(isset($_GET['sperm']) && $_GET['sperm']){
+        $setarr['sperm']=intval($_GET['sperm']);
+        $setarr['perm']=perm::mergePower($setarr['sperm'],$setarr['perm']);
+    }
+    //判断是否过期
+    if ($setarr['endtime'] && ($setarr['endtime']+60*60*24) < TIMESTAMP) {
+        if($share['status']>-1) $setarr['status']='-1';
+    }elseif($share['status']=-1) {
+        $setarr['status']=0;
+    }
+    if ($setarr['times'] && $setarr['times'] <= $share['count']) {
+        if($share['status']>-1) $setarr['status']=-2;
+    }elseif($share['status']=-2) {
+        $setarr['status']=0;
+    }
+
     C::t('pichome_share')->update($sid, $setarr);
     $data=C::t('pichome_share')->fetch_by_sid($sid);
 
@@ -174,19 +233,14 @@ if($do=='delete') {
         exit(json_encode(['success' => false, 'msg' => lang('share_title_empty')]));
     }
     $stype=intval($_GET['stype']);
-    if($stype>0){//非文件ID
-        $id=intval($_GET['id']);
-    }else{//文件rid
-        if(!preg_match("/^\w{32}$/i",$_GET['id'])){
-            exit(json_encode(['success' => false, 'msg' => lang('param rid error')]));
-        }
-        $id=htmlspecialchars($_GET['id']);
+    $filepaths=$_GET['filepaths'];
+    if(!is_array($filepaths)){
+        exit(json_encode(['success' => false, 'msg' => 'parameter error']));
     }
     $password = isset($_GET['password']) ? trim($_GET['password']) : '';
     $endtime = isset($_GET['fendtime']) ? strtotime($_GET['fendtime']) : 0;
 
     $perm = ($_GET['perm']=='true') ? 1 : 0;
-
     $params = array(
         'title' => $title,
         'times'=>intval($_GET['times']),
@@ -194,8 +248,12 @@ if($do=='delete') {
         'endtime' => $endtime,
         'perm' => $perm?perm::setPerm(['read1','read2','download1','download2'],1):7,
     );
+    if(isset($_GET['sperm']) && $_GET['sperm']){
+        $params['sperm']=intval($_GET['sperm']);
+        $params['perm']=perm::mergePower($params['sperm'],$params['perm']);
+    }
 
-    if(!$data=C::t('pichome_share')->add_share($id,$stype, $params)){
+    if(!$data=C::t('pichome_share')->add_share($filepaths,$stype, $params)){
         exit(json_encode(['success' => false, 'msg' => lang('share add error')]));
     }
 
@@ -266,7 +324,6 @@ if($do=='delete') {
 	if($count = DB::result_first("select COUNT(*) from %t where $wheresql",$params)) {
         foreach (DB::fetch_all("select id from %t where $wheresql $ordersql $limitsql", $params) as $v) {
             $v = C::t('pichome_share')->fetch_by_sid($v['id']);
-
             $data[] = $v;
         }
     }

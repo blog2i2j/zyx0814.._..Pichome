@@ -3,22 +3,27 @@ const Tmplink = {
         model:{
             required:true,
             type: Object,
-            default:{},
+            default:{}
         },
         field:{
             required:true,
             type: Object,
-            default:{},
+            default:{}
         },
         ParenIndex:{
             required:true,
             type: Number,
-            default:0,
+            default:0
         },
         typecollection:{
             required:true,
             type: Object,
-            default:{},
+            default:{}
+        },
+        licenseversion:{
+            required:true,
+            type: Number,
+            default:0
         }
     },
     template:`
@@ -58,11 +63,13 @@ const Tmplink = {
 
                 <template #default="scope">
                     <div style="display:flex;">
-                        <el-select v-model="scope.row.link" style="width: 110px;margin-right:6px;" @change="scope.row.linkval=''">
+                        <el-select v-model="scope.row.link" style="width: 110px;margin-right:6px;" @change="handleMoreChange(scope.$index)">
                             <el-option :label="Lang.text8" value="0"></el-option>
                             <el-option :label="Lang.text9" value="1"></el-option>
                             <el-option :label="Lang.text10" value="2"></el-option>
                             <el-option :label="Lang.text11" value="3"></el-option>
+                             <el-option v-if="licenseversion>1" :label="Lang.text12" value="4"></el-option>
+                            <el-option :label="Lang.text13" value="5"></el-option>
                         </el-select>
                         <template v-if="parseInt(scope.row.link) == 0">
                             <el-input v-model="scope.row.linkval"></el-input>
@@ -77,7 +84,7 @@ const Tmplink = {
                                 <el-option v-for="item in typecollection.alonepage" :label="item.pagename" :value="item.id" :key="item.id"></el-option>
                             </el-select>
                         </template>
-                        <template v-else-if="parseInt(scope.row.link) == 4">
+                        <template v-else-if="licenseversion>1 && parseInt(scope.row.link) == 4">
                             <el-select v-model="scope.row.linkval" style="width: 100%">
                                 <el-option v-for="item in typecollection.tab" :label="item.name" :value="item.gid" :key="item.gid"></el-option>
                             </el-select>
@@ -92,13 +99,24 @@ const Tmplink = {
                                 :props="{value:'id',label:'bannername',checkStrictly:true}" 
                                 clearable></el-cascader>
                         </template>
+                        <template v-else-if="parseInt(scope.row.link) == 5">
+                            <el-select 
+                                v-model="scope.row.linkval" 
+                                filterable
+                                remote
+                                :remote-method="getPublishList"
+                                :loading="DataLoading"
+                                style="width: 100%">
+                                <el-option v-for="item in DataList1" :label="item.name" :value="item.id" :key="item.id"></el-option>
+                            </el-select>
+                        </template>
                     </div>
                 </template>
             </el-table-column>
             <el-table-column width="80" align="center">
                 <template #header>
                     <language 
-                        v-if="model.data[0].langkey.tdata" 
+                        v-if="model.data[0].langkey && model.data[0].langkey.tdata" 
                         :langkey="model.data[0].langkey.tdata"
                         @change="changeContent"
                         :other="typecollection"
@@ -126,9 +144,13 @@ const Tmplink = {
             text9:__lang.library,
             text10:__lang.page,
             text11:__lang.column,
+            text12:__lang.album,
+            text13:__lang.publish,
         };
         let curRowIndex = ref(null);//当前第几个上传
         let DomTable = ref(null);
+        let DataList1 = ref([]);
+        let DataLoading = ref(false);
         if(props.model.data && props.model.data.length && props.model.data[0].data.length){
             props.model.data[0].data.forEach(item => {
                 item.key = getId();
@@ -159,8 +181,12 @@ const Tmplink = {
         function handleUploadSucess(response, file, fileList){//上传成功
             if(response.files && response.files.length){
                 let files = response.files[0];
-                props.model.data[0].data[curRowIndex.value].aid = files.data.aid;
-                props.model.data[0].data[curRowIndex.value].img = files.data.img;
+                if(files.error){
+                    ElementPlus.ElMessage({message:files.error,type:'error'});
+                }else if( files.data) {
+                    props.model.data[0].data[curRowIndex.value].aid = files.data.aid;
+                    props.model.data[0].data[curRowIndex.value].img = files.data.img;
+                }
             }
 
         };
@@ -194,6 +220,28 @@ const Tmplink = {
             
 
         }
+        async function getPublishList(query){
+            DataLoading.loading = true;
+            let ids=[];
+            props.model.data[0].data.forEach(item => {
+                if(item.link==5) ids.push(item.linkval);
+            });
+            const {data: res} = await axios.post(BasicUrl+'getPublishList',{q: query,ids:ids});
+            if(res.success){
+                DataList1.value = res.data;
+            }else{
+                ElementPlus.ElMessage.error(res.msg || __lang.get_data_fail);
+            }
+            DataLoading.loading = false;
+        }
+        function handleMoreChange(index){
+            let val = props.model.data[0].data[index].link;
+            props.model.data[0].data[index].linkval='';
+            if( val == '5'){
+                getPublishList();
+            }
+        }
+        getPublishList();
         onMounted(function(){//排序
             let tbody = DomTable.value.$el.querySelector('.el-table__body-wrapper tbody');
 				Sortable.create(tbody, {
@@ -213,7 +261,11 @@ const Tmplink = {
             curRowIndex,
             handleUploadSucess,
             handleImgDelte,
-            changeContent
+            changeContent,
+            getPublishList,
+            DataList1,
+            DataLoading,
+            handleMoreChange
         }
     }
 }

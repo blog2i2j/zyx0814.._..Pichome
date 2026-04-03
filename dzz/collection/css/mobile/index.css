@@ -1,0 +1,122 @@
+.conter-toast {
+    z-index: 5001 !important;
+}
+
+
+
+
+.favorites-list{
+	/* padding: 0 8px; */
+	/* padding-top: 1rem; */
+	/* height: 100%; */
+	/* overflow: auto; */
+}
+.favorites-list .van-row{
+	overflow: hidden;
+	margin-right: -8px;
+}
+.favorites-list .van-row .van-col{
+	float: left;
+	width: 50%;
+	padding-right: 8px;
+}
+@media screen and (min-width: 768px) {
+	.favorites-list .van-row .van-col{
+		width: 33.3333%;
+	}
+}
+@media screen and (min-width: 1024px) {
+	.favorites-list .van-row .van-col{
+		width: 236px;
+	}
+}
+.favorites-list .own-single{
+    width: 100%;
+    padding-bottom: 100%;
+	margin-bottom: 16px;
+	position: relative;
+}
+.favorites-list .own-single .item-single{
+   position: absolute;
+   width: 100%;
+   height: 100%;
+   display: flex;
+   flex-flow: column;
+}
+.favorites-list .own-single.own-gather .item-single{
+   position: absolute;
+   width: 100%;
+   height: 100%;
+   display: flex;
+   flex-flow: column;
+}
+.favorites-list .own-single.own-gather .item-single  .img-box{
+	border: 0;
+ }
+.favorites-list .own-single .item-single .img-box{
+   display: block;
+   width: 100%;
+   height: 100%;
+   position: relative;
+   overflow: hidden;
+   border: var(--el-border);
+}
+.favorites-list .own-single .item-single .img-box .slice{
+	display: block;
+    width: 50%;
+    height: 100%;
+    border-radius: 3px;
+    background-color: var(--el-bg-color);;
+    border: var(--el-border);
+    position: absolute;
+    right: 0;
+    top: 0;
+}
+.favorites-list .own-single .item-single .img-box.img-checked .left{
+    height: 100%;
+    width: 65%;
+    float: left;
+    border-right: var(--el-border);
+    background-color: var(--el-bg-color);;
+}
+.favorites-list .own-single .item-single .img-box.img-checked .right{
+    width: 35%;
+	float: left;
+	height: 100%;
+	display: flex;
+	flex-flow: column;
+}
+.favorites-list .own-single .item-single .img-box.img-checked .right .right-block{
+	height: 50%;
+	background-color: var(--el-bg-color);;
+}
+.favorites-list .own-single .item-single .img-box.img-checked .right .right-block:first-child{
+	border-bottom: var(--el-border);
+}
+.favorites-list .own-single .item-single .img-box .img{
+	object-fit: cover;
+	vertical-align: top;
+	width: 100%;
+	height: 100%;
+}
+.favorites-list .own-single .item-single .information{
+    color: var(--content-text);
+    padding-top: 0.375rem;
+	min-height: 43px;
+}
+.favorites-list .own-single .item-single .information .title{
+    font-size: 1rem;
+    font-weight: 700;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.favorites-list .own-single .item-single .information .message{
+	font-size: 0.75rem;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+
+

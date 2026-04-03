@@ -13,7 +13,7 @@ if(!defined('IN_OAOOA')) {
 global $_G;
 // Hook::listen('check_login');//检查是否登录，未登录跳转到登录界面
 $uid = $_G['uid'];
-include libfile('function/filerouterule');
+//include libfile('function/filerouterule');
 require libfile('function/code');
 $operation = $_GET['operation'] ? trim($_GET['operation']) : '';
 if($operation == 'getApp'){

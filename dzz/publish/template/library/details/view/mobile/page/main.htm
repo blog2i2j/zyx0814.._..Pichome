@@ -1,0 +1,170 @@
+<!--{template common/container/pc/header_start}-->
+<link rel="stylesheet" href="static/scss/default/index.css?{VERHASH}">
+<link rel="stylesheet" href="{MOD_PATH}/template/library/details/view/mobile/assets/css/index.css?{VERHASH}">
+<link rel="stylesheet" href="{MOD_PATH}/template/library/details/view/mobile/assets/css/xuanzhuan/index.css?{VERHASH}">
+<script src="{MOD_PATH}/template/library/details/view/mobile/assets/js/pinchzoom.js?{VERHASH}"></script>
+<script src="{MOD_PATH}/template/library/details/view/mobile/assets/js/imagezoom.js?{VERHASH}"></script>
+<script type="text/javascript" src="{MOD_PATH}/template/library/default/view/mobile/assets/js/menu.js?{VERHASH}"></script>
+<script>
+    function debounce(fun, delay) {
+        var time;
+        return function(args) {
+            var that = this;
+            var _args = args;
+            if (time) clearTimeout(time);
+            time = setTimeout(function() {
+                fun.call(that, _args)
+            }, delay)
+        }
+    };
+</script>
+<!--{template common/container/pc/header_end}-->
+<div id="dzzoffice">
+    <el-container class="page-main">
+       
+        <el-header class="page-header"  height="60px" style="--el-header-padding: 0 10px;">
+             <!--{template library/details/view/mobile/components/header}-->
+        </el-header>
+        <el-container>
+            <el-main style="overflow: hidden;padding:0" class="dzz-container">
+                <!--{template library/details/view/mobile/components/main}-->
+            </el-main>
+        </el-container>
+        <el-footer class="page-header" id="footer_header"  height="60px" style="padding: 0px 10px;border: 0;border-top:1px solid var(--el-border-color);" v-if="pageset.topNavigation">
+			<!--{template library/details/view/mobile/components/footer}-->
+		</el-footer>
+    </el-container>
+    <!--{template library/details/view/mobile/components/left}-->
+</div>
+<script type="text/javascript">
+    const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch,defineAsyncComponent, onBeforeUpdate,onUnmounted , onUnmounted } = Vue;
+    const dzzoffice = createApp({
+        data() {
+            return {
+                DocumentThemeColor:'',
+                keyword:'',
+                scrollref:'',
+                DocumentAppid:'{$data['pval']}',
+                ContentData:[],
+                pageset:$json_pageset,
+                headeralldata:{
+                    data:[],
+                    message:{
+                        sitebeiantxt:'',
+                        sitebeian:'',
+                    }
+                },
+                HtmlLoading:true,
+            }
+        },
+        mixins:[FooterMixin,HeaderMixins,leftMixins,MainMixins],
+        watch:{
+			DocumentThemeColor:{
+				handler(newval){
+					document.querySelector('html').className = newval;
+				},
+				deep:true,
+				// immediate:true
+			}
+		},
+        created() {
+            let self=this;
+            this.getBannerData();
+            if(location.hash){
+
+                const curentkey=self.CommonGetHashParam('id');
+                if(curentkey){
+                    let arr=curentkey.split('/');
+                    self.LeftTree.Currentkey =  arr.pop();
+                    if(arr.length){
+                        self.LeftTree.defaultOpenkeys = arr;
+                        self.LeftTree.defaultOpenkeysInit = arr;
+                    }
+                }else{
+                    self.LeftTree.Currentkey=null;
+                }
+
+                let keyword = this.CommonGetHashParam('keyword');
+                if(keyword){
+                    self.LeftTree.filterText = decodeURI(keyword);
+                    self.LeftTreeSearchFolder(keyword);
+
+                }
+            }
+            this.$nextTick(function(){
+                self.LeftTree.show = true;
+            })
+        },
+        methods: {
+
+            CommonGetHashParam(name,url){
+
+                if(!url){
+                    url=location.hash;
+                }
+                if (!name) {
+                    return '';
+                }
+                var reg = new RegExp("(^#|&)" + name + "=([^&]*)(&|$)");
+                if (!url) {
+                    return '';
+                }
+                var r = url.match(reg);
+                if (r !== null) {
+                    return decodeURIComponent(r[2]);
+                }
+            },
+            HandleElScrollbar(data){
+				var self = this;
+				// self.$refs.RefImageLayout.HandleElScrollbar();
+                if(self.$refs.domchild && self.$refs.domchild.length){
+                    for (let index = 0; index < self.$refs.domchild.length; index++) {
+                        const element = self.$refs.domchild[index];
+                        if(element.HandleElScrollbar){
+                            element.HandleElScrollbar();
+                        }
+                    }
+                }
+			},
+
+            DocumentThemeChange(){
+				if(this.DocumentThemeColor=='light'){
+					this.DocumentThemeColor='dark';
+					localStorage.setItem('theme','dark');
+				}else{
+					this.DocumentThemeColor='light';
+					localStorage.setItem('theme','light');
+				}
+				
+			},
+        },
+        mounted() {
+            let self = this;
+            //主题颜色
+			let theme = localStorage.getItem('theme');
+			if(theme){
+				this.DocumentThemeColor=theme;
+			}else{
+				this.DocumentThemeColor = 'light'
+			}
+        },
+        components: {
+			comavatar,
+            imagezoom,
+            menuitem
+		},
+    });
+    dzzoffice.use(ElementPlus, {
+        locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+    });
+    for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+        dzzoffice.component(key, component)
+    }
+
+    dzzoffice.component('international',international);
+    // 屏蔽警告信息
+    dzzoffice.config.warnHandler = function(){return null};
+    dzzoffice.mount('#dzzoffice');
+</script>
+
+<!--{template common/container/pc/footer}-->

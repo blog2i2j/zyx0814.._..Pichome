@@ -15,7 +15,7 @@
             parent::__construct();
         }
         
-        public function insert($setarr)
+        public function insert($setarr, $return_insert_id = false, $replace = false, $silent = false)
         {
             if (DB::result_first("select count(rid) from %t where rid = %s", array($this->_table, $setarr['rid']))) {
                 $rid = $setarr['rid'];

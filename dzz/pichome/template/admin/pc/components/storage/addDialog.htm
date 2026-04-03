@@ -7,54 +7,56 @@
 	v-model="AddDialog.dialogVisible">
 	<el-form ref="AddDialogref" :model="AddDialog" label-width="200px">
 		<el-form-item class="title" label="{lang qocs_api}"></el-form-item>
-		<el-form-item 
+		<el-form-item
 			prop="coludname"
 			label="{lang storage_location}：" >
 			<el-input class="maxWidth " v-model="AddDialog.coludname"></el-input>
 		</el-form-item>
 		<el-form-item
 			prop="appid"
-			label="appid：" 
+			label="appid："
 			:rules="{required: true, message: 'appid {lang unallow_empty}', trigger: 'blur'}">
 			<el-input class="maxWidth " v-model="AddDialog.appid"></el-input>
 		</el-form-item>
-		<el-form-item 
+		<el-form-item
 			prop="appkey"
 			label="secretid："
 			:rules="{required: true, message: 'secretid {lang unallow_empty}', trigger: 'blur'}">
 			<el-input class="maxWidth " v-model="AddDialog.appkey"></el-input>
 		</el-form-item>
-		<el-form-item 
+		<el-form-item
 			prop="appsecret"
 			label="sercertkey："
 			:rules="{required: true, message: 'sercertkey {lang unallow_empty}', trigger: 'blur'}">
 			<el-input class="maxWidth " v-model="AddDialog.appsecret"></el-input>
 		</el-form-item>
 		<el-form-item class="title" label="{lang bucket_settings}"></el-form-item>
-		<el-form-item 
+		<el-form-item
 			prop="bucket"
 			label="{lang bucket_name}："
 			:rules="{required: true, message: '{lang bucket_name}{lang unallow_empty}', trigger: 'blur'}">
 			<el-input class="maxWidth " v-model="AddDialog.bucket"></el-input>
 		</el-form-item>
-		<el-form-item 
+		<el-form-item
 			prop="region"
 			label="{lang bucket_region}："
 			:rules="{required: true, message: '{lang bucket_region}{lang unallow_empty}', trigger: 'blur'}">
 			<el-input class="maxWidth " v-model="AddDialog.region"></el-input>
 			<p class="tipTxt" style="margin: 0;">{lang example}：ap-beijing</p>
 		</el-form-item>
-		<el-form-item 
+		<el-form-item
 			prop="realmname"
 			label="{lang visit_domain}："
 			:rules="{required: true, message: '{lang visit_domain}{lang unallow_empty}', trigger: 'blur'}">
 			<el-input class="maxWidth " v-model="AddDialog.realmname"></el-input>
 		</el-form-item>
 	</el-form>
-	<span #footer class="dialog-footer" style="display:block;text-align: right">
+	<template #footer>
+	<span  class="dialog-footer" style="display:block;text-align: right">
 		<el-button :loading="AddDialog.btnloading" @click="AddDialog.dialogVisible = false;">{lang cancel}</el-button>
 		<el-button type="primary" @click="AddDialogSubmit" :loading="AddDialog.btnloading">{lang confirms}</el-button>
 	</span>
+	</template>
 </el-dialog>
 <script type="text/javascript">
 	var AddDialogMixin = {

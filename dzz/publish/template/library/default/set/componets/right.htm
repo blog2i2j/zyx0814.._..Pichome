@@ -1,0 +1,618 @@
+<el-tabs v-model="RightactiveName" v-if="!DataLoading" style="width: 100%;" @tab-click="handleClick">
+    <el-tab-pane label="{lang setting_basic}" name="tool">
+        <el-scrollbar>
+            <el-form 
+                :model="RightformBasic" 
+				ref="formRef"
+                label-position="top" 
+                label-suffix=":"
+                style="width: 100%;">
+				<el-form-item label="{lang page_title}" prop="pname" :rules="[{ required: true, message: __lang.required_field }]">
+					<el-input v-model="RightformBasic.pname"></el-input>
+				</el-form-item>
+                <el-form-item label="{lang pagelogo}">
+                    <el-upload
+                            class="avatar-uploader"
+                            action="{MOD_URL}&op=admin&operation=uploadimg"
+                            :show-file-list="false"
+                            name="files"
+                            accept="image/*"
+                            :on-success="handleUploaLogodSuccess">
+                        <template v-if="RightformLick._file_logo.src">
+                            <img :src="RightformLick._file_logo.src" class="avatar" />
+                            <el-icon class="close-img" @click.stop="handleCloseImg('logo')"><Close-Bold /></el-icon>
+                        </template>
+                        <template v-else>
+                            <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+                        </template>
+                    </el-upload>
+                </el-form-item>
+                <el-form-item label="{lang cover}">
+                    <el-upload
+                            class="avatar-uploader cover"
+                            action="{MOD_URL}&op=admin&operation=uploadimg"
+                            :show-file-list="false"
+                            name="files"
+                            accept="image/*"
+                            :on-success="handleCoverUploaLogodSuccess">
+                        <template v-if="RightformLick._file_cover.src">
+                            <img :src="RightformLick._file_cover.src" class="avatar" />
+                            <el-icon class="close-img" @click.stop="handleCloseImg('cover')"><Close-Bold /></el-icon>
+                        </template>
+                        <template v-else>
+                            <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+                        </template>
+                    </el-upload>
+                </el-form-item>
+                <el-form-item label="{lang collect}">
+                    <el-select
+                            v-model="RightformBasic.collection"
+                            multiple
+                            style="width: 100%">
+                        <el-option
+                                v-for="item in RightformBasic.options"
+                                :key="item.value"
+                                :label="item.label"
+                                :value="item.value"
+                        ></el-option>
+                    </el-select>
+                </el-form-item>
+               <el-form-item label="{lang metadescription}">
+                    <el-input v-model="RightformBasic.metadescription"  :autosize="{ minRows: 2, maxRows: 4 }"  type="textarea"></el-input>
+                </el-form-item>
+                <el-form-item label="{lang metakeywords}">
+                    <el-input v-model="RightformBasic.metakeywords" :autosize="{ minRows: 2, maxRows: 4 }"  type="textarea"></el-input>
+                </el-form-item>
+                <el-form-item label="{lang address}">
+					<div style="display: flex;width: 100%;">
+						<el-input v-model="RightformBasic.address" style="flex: 1;"></el-input>
+						<!-- <el-button style="margin-left: 6px;" icon="CopyDocument"></el-button> -->
+					</div>
+				</el-form-item>
+				<el-form-item label="{lang perm_view}">
+					<orguser-select 
+						defaulttype="view" 
+						@change="SettingUserChange" 
+						:defaultheckeds="SettingFormvisit.checked" 
+						:defaultexpanded="SettingFormvisit.expanded" 
+						:defaultdata="SettingFormvisit.data"></orguser-select>
+				</el-form-item>
+				<el-form-item label="{lang perm_download}">
+					<orguser-select 
+						defaulttype="down" 
+						@change="SettingUserChange" 
+						:defaultheckeds="SettingFormdown.checked" 
+						:defaultexpanded="SettingFormdown.expanded" 
+						:defaultdata="SettingFormdown.data"></orguser-select>
+				</el-form-item>
+				<el-form-item label="{lang perm_share}">
+					<orguser-select 
+						defaulttype="share" 
+						@change="SettingUserChange" 
+						:defaultheckeds="SettingFormshare.checked" 
+						:defaultexpanded="SettingFormshare.expanded" 
+						:defaultdata="SettingFormshare.data"></orguser-select>
+				</el-form-item>
+
+			</el-form>
+        </el-scrollbar>
+        
+    </el-tab-pane>
+    <el-tab-pane label="{lang setting_preference}" name="like"> 
+        <el-scrollbar>
+            <el-form 
+                class="like-form"
+                :model="RightformLick" 
+                label-position="top" 
+                label-suffix=":"
+                style="width: 100%;">
+                <el-form-item label="{lang defalut_layout}">
+                    <el-radio-group v-model="RightformLick.layout"  style="width: 100%;">
+                        <el-radio label="waterFall" style="margin-bottom: 6px;width: 40%;" border>{lang image_waterFall}</el-radio>
+                        <el-radio label="rowGrid" style="margin-bottom: 6px;width: 40%;" border>{lang image_rowGrid}</el-radio>
+                        <el-radio label="imageList" style="margin-bottom: 6px;width: 40%;" border>{lang image_imageList}</el-radio>
+                        <el-radio label="tabodd" style="margin-bottom: 6px;width: 40%;" border>{lang image_tabodd}</el-radio>
+                        <el-radio label="tabeven" style="margin-bottom: 6px;width: 40%;" border>{lang image_tabeven}</el-radio>
+                        <el-radio label="details" style="margin-bottom: 6px;width: 40%;" border>{lang image_details}</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+                <el-form-item label="{lang default_show_info}">
+                    <el-checkbox-group v-model="RightformLick.display"  style="width: 100%;">
+                        <el-checkbox border style="margin-bottom: 6px;width: 40%;" label="name" name="type">{lang file_name}</el-checkbox>
+                        <!-- <el-checkbox border style="margin-bottom: 6px;" label="tagging" name="type">标注数</el-checkbox> -->
+                        <el-checkbox border style="margin-bottom: 6px;width: 40%;" label="extension" name="type">{lang extension}</el-checkbox>
+                        <el-checkbox border style="margin-bottom: 6px;width: 40%;" label="other" name="type">{lang other_info}</el-checkbox>
+                    </el-checkbox-group>
+                </el-form-item>
+                <el-form-item v-if="RightformLick.display.indexOf('other')>-1" label="{lang other_info}">
+                    <el-radio-group v-model="RightformLick.other"  style="width: 100%;">
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" label="size">{lang size}</el-radio>
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" label="filesize">{lang file_size}</el-radio>
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" label="tag">{lang label}</el-radio>
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" label="grade">{lang grade}</el-radio>
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" label="btime">{lang add_time}</el-radio>
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" label="dateline">{lang modify_time}</el-radio>
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" label="mtime">{lang creation_time}</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+                <el-form-item label="{lang default_sort_type}">
+                    <el-radio-group v-model="RightformLick.sort"  style="width: 100%;">
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" label="btime">{lang add_time}</el-radio>
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" label="dateline">{lang modify_time}</el-radio>
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" label="mtime">{lang creation_time}</el-radio>
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" label="name">{lang title}</el-radio>
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" label="filesize">{lang file_size}</el-radio>
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" label="whsize">{lang size}</el-radio>
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" label="grade">{lang grade}</el-radio>
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" label="duration">{lang duration}</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+                <el-form-item label="{lang screen_size}">
+                    <el-radio-group v-model="RightformLick.full" style="width: 100%;">
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" :label="0">{lang full_screen}</el-radio>
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" :label="1">{lang narrow_screen}</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+                <el-form-item label="{lang default_sort}">
+                    <el-radio-group v-model="RightformLick.desc" style="width: 100%;">
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" label="desc">{lang sort_desc}</el-radio>
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" label="asc">{lang sort_asc}</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+                <el-form-item label="{lang open_win_type}">
+                    <el-radio-group v-model="RightformLick.opentype" style="width: 100%;">
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" label="current">{lang current_window}</el-radio>
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" label="new">{lang new_window}</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+                <el-form-item label="{lang filter_style}">
+                    <el-radio-group v-model="RightformLick.filterstyle"  style="width: 100%;">
+                        <el-radio border :label="0" style="width: 40%;">{lang menu_style}</el-radio>
+                        <el-radio border :label="1" style="width: 40%;">{lang list_style}</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+                <el-form-item label="{lang left_show_cat}">
+                    <el-radio-group v-model="RightformLick.aside"  style="width: 100%;">
+                        <el-radio border :label="1" style="width: 40%;">{lang enable}</el-radio>
+                        <el-radio border :label="0" style="width: 40%;">{lang close}</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+                <el-form-item label="{lang search_function}">
+                    <el-radio-group v-model="RightformLick.search" style="width: 100%;">
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" :label="1">{lang enable}</el-radio>
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" :label="0">{lang close}</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+                <!--{if $_G['setting']['imageSearchFlag']}-->
+                <el-form-item label="{lang image_search}" v-if="RightformLick.search">
+                    <el-radio-group v-model="RightformLick.picture" style="width: 100%;">
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" :label="1">{lang enable}</el-radio>
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" :label="0">{lang close}</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+                <!--{/if}-->
+                <el-form-item label="{lang topNavigation}" >
+                    <el-radio-group v-model="RightformLick.topNavigation" style="width: 100%;">
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" :label="1">{lang enable}</el-radio>
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" :label="0">{lang close}</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+                <el-form-item label="{lang bottomEnable}">
+                    <el-radio-group v-model="RightformLick.bottomEnable" style="width: 100%;">
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" :label="1">{lang enable}</el-radio>
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" :label="0">{lang close}</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+
+                <el-form-item label="{lang bottomNavigation}" v-if="RightformLick.bottomEnable">
+                    <el-radio-group v-model="RightformLick.bottomNavigation" style="width: 100%;">
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" :label="1">{lang enable}</el-radio>
+                        <el-radio border style="margin-bottom: 6px;width: 40%;" :label="0">{lang close}</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+                <el-form-item label="{lang bottomTitle}" v-if="RightformLick.bottomEnable">
+                    <el-input
+                            v-model="RightformLick._textarea_bottomtitle"
+                            :autosize="{ minRows: 2, maxRows: 4 }"
+                            type="textarea"></el-input>
+                </el-form-item>
+                <el-form-item label="{lang beian}" v-if="RightformLick.bottomEnable">
+                    <el-input v-model="RightformLick.beian"></el-input>
+                </el-form-item>
+                <el-form-item label="{lang beianmps}" v-if="RightformLick.bottomEnable">
+                    <el-input v-model="RightformLick.beianmps"></el-input>
+                </el-form-item>
+            </el-form>
+        </el-scrollbar>
+        
+    </el-tab-pane>
+    <el-tab-pane label="{lang screen_setting}" name="screen">
+        <div class="screen-box" style="display: flex;flex-direction: column;">
+            <el-scrollbar class="top" style="padding-bottom: 10px;">
+                <el-tree
+                    v-if="SettingScreens.show"
+                    ref="SettingTreeRef"
+                    style="padding: 10px;"
+                    show-checkbox
+                    default-expand-all
+                    :data="SettingScreens.data"
+                    check-strictly
+                    node-key="key"
+                    :expand-on-click-node="false"
+                    check-on-click-node
+                    @check="SettingTreeChange"
+                    :default-checked-keys="SettingScreens.defaultKeys"
+                    :props="{
+                        children: 'children',
+                        label: 'label',
+                        isLeaf:'isLeaf'
+                    }"
+                ></el-tree>
+            </el-scrollbar>
+            <el-scrollbar class="bottom" style="padding: 10px 0;border-top: var(--el-border);">
+                <div class="el-checkbox-group checkedkeys-checkbox-group">
+                    <label 
+                        class="el-checkbox" 
+                        v-for="item in SettingScreens.checkedVals"
+                        :class="{checked:item.key == 'tag' || item.group,'is-active':SettingScreens.tagvaldata.active == item.key}"
+                        :key="item.key"
+                        @click.stop="SettingTagVal(item)">
+                        <span class="el-checkbox__label">{{item.label}}</span>
+                        <el-icon class="move move-handle"><Rank></Rank></el-icon>
+                    </label>
+                </div>
+            </el-scrollbar>
+        </div>
+    </el-tab-pane>
+</el-tabs>
+<script type="text/javascript">
+	var RightMixin = {
+		data(){
+			return {
+				RightactiveName:'tool',
+                RightformBasic:{
+                    pname:'',
+                    metakeywords:'',
+                    metadescription:'',
+                    address:'',
+					collection:[],
+					options: []
+                },
+                RightformLick:{
+                    search:1,
+                    picture:1,
+                    layout: 'waterFall',
+                    display: [],
+                    other:'btime',
+                    sort: 'btime',
+                    desc: 'desc',
+                    opentype:'current',
+					aside:0,
+					filterstyle:0,
+                    full:0,
+                    _file_logo:{src:'',aid:0},
+                    _file_cover:{src:'',aid:0},
+                    bottomEnable:0,
+                    bottomNavigation:0,
+                    topNavigation:0,
+                    _textarea_bottomtitle:'',
+                    beian:'',
+                    beianmps:'',
+                    issearch:0,
+                },
+                RightformScreen:[],
+                SettingFormvisit:{
+					groups:[],
+					uids:[],
+					data:[],
+					checked:[],
+					expanded:[],
+					status:0
+				},
+                SettingFormdown:{
+					groups:[],
+					uids:[],
+					data:[],
+					checked:[],
+					expanded:[],
+					status:0
+				},
+                SettingFormshare:{
+					groups:[],
+					uids:[],
+					data:[],
+					checked:[],
+					expanded:[],
+					status:0
+				},
+                SettingScreens:{
+					defaultKeys:[],
+					data:[],
+					tagchilds:[],
+					checkedVals:[],
+					tagvaldata:{
+						data:{},
+						title:'',
+						active:'',
+						keyword:''
+					},
+					show:false
+				},
+				collectData:[]
+			}
+		},
+        watch:{
+
+		},
+		created() {
+        },
+		methods:{
+            handleCloseImg(type){
+                if(type == 'logo'){
+                    this.RightformLick._file_logo = {src:'',aid:0};
+                }else{
+                    this.RightformLick._file_cover = {src:'',aid:0};
+                }
+            },
+            handleUploaLogodSuccess(data){
+                let self = this;
+                if(data.files && data.files.length && data.files[0].data){
+                    this.RightformLick._file_logo = {src:data.files[0].data.img,aid:data.files[0].data.aid};
+                }else if(data.files && data.files.length && data.files[0].error){
+                    self.$message.error(data.files[0].error);
+                }else{
+                    self.$message.error(__lang.upload_failed);
+                }
+
+            },
+            handleCoverUploaLogodSuccess(data){
+                let self = this;
+                if(data.files && data.files.length && data.files[0].data){
+                    this.RightformLick._file_cover = {src:data.files[0].data.img,aid:data.files[0].data.aid};
+                }else if(data.files && data.files.length && data.files[0].error){
+                    self.$message.error(data.files[0].error);
+                }else{
+                    self.$message.error(__lang.upload_failed);
+                }
+
+            },
+
+			async GetCollectData(){
+                let param = {
+                    ptype:6,
+                }
+                let {data: res } = await axios.post('{MOD_URL}&op=admin&operation=list',param);
+                this.collectData = res.data.data;
+            },
+            async addPosition(type){
+                let self = this;
+				self.$refs.formRef.validate(async (valid) => {
+					if (valid) {
+						let visit = {};
+						let share = {};
+						let download = {};
+						if(parseFloat(self.SettingFormvisit.status)){
+							visit = 0;
+						}else if(self.SettingFormvisit.groups && self.SettingFormvisit.groups.length && self.SettingFormvisit.groups.indexOf('unlimit')>-1){
+							visit = 1;
+						}else{
+							if(self.SettingFormvisit.groups && self.SettingFormvisit.groups.length){
+								visit['groups'] = self.SettingFormvisit.groups;
+							}
+							if(self.SettingFormvisit.uids && self.SettingFormvisit.uids.length){
+								visit['uids'] = self.SettingFormvisit.uids;
+							}
+						}
+						if(parseFloat(self.SettingFormshare.status)){
+							share = 0;
+						}else if(self.SettingFormshare.groups && self.SettingFormshare.groups.length && self.SettingFormshare.groups.indexOf('unlimit')>-1){
+							share = 1;
+						}else{
+							if(self.SettingFormshare.groups && self.SettingFormshare.groups.length){
+								share['groups'] = self.SettingFormshare.groups;
+							}
+							if(self.SettingFormshare.uids && self.SettingFormshare.uids.length){
+								share['uids'] = self.SettingFormshare.uids;
+							}
+						}
+					
+						if(parseFloat(self.SettingFormdown.status)){
+							download = 0;
+						}else if(self.SettingFormdown.groups && self.SettingFormdown.groups.length && self.SettingFormdown.groups.indexOf('unlimit')>-1){
+							download = 1;
+						}else{
+							if(self.SettingFormdown.groups && self.SettingFormdown.groups.length){
+								download['groups'] = self.SettingFormdown.groups;
+							}
+							if(self.SettingFormdown.uids && self.SettingFormdown.uids.length){
+								download['uids'] = self.SettingFormdown.uids;
+							}
+						}
+						let pageset = JSON.parse(JSON.stringify(self.RightformLick));
+                        if(this.RightformLick._file_logo.aid > 0){
+                            pageset['_file_logo'] = {aid:this.RightformLick._file_logo.aid,src:''};
+                        }else{
+                            pageset['_file_logo'] = {aid:0,src:this.RightformLick._file_logo.src};
+                        }
+                        if(this.RightformLick._file_cover.aid > 0){
+                            pageset['_file_cover'] = {aid:this.RightformLick._file_cover.aid,src:''};
+                        }else{
+                            pageset['_file_cover'] = {aid:0,src:this.RightformLick._file_cover.src};
+                        }
+                        let screen = [];
+                        for (let s = 0; s < this.SettingScreens.checkedVals.length; s++) {
+                            const item = JSON.parse(JSON.stringify(this.SettingScreens.checkedVals[s]));
+                            if(item.group || item.key == 'tag'){
+                                if(this.SettingScreens.tagvaldata.data[item.key]){
+                                    let fitem = this.SettingScreens.tagvaldata.data[item.key];
+                                    item['group'] = fitem.group ? true : '';
+                                    item['sort'] = fitem.sort;
+                                    item['auto'] = fitem.auto;
+                                    item['data'] = fitem.data || [];
+                                }
+                            }
+                            screen.push(item)
+                        }
+						let param = {
+							formhash:'{FORMHASH}',
+							submit:true,
+							id:$id,
+							ptype:'{$data['ptype']}',
+							pval:'{$data['pval']}',
+							pname:self.RightformBasic.pname,
+							metadescription:self.RightformBasic.metadescription,
+							metakeywords:self.RightformBasic.metakeywords,
+							rpids:self.RightformBasic.rpids&&self.RightformBasic.rpids.length?self.RightformBasic.rpids:this.RightformBasic.collection,
+							address:self.RightformBasic.address,
+							view:visit,
+							download:download,
+							share:share,
+							pageset:pageset,
+							filter:screen
+						};
+                        if(type!=='save'){
+							param['pstatus'] = 1;
+						}
+						self.IsIframe = false;
+						let {data: res} = await axios.post('{MOD_URL}&op=admin&operation=basic',param);
+						self.IsIframe = true;
+					}
+				})
+                
+            },
+
+            SettingUserChange(data,type){
+				var str = {
+					groups:[],
+					uids:[],
+					data:[],
+					checked:[],
+					expanded:[],
+					status:0
+				}
+				if(data && data.length){
+					for(var i in data){
+						var item = data[i];
+						if(item.type == 'unlimit'){
+							str.groups.push('unlimit');
+							break;
+						}
+						if(item.type == 'user'){
+							str.uids.push(item.id);
+						}else{
+							str.groups.push(item.id);
+						}
+						str.data.push(item);
+					}
+				}else{
+					str.status = 1;
+				}
+                if(type == 'view'){
+                    this.SettingFormvisit = str;
+                }else if(type == 'down'){
+                    this.SettingFormdown = str;
+                }else if(type == 'share'){
+                    this.SettingFormshare = str;
+                }
+			},
+            //筛选项change
+			SettingTreeChange(data,checkedNodes){
+				const self = this;
+
+				if(data.group && checkedNodes.checkedKeys.indexOf(data.key) > -1){
+					self.$refs.SettingTreeRef.setChecked('tag',false);
+					this.SettingTreeVal({key:'tag'},false);
+				}else if(data.key == 'tag' && checkedNodes.checkedKeys.indexOf(data.key) > -1){
+					for (let index = 0; index < this.SettingScreens.tagchilds.length; index++) {
+						const item = this.SettingScreens.tagchilds[index];
+						if(checkedNodes.checkedKeys.indexOf(item.key) > -1){
+							self.$refs.SettingTreeRef.setChecked(item.key,false);
+							this.SettingTreeVal({key:item.key},false);
+						}
+					}
+				}
+				this.SettingTreeVal(data,checkedNodes.checkedKeys.indexOf(data.key)>-1);
+				this.SettingScreens.defaultKeys = checkedNodes.checkedKeys;
+
+			},
+            //处理筛选的值
+			SettingTreeVal(data,status){
+				if(status){
+					let obj = {
+						key:data.key,
+						label:data.label?data.label:data.text,
+					}
+					if(data.group || data.key == 'tag'){
+						obj['group'] = data.group || false;
+						obj['data'] = data.data || [];
+						obj['auto'] = data.auto || '0';
+						obj['sort'] = data.sort || 'hot';
+						this.SettingScreens.tagvaldata.data[data.key] = obj;
+					}
+					this.SettingScreens.checkedVals.push(obj);
+				}else{
+					let index = this.SettingScreens.checkedVals.findIndex(function(current){
+						return current.key == data.key;
+					});
+					if(index > -1){
+						this.SettingScreens.checkedVals.splice(index,1);
+						if(data.group || data.key == 'tag'){
+							delete this.SettingScreens.tagvaldata.data[data.key];
+							if(this.SettingScreens.tagvaldata.active == data.key){
+								this.SettingScreens.tagvaldata.active = '';
+								this.SettingScreens.tagvaldata.title = '';
+								this.SettingScreens.tagvaldata.keyword = '';
+							}
+						}
+					}
+				}
+			
+			},
+            //筛选项加载
+			async TreeloadNode(node,resolve){
+				let self = this;
+				let param = {
+					pid:'$id',
+					appid:self.appid
+				}
+				var {data: res} = await axios.post('{MOD_URL}&op=ajax&do=gettagcat',param);
+				let data = [];
+				if(res.success){
+					for(let i in res.data){
+						data.push({
+							key:i,
+							label:res.data[i],
+							group:true,
+						});
+					}
+					
+				}
+				if(data.length){
+					let tagIndex=this.SettingScreens.data.findIndex((item)=>{
+						return item.key=='tag';
+					});
+					if(tagIndex>-1) this.SettingScreens.data[tagIndex].children = data;
+				}
+				this.SettingScreens.tagchilds = data;
+				self.SettingScreens.show = true;
+				self.$nextTick(function(){
+					self.SettingScrrenTwoSortable();
+				});
+			},
+            SettingScrrenTwoSortable(){//已选筛选排序
+				var _this = this;
+				var tbody = document.querySelector('.checkedkeys-checkbox-group');
+				Sortable.create(tbody, {
+                    animation: 150,
+					draggable: ".el-checkbox",
+					handle: ".move",
+					onUpdate ({ newIndex, oldIndex }) {//列表内元素顺序更新的时候触发
+						var val = _this.SettingScreens.checkedVals[oldIndex];
+						_this.SettingScreens.checkedVals.splice(oldIndex, 1);
+						_this.SettingScreens.checkedVals.splice(newIndex, 0, val);
+					}
+				});
+			},
+		}
+	};
+</script>

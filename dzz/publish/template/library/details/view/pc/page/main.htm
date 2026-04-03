@@ -1,0 +1,171 @@
+<!--{template common/container/pc/header_start}-->
+<link rel="stylesheet" href="static/scss/default/index.css?{VERHASH}">
+<link rel="stylesheet" href="{MOD_PATH}/template/library/details/view/pc/assets/css/index.css?{VERHASH}">
+<link rel="stylesheet" href="{MOD_PATH}/template/library/details/view/pc/assets/css/xuanzhuan/index.css?{VERHASH}">
+<script type="text/javascript" src="{MOD_PATH}/template/library/details/view/pc/assets/js/navigationmenu.js?{VERHASH}"></script>
+<script>
+    function debounce(fun, delay) {
+        var time;
+        return function(args) {
+            var that = this;
+            var _args = args;
+            if (time) clearTimeout(time);
+            time = setTimeout(function() {
+                fun.call(that, _args)
+            }, delay)
+        }
+    };
+</script>
+<!--{template common/container/pc/header_end}-->
+<div id="dzzoffice">
+    <el-container class="page-main">
+        <!--{template library/details/view/pc/components/header}-->
+        <el-container>
+            <el-aside class="page-left" :width="LeftWidth+'px'" style="padding-top: 8px;">
+				<!--{template library/details/view/pc/components/left}-->
+			</el-aside>
+            <el-main style="overflow: hidden;padding:0" class="dzz-container">
+                <!--{template library/details/view/pc/components/main}-->
+            </el-main>
+        </el-container>
+    </el-container>
+</div>
+<script type="text/javascript">
+    const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch,defineAsyncComponent, onBeforeUpdate , onUnmounted } = Vue;
+    const dzzoffice = createApp({
+        data() {
+            return {
+                DocumentThemeColor:'',
+                keyword:'',
+                scrollref:'',
+                DocumentAppid:'{$data['pval']}',
+                ContentData:[],
+                pageset:$json_pageset,
+                headeralldata:{
+                    data:[],
+                    message:{
+                        sitebeiantxt:'',
+                        sitebeian:'',
+                    }
+                },
+                HtmlLoading:true
+            }
+        },
+        mixins:[HeaderMixins,leftMixins,MainMixins],
+        watch:{
+			DocumentThemeColor:{
+				handler(newval){
+					document.querySelector('html').className = newval;
+				},
+				deep:true,
+				// immediate:true
+			}
+		},
+        created() {
+            
+
+            this.GetData();
+            
+
+        },
+        methods: {
+            async GetData(){
+                let self = this;
+
+                if(location.hash){
+
+                    const curentkey=self.CommonGetHashParam('id');
+                    if(curentkey){
+                        let arr=curentkey.split('/');
+                        self.LeftTree.Currentkey =  arr.pop();
+                        if(arr.length){
+                            self.LeftTree.defaultOpenkeys = arr;
+                            self.LeftTree.defaultOpenkeysInit = arr;
+                        }
+                    }else{
+                        self.LeftTree.Currentkey=null;
+                    }
+
+                    let keyword = this.CommonGetHashParam('keyword');
+                    if(keyword){
+                        self.LeftTree.filterText = decodeURI(keyword);
+                        self.LeftTreeSearchFolder(keyword);
+
+                    }
+                }
+
+                self.$nextTick(function(){
+                    self.LeftTree.show = true;
+                })
+            },
+            CommonGetHashParam(name,url){
+
+                if(!url){
+                    url=location.hash;
+                }
+                if (!name) {
+                    return '';
+                }
+                var reg = new RegExp("(^#|&)" + name + "=([^&]*)(&|$)");
+                if (!url) {
+                    return '';
+                }
+                var r = url.match(reg);
+                if (r !== null) {
+                    return decodeURIComponent(r[2]);
+                }
+            },
+            HandleElScrollbar(data){
+				var self = this;
+				// self.$refs.RefImageLayout.HandleElScrollbar();
+                if(self.$refs.domchild && self.$refs.domchild.length){
+                    for (let index = 0; index < self.$refs.domchild.length; index++) {
+                        const element = self.$refs.domchild[index];
+                        if(element.HandleElScrollbar){
+                            element.HandleElScrollbar();
+                        }
+                    }
+                }
+			},
+
+            DocumentThemeChange(){
+				if(this.DocumentThemeColor=='light'){
+					this.DocumentThemeColor='dark';
+					localStorage.setItem('theme','dark');
+				}else{
+					this.DocumentThemeColor='light';
+					localStorage.setItem('theme','light');
+				}
+				
+			},
+        },
+        mounted() {
+            let self = this;
+            //主题颜色
+			let theme = localStorage.getItem('theme');
+			if(theme){
+				this.DocumentThemeColor=theme;
+			}else{
+				this.DocumentThemeColor = 'light'
+			}
+        },
+        components: {
+            navigationmenu,
+			comavatar
+
+		},
+    });
+    dzzoffice.use(ElementPlus, {
+        locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+    });
+    for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+        dzzoffice.component(key, component)
+    }
+
+    dzzoffice.component('international',international);
+    // 屏蔽警告信息
+    dzzoffice.config.warnHandler = function(){return null};
+    dzzoffice.mount('#dzzoffice');
+</script>
+
+<!--{template common/container/pc/footer}-->

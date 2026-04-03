@@ -110,27 +110,14 @@ class ImagetagAnddesc
                 }
 
                 if ($getType == 1) {
-                    $content=strip_tags($content);
-                    $content = str_replace('、',',',$content);
-                    $content = str_replace('，',',',$content);
-                    $content = str_replace("\n",',',$content);
-                    $content = str_replace("：",':',$content);
-                    $content = preg_replace('/标签\d+:/', ',', $content);
-                    $content = str_replace('标签:', ',', $content);
-                    $tags = explode(',',$content);
-                    $tags=array_unique($tags);
-
+                    $tags = explode('，',$content);
                     $tids = [];
                     foreach ($tags as $v) {
-
+                        $v = preg_replace('/标签\d+[:：]/', '', $v);
                         $v = trim($v);
-                        $v = str_replace(['[',']',',','，','.','。','"',"\n"],'',$v);
-                        $v = trim($v);
-                        $v = preg_replace("/^\d+\s+/",'',$v);
-                        $v = preg_replace("/^\d+/",'',$v);
+                        $v = str_replace([',','，','.','。'],'',$v);
                         $v = trim($v);
                         if ($v) {
-                            if(mb_strlen($v)>6) continue;
                             $tids[] = C::t('pichome_tag')->insert($v, 1);
                         }
                     }

@@ -1,0 +1,140 @@
+<van-nav-bar
+	 class="header-top"
+	:class="ParamFooter.IsShow=='up'?'':'headerhide'"
+	:title="DocumentName"
+	left-text=""
+	@click-left="window.location.href='index.php?mod=collection&op=view'"
+	:left-arrow="!Documentshareid && (parseInt(DocumentPerm) && (!parseInt($_G[config][pichomeclosecollect]) || parseInt(DocumentAdminId)))?true:false">
+	<template #right>
+		<van-icon v-if="!Documentshareid||parseInt(DocumentPerm)" style="display: block;" name="setting-o" @click="NavBarParamRightClick" size="18" />
+	</template>
+</van-nav-bar>
+
+<van-action-sheet
+	style="padding-top: 10px;"
+	v-model="NavBarParam.visible"
+	:actions="NavBarParam.data"
+	cancel-text="{lang cancel}"
+	@select="NavBarParamRightChange"
+	close-on-click-action>
+</van-action-sheet>
+<script type="text/javascript">
+	var NavBarMixin = {
+		data(){
+			return {
+				NavBarParam:{
+					visible:false,
+					data:[]
+				},
+			}
+		},
+		methods:{
+			NavBarParamRightClick(){
+				var arr = [];
+				if(parseInt(this.DocumentPerm) > 2){
+					arr = [
+						{ name: '{lang edit_collect}',type:'edit' },
+						{ name: '{lang Batch_operations}',type:'checked' },
+						{ name: '{lang classify_management}',type:'classify' },
+						{ name: '{lang member_management}',type:'orguser' },
+						<!--{if !$_G['config']['pichomeclosecollect'] || $_G['adminid']}-->
+						{ name: '{lang share_collect}',type:'share' },
+						<!--{/if}-->
+						{ name: '{lang delete_collects}',type:'delete' },
+					];
+				}else if(parseInt(this.DocumentPerm) == 2){
+					arr = [
+						{ name: '{lang edit_collect}',type:'edit' },
+						{ name: '{lang Batch_operations}',type:'checked' },
+						{ name: '{lang classify_management}',type:'classify' },
+						{ name: '{lang member_management}',type:'orguser' },
+						<!--{if !$_G['config']['pichomeclosecollect'] || $_G['adminid']}-->
+						{ name: '{lang share_collect}',type:'share' },
+						<!--{/if}-->
+					]
+				}else if(parseInt(this.DocumentPerm) == 1){
+					arr = [
+						// { name: '批量操作',type:'checked' },
+						// { name: '分类管理',type:'classify' },
+						{ name: '{lang member_management}',type:'orguser' },
+						<!--{if !$_G['config']['pichomeclosecollect'] || $_G['adminid']}-->
+						{ name: '{lang share_collect}',type:'share' },
+						<!--{/if}-->
+					]
+				}
+				this.NavBarParam.data = arr;
+				this.NavBarParam.visible = true;
+			},
+			async NavBarParamRightChange(data,index){
+				var self = this;
+				switch(data.type){
+					case 'edit':
+						this.Operation.type = 'editparent';
+						this.Operation.name = this.DocumentName;
+						this.Operation.PopupVisible = true;
+					break;
+					case 'delete':
+						self.$dialog.confirm({
+							title: '{lang prompt}',
+							message: '{lang delete_collections_confirm}',
+						}).then(async function(){
+							self.$toast.loading({
+								overlay:true,
+								message: '{lang Deleting}',
+								forbidClick: true,
+								duration:0,
+								loadingType: 'spinner',
+							});
+							var res = await axios.post(MOD_URL+'&op=collect&do=delcollect',{
+								clid:self.ParamBasic.clid
+							});
+							if(res == 'intercept'){
+								return false;
+							}
+							var json = res.data;
+			
+							if(json.success){
+								window.location.href = MOD_URL;
+							}else{
+								self.$toast.fail(json.error);
+							}
+						}).catch(function(){
+						    // on cancel
+						});
+					break;
+					case 'share':
+						var res = await axios.post(MOD_URL+'&op=collect&do=addshare',{
+							clid:self.ParamBasic.clid
+						});
+						if(res == 'intercept'){
+							return false;
+						}
+						var json = res.data;
+						if(json.success){
+							self.$dialog.confirm({
+								title: '',
+								confirmButtonText:'{lang copy_link}',
+								message: json.success,
+							}).then(function(){
+								self.CommonCopyTxt(json.success)
+							}).catch(function(){
+								// on cancel
+							});
+						}else{
+							self.$toast.fail('{lang get_data_fail}');
+						}
+					break;
+					case 'classify':
+						this.Classifys.PopupVisible = true;
+					break;
+					case 'orguser':
+						this.Orguser.PopupVisible = true;
+					break;
+					case 'checked':
+						this.ParamImages.checked = true;
+					break;
+				}
+			},
+		}
+	};
+</script>

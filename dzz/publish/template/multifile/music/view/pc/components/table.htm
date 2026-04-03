@@ -1,0 +1,250 @@
+<div style="background: var(--el-bg-color);">
+    <el-table 
+    :data="tableData" 
+    class="tableData" 
+    row-key="rid"
+    v-loading="tableLoading"
+    ref="multipleTableRef"
+    @selection-change="handleSelectionChange"
+    style="width: 100%">
+        <el-table-column type="selection" width="55"></el-table-column>
+        <el-table-column label="音频">
+            <template #default="scope">
+              <div class="songname">
+                <div class="bg" @click="MusicPlayer(scope.row)">
+                  <el-icon>
+                    <template v-if="scope.row.play">
+                      <svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 12V36" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M32 12V36" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </template>
+                    <template v-else>
+                      <svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 24V11.8756L25.5 17.9378L36 24L25.5 30.0622L15 36.1244V24Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                    </template>
+                  </el-icon>
+                </div>
+                <el-text line-clamp="2" class="title">
+                  {{scope.row.name}}
+                  <template v-if="DataPageset.display">
+                    .{{scope.row.ext}}
+                  </template>
+                </el-text>
+              </div>
+            </template>
+        </el-table-column>
+        <el-table-column label="时长" width="200"  align="center">
+          <template #default="scope">
+              {{scope.row.fduration}}
+            </template>
+        </el-table-column>
+        <el-table-column label="文件大小" width="100" prop="fsize" align="center"></el-table-column>
+        <el-table-column label=""  width="150" align="center">
+            <template #default="scope">
+              <el-dropdown @command="ImageOperation">
+                <el-button icon="MoreFilled"></el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item 
+                      v-if="scope.row.share" 
+                      :command="ImageOperationVal('share',scope.row)">
+                      <el-icon><Share /></el-icon>
+                      {lang share}
+                    </el-dropdown-item>
+                    <el-dropdown-item v-if="scope.row.download" 
+                      :command="ImageOperationVal('down',scope.row)"
+                      class="circulars">
+                      <el-icon><Download /></el-icon>
+                      {lang download}
+                    </el-dropdown-item>
+                    <el-dropdown-item 
+                      v-if="parseInt(scope.row.collection)" 
+                      :command="ImageOperationVal('collect',scope.row)">
+                      <el-icon><Collection /></el-icon>
+                      {lang collect}
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+              </template>
+        </el-table-column>
+    </el-table>
+    <div class="pageContainer" style="padding:20px 0 10px 0;display:flex;justify-content: center">
+      <el-pagination
+          large
+          background
+          :disabled="tableLoading"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+          :current-page="currentPage"
+          :page-sizes="pageset.pagesizes"
+          :page-size="pageset.perpage"
+          layout="total, sizes, prev, pager, next"
+          :total="pageset.total">
+      </el-pagination>
+    </div>
+  </div>
+  
+  <script type="text/javascript">
+  let ImageMixin = {
+    data(){
+      return {
+        tableData:[],
+        tableLoading:false,
+        imgparam:{},
+        RableSelectrid:[],
+        ZipDownLoad:false,
+        fpercentage:{
+					status: 0,
+					progress: 0,
+					total: 0,
+					totalsize:0,
+					downloaded:0,
+					totalpage: 0,
+				},
+        targetContainer:'',
+        MusicPlays:{},
+        playrid:'',
+        pageset:{
+					page:1,
+					perpage:20,
+					total:0,
+					pagesizes:[20,50,80,100]
+				}
+      }
+    },
+    methods:{
+      handleSelectionChange(data){
+        this.RableSelectrid = data;
+      },
+      async ImageOperation(data){
+				let self = this;
+				if(data.type == 'down'){
+					window.open(SITEURL+MOD_URL+'&op=download&dpath='+data.resourcedata.dpath);
+				}else if(data.type == 'collect'){
+              // self.$refs.RefImageLayout.ImageQuickChangeCollect(data.resourcedata.rid)
+				}else if(data.type == 'publish'){
+					window.open('index.php?mod=publish&op=choose&ptype=1&value='+data.resourcedata.rid);
+				}else if(data.type == 'share'){
+					self.shareDialog.visible=true;
+					self.shareDialog.filepaths=[data.resourcedata.rid];
+					self.shareDialog.stype=0;
+					self.shareDialog.sperm=data.resourcedata.perm;
+					self.shareDialog.title=data.resourcedata.name;
+				}
+			},
+			ImageOperationVal(type,data){
+				return {
+					type:type,
+					resourcedata:data
+				};
+			},
+      async TableGetData(){
+          const self = this;
+          self.tableData = [];
+          self.tableLoading = true;
+          self.RableSelectrid = [];
+          const {data: res} = await axios.post('index.php?mod=publish&op=ajax&do=getDefaultFiles',self.imgparam);
+          let fdata = res.data.data;
+          if(fdata && fdata.length){
+            fdata.forEach(element => {
+              if(element.type == 'audio'){
+                element['finish'] = false;
+                element['play'] = false;
+                if(self.MusicPlays[element.rid]){
+                  if(self.playrid == element.rid){
+                    element['play'] = true;
+                  }
+                  element['finish'] = true;
+                }
+                element['fduration'] = self.ImageAudioPlaySecondToDate(element['duration'],element['duration']);
+                
+                self.tableData.push(element);
+              }
+            });
+          }
+          self.pageset.total = parseInt(res.data.param.total);
+          self.tableLoading = false;
+			},
+      MusicPlayer(data){
+          let self = this;
+          if(data.play){
+            self.$refs['musicplay'+data.rid][0].pause();
+          }else{
+            this.MusicStopPlay(data.rid);
+            this.playrid = data.rid;
+            if(this.MusicPlays[data.rid]){
+              self.$refs['musicplay'+data.rid][0].play();
+            }else{
+              this.MusicPlays[data.rid] = data;
+              self.$nextTick(() => {
+                self.$refs['musicplay'+data.rid][0].init();
+              });
+            }
+          }
+      },
+      musicplay(rid){
+          this.playrid = rid;
+          if(this.MusicPlays[rid]){
+            this.MusicPlays[rid].play = true;
+          }
+          let curr = this.tableData.find(item => {
+            return item.rid == rid;
+          });
+          if(!curr)return false;
+          curr.play = true;
+      },
+      musicstop(rid){
+        if(this.MusicPlays[rid]){
+            this.MusicPlays[rid].play = false;
+          }
+        let curr = this.tableData.find(item => {
+          return item.rid == rid;
+        });
+        if(!curr)return false;
+        curr.play = false;
+      },
+      MusicOperation(data){
+        let self = this;
+        if(data.type == 'delete'){
+          this.playrid = '';
+        }else if(data.type == 'share'){
+          self.shareDialog.visible=true;
+					self.shareDialog.filepaths=[data.resourcedata.rid];
+					self.shareDialog.stype=0;
+					self.shareDialog.sperm=data.resourcedata.perm;
+					self.shareDialog.title=data.resourcedata.name;
+        }
+          
+      },
+      MusicStop(data){
+          
+      },
+      MusicStopPlay(rid){
+        let self = this;
+        if(rid == this.playrid)return false;
+        if(self.$refs['musicplay'+this.playrid]){
+          self.$refs['musicplay'+this.playrid][0].pause();
+        }
+        
+      },
+      handleSizeChange(perpage){
+				this.pageset.perpage = perpage;
+				this.CommonGetImageData();
+			},
+			handleCurrentChange(page){
+				this.pageset.page = page;
+				this.CommonGetImageData();
+			},
+      ImageAudioPlaySecondToDate(result,count){
+          let h = Math.floor(result / 3600) < 10 ? '0'+Math.floor(result / 3600) : Math.floor(result / 3600);
+          let m = Math.floor((result / 60 % 60)) < 10 ? '0' + Math.floor((result / 60 % 60)) : Math.floor((result / 60 % 60));
+          let s = Math.floor((result % 60)) < 10 ? '0' + Math.floor((result % 60)) : Math.floor((result % 60));
+          if(count >= 3600){
+              return result = h + ":" + m + ":" + s;
+          }else if(count >= 60){
+              return result = m + ":" + s;
+          }else{
+              return result = '0:'+s;
+          }
+      }
+    }
+  }
+  </script>

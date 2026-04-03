@@ -173,15 +173,21 @@ if ($do == 'getLangkeyList') {
                     $tdata = C::t('pichome_templatetagdata')->fetch($tdataid);
                     $tagid = $tdata['tid'];
                     $tagdata = C::t('pichome_templatetag')->fetch($tagid);
+
                     //$tag
                     $dataValue = C::t('lang')->fetchSvalueBySkey($table_sf, $dataKey);
+
                     //if(!$dataValue) $dataValue = (preg_match('/^alonepagedata\|tdata\:\d+/',$dataKey)) ? $tdata['tdata']:$tdata['tdataname'];
                     if(preg_match('/^alonepagedata\|tdata\:\d+/',$dataKey)){
                         $dataValue = $dataValue ?? $tdata['tdata'];
                        if($svalue = unserialize($dataValue)){
-                           if($tagdata['tagtype'] != 'link'){
+                           if($tagdata['tagtype'] == 'question'){
                                foreach($svalue as $sk=>$sval){
-                                   $svalue[$sk]['answer'] = parserichtextdata($svalue[$sk]['answer']);
+                                   if(isset($svalue[$sk]['answer'])) {
+                                       $svalue[$sk]['answer'] = parserichtextdata($svalue[$sk]['answer']);
+                                   }else{
+                                       unset($svalue[$sk]);
+                                   }
                                }
 
                            }else{
@@ -284,7 +290,7 @@ elseif ($do == 'saveData') {//保存语言值
                         $iddata = array_unique($iddata);
                         foreach ($iddata as $id) {
                             $setarr = [
-                                'skey' => $idtypestr.'|'.$idarr[0].'-'.$id,
+                                'skey' => $idtypestr.'|'.$filedarr[0].':'.$id,
                                 'idtype' => $idtype,
                                 'svalue' => $v,
                                 'filed'=>$filedarr[1],
@@ -326,7 +332,7 @@ elseif ($do == 'saveData') {//保存语言值
 
                         foreach ($iddata as $id) {
                             $setarr = [
-                                'skey' => $idtypestr.'|'.$idarr[0].'-'.$id,
+                                'skey' => $idtypestr.'|'.$dataKeyarr[0].':'.$id,
                                 'idtype' => $idtype,
                                 'svalue' => $v,
                                 'idvalue' => $id,
@@ -356,8 +362,14 @@ elseif ($do == 'saveData') {//保存语言值
                                 $data = unserialize($setarr['svalue']);
                                 $olddata = unserialize($odata['svalue']);
                                 $setarr['svalue'] = serialize(parseaidarrdata($data,$olddata));
-                            }elseif($ovalue = unserialize($odata['svalue'])){
-                                $v['svalue'][0] = getcontentdata($v['svalue'][0]['answer'],$ovalue[0]['answer']);
+                            }elseif($tagdata['tagtype'] == 'question') {
+                                $ovalue = unserialize($odata['svalue']);
+                                foreach ($ovalue as $k1 => $v1) {
+                                    if (isset($v[$k1]['answer'])) {
+                                        $v[$k1]['answer'] = getcontentdata($v[$k1]['answer'], $v1['answer']);
+                                    }
+                                }
+
                             }else{
                                 $v['svalue'] = getcontentdata($v['svalue'],$ovalue);
                             }

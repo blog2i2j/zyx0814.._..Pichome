@@ -12,7 +12,7 @@ class table_pichome_folder_tag extends dzz_table
         $this->_pk = 'id';
         parent::__construct();
     }
-    public function insert($setarr)
+    public function insert($setarr, $return_insert_id = false, $replace = false, $silent = false)
     {
         if($id = DB::result_first("select id from %t where appid = %s and tid = %d ",array($this->_table,$setarr['appid'],$setarr['tid']))){
             return $id;

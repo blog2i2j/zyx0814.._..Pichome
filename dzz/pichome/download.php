@@ -30,14 +30,17 @@ $vappdata = DB::fetch_first("select v.* from %t r left join %t v on r.appid = v.
     if($extension != $resourcesdata['ext']){
         $resourcesdata['name'] = $resourcesdata['name'].'.'.$resourcesdata['ext'];
     }
-    $resourcesdata['name'] = '"' . (strtolower(CHARSET) == 'utf-8' && (strexists($_SERVER['HTTP_USER_AGENT'], 'MSIE') || strexists($_SERVER['HTTP_USER_AGENT'], 'Edge') || strexists($_SERVER['HTTP_USER_AGENT'], 'rv:11')) ? urlencode($resourcesdata['name']) : ($resourcesdata['name'])) . '"';
+    if(strexists($_SERVER['HTTP_USER_AGENT'], 'Firefox')){
+        $resourcesdata['name']=urlencode($resourcesdata['name']);
+    }else{
+        $resourcesdata['name'] = '"' . (strtolower(CHARSET) == 'utf-8' && (strexists($_SERVER['HTTP_USER_AGENT'], 'MSIE') || strexists($_SERVER['HTTP_USER_AGENT'], 'Edge') || strexists($_SERVER['HTTP_USER_AGENT'], 'rv:11')) ? urlencode($resourcesdata['name']) : ($resourcesdata['name'])) . '"';
+    }
 
     if(isset($patharr['fpath']) && strpos($patharr['fpath'], 'attach::') === 0){
         $attachpath = $patharr['fpath'];
         $aid = intval(str_replace('attach::','',$patharr['fpath']));
         $attachment = C::t('attachment')->fetch($aid);
         $resourcesdata['size'] = $attachment['filesize'];
-        $resourcesdata = $attachment['filename'];
     }else{
         $attach = DB::fetch_first("select path,appid from %t where rid = %s",array('pichome_resources_attr',$rid));
 

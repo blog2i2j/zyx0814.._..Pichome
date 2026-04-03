@@ -233,7 +233,7 @@ class dzz_upgrade
         $checkdata['company'] = defined('LICENSE_COMPANY') ? LICENSE_COMPANY:'';
         $checkdata['lunum'] = defined('LICENSE_LIMIT') ? LICENSE_LIMIT:1;
         $checkdata['dateline'] = defined('LICENSE_CTIME') ? LICENSE_CTIME:0;
-        $checkdata['expiretime'] = LICENSE_EXPIRE;
+        $checkdata['expiretime'] = defined('LICENSE_EXPIRE')?LICENSE_EXPIRE:0;
         $checkdata['siteurl'] = $_G['siteurl'];
         $checkdata['sitename'] = $_G['setting']['sitename'];
         $checkdata['unum'] = CURRTENT_UNUM;

@@ -1,17 +1,3 @@
--- phpMyAdmin SQL Dump
--- version 5.1.3
--- https://www.phpmyadmin.net/
---
--- 主机： localhost
--- 生成日期： 2023-04-19 10:48:50
--- 服务器版本： 5.7.26
--- PHP 版本： 7.4.3
-
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-START TRANSACTION;
-SET time_zone = "+00:00";
-
--- --------------------------------------------------------
 
 --
 -- 表的结构 `dzz_admincp_session`
@@ -25,7 +11,7 @@ CREATE TABLE `dzz_admincp_session` (
   `ip` char(40) NOT NULL DEFAULT '',
   `dateline` int(10) UNSIGNED NOT NULL DEFAULT '0',
   `errorcount` tinyint(1) NOT NULL DEFAULT '0',
-  `storage` mediumtext default NULL,
+  `storage` mediumtext NOT NULL,
   PRIMARY KEY (`uid`,`panel`)
 ) ENGINE=MyISAM;
 
@@ -41,7 +27,7 @@ CREATE TABLE `dzz_app_market` (
   `mid` int(10) UNSIGNED NOT NULL DEFAULT '0' COMMENT '云端应用ID',
   `appname` varchar(255) NOT NULL,
   `appico` varchar(255) NOT NULL,
-  `appdesc` text default NULL,
+  `appdesc` text NOT NULL,
   `appurl` varchar(255) NOT NULL,
   `appadminurl` varchar(255) DEFAULT NULL COMMENT '管理设置地址',
   `noticeurl` varchar(255) NOT NULL DEFAULT '' COMMENT '通知接口地址',
@@ -52,8 +38,8 @@ CREATE TABLE `dzz_app_market` (
   `isshow` tinyint(1) UNSIGNED NOT NULL DEFAULT '1' COMMENT '是否显示应用图标',
   `havetask` tinyint(1) UNSIGNED NOT NULL DEFAULT '1' COMMENT '是否显示任务栏',
   `hideInMarket` tinyint(1) UNSIGNED NOT NULL DEFAULT '0' COMMENT '应用市场里不显示',
-  `feature` text default NULL COMMENT '窗体feature',
-  `fileext` text default NULL COMMENT '可以打开的文件类型',
+  `feature` text NOT NULL COMMENT '窗体feature',
+  `fileext` text NOT NULL COMMENT '可以打开的文件类型',
   `group` tinyint(1) NOT NULL DEFAULT '1' COMMENT '应用的分组:0:全部；-1:游客可用，3:系统管理员可用;2：部门管理员可用;1:所有成员可用',
   `orgid` int(10) UNSIGNED NOT NULL DEFAULT '0' COMMENT '可以使用的部门id，为0表示不限制',
   `position` tinyint(1) NOT NULL DEFAULT '0' COMMENT '2：desktop,3:taskbar,1：apparea',
@@ -65,13 +51,12 @@ CREATE TABLE `dzz_app_market` (
   `app_path` varchar(50) DEFAULT NULL COMMENT 'APP路劲',
   `available` tinyint(1) NOT NULL DEFAULT '1',
   `version` varchar(20) NOT NULL DEFAULT '',
-  `upgrade_version` text default NULL COMMENT '升级版本',
+  `upgrade_version` text NOT NULL COMMENT '升级版本',
   `check_upgrade_time` int(11) NOT NULL DEFAULT '0' COMMENT '最近次检测升级时间',
-  `extra` text default NULL,
+  `extra` text NOT NULL,
   `uids` text COMMENT '访问用户',
   `showadmin` tinyint(3) UNSIGNED DEFAULT '0' COMMENT '0不显示在后台管理，1显示在后台管理',
   PRIMARY KEY (`appid`),
-  UNIQUE KEY `appurl` (`appurl`) USING BTREE,
   KEY `available` (`available`) USING BTREE,
   KEY `identifier` (`identifier`) USING BTREE
 ) ENGINE=MyISAM;
@@ -84,7 +69,7 @@ CREATE TABLE `dzz_app_market` (
 
 DROP TABLE IF EXISTS `dzz_app_open`;
 CREATE TABLE `dzz_app_open` (
-  `ext` varchar(255) NOT NULL DEFAULT '',
+  `ext` varchar(60) NOT NULL DEFAULT '',
   `appid` int(10) UNSIGNED NOT NULL DEFAULT '0',
   `disp` smallint(6) NOT NULL DEFAULT '0',
   `extid` smallint(6) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -103,7 +88,7 @@ CREATE TABLE `dzz_app_open` (
 DROP TABLE IF EXISTS `dzz_app_open_default`;
 CREATE TABLE `dzz_app_open_default` (
   `uid` int(10) UNSIGNED NOT NULL,
-  `ext` varchar(255) NOT NULL DEFAULT '',
+  `ext` varchar(60) NOT NULL DEFAULT '',
   `extid` smallint(6) UNSIGNED NOT NULL DEFAULT '0',
   `dateline` int(10) UNSIGNED NOT NULL DEFAULT '0',
   UNIQUE KEY `defaultext` (`ext`,`uid`) USING BTREE
@@ -330,7 +315,7 @@ CREATE TABLE `dzz_billfish_tagrecord` (
 
 DROP TABLE IF EXISTS `dzz_cache`;
 CREATE TABLE `dzz_cache` (
-  `cachekey` varchar(255) NOT NULL DEFAULT '',
+  `cachekey` varchar(250) NOT NULL DEFAULT '',
   `cachevalue` mediumblob NOT NULL,
   `dateline` int(10) UNSIGNED NOT NULL DEFAULT '0',
   PRIMARY KEY (`cachekey`)
@@ -346,7 +331,7 @@ DROP TABLE IF EXISTS `dzz_collect`;
 CREATE TABLE `dzz_collect` (
   `cid` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
   `ourl` varchar(255) NOT NULL DEFAULT '',
-  `data` text default NULL,
+  `data` text NOT NULL,
   `dateline` int(10) UNSIGNED NOT NULL,
   `copys` int(10) UNSIGNED NOT NULL,
   `type` varchar(30) NOT NULL DEFAULT '',
@@ -365,7 +350,7 @@ CREATE TABLE `dzz_connect` (
   `key` varchar(255) NOT NULL DEFAULT '',
   `secret` varchar(255) NOT NULL DEFAULT '',
   `type` varchar(255) NOT NULL COMMENT 'pan,mail,storage,web',
-  `bz` varchar(255) NOT NULL COMMENT 'Dropbox,Box,Google,Aliyun,Grandcloud',
+  `bz` varchar(200) NOT NULL COMMENT 'Dropbox,Box,Google,Aliyun,Grandcloud',
   `root` varchar(255) NOT NULL DEFAULT '',
   `available` tinyint(1) UNSIGNED NOT NULL DEFAULT '0' COMMENT '是否可用',
   `dname` varchar(255) NOT NULL COMMENT '数据库名称',
@@ -507,7 +492,7 @@ CREATE TABLE `dzz_document_reversion` (
   `uid` int(10) UNSIGNED NOT NULL DEFAULT '0',
   `username` varchar(30) NOT NULL DEFAULT '',
   `version` smallint(6) UNSIGNED NOT NULL DEFAULT '0',
-  `attachs` text default NULL,
+  `attachs` text NOT NULL,
   PRIMARY KEY (`revid`),
   KEY `dateline` (`dateline`) USING BTREE,
   KEY `qid` (`did`) USING BTREE,
@@ -576,13 +561,20 @@ CREATE TABLE `dzz_failedlogin` (
 DROP TABLE IF EXISTS `dzz_ffmpegimage_cache`;
 CREATE TABLE `dzz_ffmpegimage_cache` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `path` varchar(255) NOT NULL DEFAULT '' COMMENT '附件路径',
+  `path` varchar(200) NOT NULL DEFAULT '' COMMENT '附件路径',
   `info` text COMMENT '数据值',
   `dateline` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '时间',
   PRIMARY KEY (`id`,`path`) USING BTREE
 ) ENGINE=MyISAM;
 
--- --------------------------------------------------------
+DROP TABLE IF EXISTS dzz_ffmpegimage_cache;
+CREATE TABLE IF NOT EXISTS pichome_ffmpegimage_cache (
+    id int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+    path varchar(200) NOT NULL DEFAULT '' COMMENT '附件路径',
+    info text COMMENT '数据值',
+    dateline int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '时间',
+    PRIMARY KEY (id,path) USING BTREE
+    ) ENGINE=MyISAM;
 
 --
 -- 表的结构 `dzz_form_setting`
@@ -596,15 +588,15 @@ CREATE TABLE `dzz_form_setting` (
   `length` int(10) NOT NULL DEFAULT '0' COMMENT '限制长度，如果是上传类型单位为M',
   `regex` varchar(255) NOT NULL DEFAULT '' COMMENT '正则验证表达式',
   `multiple` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否支持多选，如果支持多选的话，最多可以选择几项',
-  `options` text default NULL COMMENT '多选单选选项，数组形式序列化存储',
+  `options` text NOT NULL COMMENT '多选单选选项，数组形式序列化存储',
   `required` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否为必填项',
-  `extra` text default NULL COMMENT '其他扩展字段',
+  `extra` text NOT NULL COMMENT '其他扩展字段',
   `disp` smallint(6) NOT NULL DEFAULT '0' COMMENT '排序',
   `system` tinyint(1) UNSIGNED NOT NULL DEFAULT '0' COMMENT '0:自定义；1：系统内置',
   `incard` tinyint(1) NOT NULL DEFAULT '0' COMMENT '在列表显示',
   `catid` int(10) NOT NULL DEFAULT '0' COMMENT '分类id',
   `filedtype` varchar(120) NOT NULL DEFAULT 'string' COMMENT '字段类型',
-  `appid` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '应用id,标识该字段归属应用，为用户自定义',
+  `appid` char(6)  NOT NULL DEFAULT '' COMMENT '应用id,标识该字段归属应用，为用户自定义',
   `isdefault` tinyint(1) UNSIGNED NOT NULL DEFAULT '0' COMMENT '是否为默认标注字段',
   `allowsearch` tinyint(1) UNSIGNED NOT NULL DEFAULT '1' COMMENT '是否允许搜索，0不允许，1允许',
   `tabgroupid` int(11) UNSIGNED DEFAULT '0' COMMENT 'tabid',
@@ -613,19 +605,33 @@ CREATE TABLE `dzz_form_setting` (
   PRIMARY KEY (`flag`),
   KEY `disp` (`disp`)
 ) ENGINE=MyISAM;
-
--- --------------------------------------------------------
+--
+-- 表的结构 `dzz_form_filedvals`
+--
+DROP TABLE IF EXISTS `dzz_form_filedvals`;
+CREATE TABLE `dzz_form_filedvals` (
+  id int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  filed char(30) NOT NULL DEFAULT '' COMMENT '字段名',
+  filedval varchar(255) DEFAULT NULL COMMENT '默认字段值',
+  lang char(30) DEFAULT 'zh-CN' COMMENT '默认语言',
+  hots int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '使用次数',
+  initial char(6) DEFAULT '' COMMENT '首字符',
+  PRIMARY KEY (id)
+) ENGINE=MyISAM;
+--
+-- 表的结构 `dzz_form_setting_filedcat`
+--
 DROP TABLE IF EXISTS `dzz_form_setting_filedcat`;
 CREATE TABLE `dzz_form_setting_filedcat` (
-  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '分类id',
-  `catname` varchar(120) DEFAULT '' COMMENT '分类名称',
-  `cat` int(11) UNSIGNED NOT NULL DEFAULT '1' COMMENT '所属分类 1，tab,0系统',
-  `disp` int(11) UNSIGNED DEFAULT '0' COMMENT '排序',
-  `appid` int(11) UNSIGNED DEFAULT '0' COMMENT '库id',
-  `tabgroupid` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '卡片id',
-  PRIMARY KEY (`id`) USING BTREE,
-  KEY `appid` (`appid`) USING BTREE,
-  KEY `tabgroupid` (`tabgroupid`) USING BTREE
+ `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '分类id',
+ `catname` varchar(120) DEFAULT '' COMMENT '分类名称',
+ `cat` int(11) UNSIGNED NOT NULL DEFAULT '1' COMMENT '所属分类 1，tab,0系统',
+ `disp` int(11) UNSIGNED DEFAULT '0' COMMENT '排序',
+ `appid` char(6)  DEFAULT '' COMMENT '库id',
+ `tabgroupid` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '卡片id',
+ PRIMARY KEY (`id`) USING BTREE,
+ KEY `appid` (`appid`) USING BTREE,
+ KEY `tabgroupid` (`tabgroupid`) USING BTREE
 ) ENGINE=MyISAM;
 --
 -- 表的结构 `dzz_hooks`
@@ -636,7 +642,7 @@ CREATE TABLE `dzz_hooks` (
   `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
   `app_market_id` int(11) NOT NULL COMMENT '应用ID',
   `name` varchar(40) NOT NULL DEFAULT '' COMMENT '钩子名称',
-  `description` text default NULL COMMENT '描述',
+  `description` text NOT NULL COMMENT '描述',
   `type` tinyint(1) UNSIGNED NOT NULL DEFAULT '1' COMMENT '类型',
   `update_time` int(10) UNSIGNED NOT NULL DEFAULT '0' COMMENT '更新时间',
   `addons` varchar(255) NOT NULL DEFAULT '' COMMENT '钩子对应程序',
@@ -745,7 +751,7 @@ CREATE TABLE `dzz_local_router` (
   `routerid` smallint(6) UNSIGNED NOT NULL AUTO_INCREMENT,
   `name` char(60) NOT NULL DEFAULT '',
   `remoteid` smallint(6) UNSIGNED NOT NULL DEFAULT '0',
-  `router` text default NULL,
+  `router` text NOT NULL,
   `dateline` int(10) UNSIGNED NOT NULL DEFAULT '0',
   `available` tinyint(1) NOT NULL DEFAULT '0',
   `priority` smallint(6) UNSIGNED NOT NULL DEFAULT '100',
@@ -802,8 +808,8 @@ DROP TABLE IF EXISTS `dzz_mailqueue`;
 CREATE TABLE `dzz_mailqueue` (
   `qid` mediumint(8) UNSIGNED NOT NULL AUTO_INCREMENT,
   `cid` mediumint(8) UNSIGNED NOT NULL DEFAULT '0',
-  `subject` text default NULL,
-  `message` text default NULL,
+  `subject` text NOT NULL,
+  `message` text NOT NULL,
   `dateline` int(10) UNSIGNED NOT NULL DEFAULT '0',
   PRIMARY KEY (`qid`),
   KEY `mcid` (`cid`,`dateline`) USING BTREE
@@ -823,8 +829,8 @@ CREATE TABLE `dzz_notification` (
   `new` tinyint(1) NOT NULL DEFAULT '0',
   `authorid` int(10) UNSIGNED NOT NULL DEFAULT '0',
   `author` varchar(30) NOT NULL DEFAULT '',
-  `note` text default NULL,
-  `wx_note` text default NULL,
+  `note` text NOT NULL,
+  `wx_note` text NOT NULL,
   `wx_new` tinyint(1) NOT NULL DEFAULT '1',
   `redirecturl` varchar(255) NOT NULL DEFAULT '' COMMENT '跳转地址',
   `title` varchar(255) NOT NULL DEFAULT '',
@@ -1049,9 +1055,9 @@ CREATE TABLE `dzz_pichome_collect` (
   `username` char(30) NOT NULL DEFAULT '' COMMENT '用户名',
   `dateline` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '添加时间',
   `filenum` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '文件数',
-  `covert` text default NULL COMMENT '封面图地址',
-  `covert1` text default NULL COMMENT '封面图地址1',
-  `covert2` text default NULL COMMENT '封面图地址2',
+  `covert` text NOT NULL COMMENT '封面图地址',
+  `covert1` text NOT NULL COMMENT '封面图地址1',
+  `covert2` text NOT NULL COMMENT '封面图地址2',
   `lid` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '封面地址1对应id',
   `lid1` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '封面地址2对应id',
   `lid2` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '封面地址3对应id',
@@ -1103,7 +1109,7 @@ CREATE TABLE `dzz_pichome_collectevent` (
   `do_obj` varchar(60) NOT NULL DEFAULT '' COMMENT '操作对象',
   `type` tinyint(1) UNSIGNED NOT NULL DEFAULT '0' COMMENT '0，操作，1评论',
   `eventbody` varchar(60) NOT NULL DEFAULT '' COMMENT '事体',
-  `bodydata` text default NULL COMMENT '操作数据',
+  `bodydata` text NOT NULL COMMENT '操作数据',
   `dateline` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '操作时间',
   `state` tinyint(1) UNSIGNED NOT NULL DEFAULT '0' COMMENT '0对象存在，1已删除',
   `clid` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '收藏id',
@@ -1319,7 +1325,7 @@ CREATE TABLE `dzz_pichome_resources` (
   `uid` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '用户id',
   `username` char(30) NOT NULL DEFAULT '' COMMENT '用户名',
   `appid` char(6) NOT NULL DEFAULT '' COMMENT '库id',
-  `name` varchar(255) NOT NULL DEFAULT '' COMMENT '文件名称',
+  `name` varchar(200) NOT NULL DEFAULT '' COMMENT '文件名称',
   `type` char(15) NOT NULL DEFAULT '' COMMENT '文件类型',
   `ext` char(15) NOT NULL DEFAULT '' COMMENT '文件后缀',
   `height` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '高度',
@@ -1350,7 +1356,6 @@ CREATE TABLE `dzz_pichome_resources` (
   KEY `type` (`type`) USING BTREE,
   KEY `level` (`level`),
   KEY `isdelete` (`isdelete`),
-  KEY `namerid` (`name`,`rid`),
   KEY `datelinerid` (`dateline`,`rid`),
   KEY `mtimerid` (`mtime`,`rid`),
   KEY `btimerid` (`btime`,`rid`),
@@ -1392,7 +1397,7 @@ CREATE TABLE `dzz_pichome_resources_attr` (
   `duration` float(11,2) UNSIGNED NOT NULL DEFAULT '0.00' COMMENT '时长',
   `desc` text COMMENT '描述',
   `link` varchar(255) NOT NULL DEFAULT '' COMMENT '链接',
-  `tag` text default NULL COMMENT '标签id',
+  `tag` text NOT NULL COMMENT '标签id',
   `path` blob NOT NULL COMMENT '路径',
   `isget` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否已获取数据',
   `searchval` text COMMENT '关键词',
@@ -1470,6 +1475,7 @@ CREATE TABLE IF NOT EXISTS dzz_pichome_share (
     stype smallint(1) UNSIGNED NOT NULL DEFAULT '0',
     clid int(11) UNSIGNED NOT NULL DEFAULT '0',
     perm int(10) NOT NULL DEFAULT '1' COMMENT '分享权限',
+    sperm int(10) NOT NULL DEFAULT '0' COMMENT '超级权限',
     PRIMARY KEY (id),
     KEY appid (appid) USING BTREE,
     KEY uid (uid) USING BTREE,
@@ -1533,14 +1539,17 @@ CREATE TABLE `dzz_pichome_tagrelation` (
 --
 
 DROP TABLE IF EXISTS `dzz_pichome_templatepage`;
-CREATE TABLE `dzz_pichome_templatepage` (
-  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `pagename` varchar(255) DEFAULT NULL COMMENT '单页名称',
-  `dateline` int(11) DEFAULT NULL COMMENT '添加时间',
-  `disp` int(11) UNSIGNED DEFAULT '1' COMMENT '排序',
-  `issystem` tinyint(1) UNSIGNED DEFAULT '0' COMMENT '是否为系统',
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM;
+CREATE TABLE IF NOT EXISTS dzz_pichome_templatepage (
+    id int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+    pagename varchar(255) DEFAULT NULL COMMENT '单页名称',
+    dateline int(11) DEFAULT NULL COMMENT '添加时间',
+    disp int(11) UNSIGNED DEFAULT '1' COMMENT '排序',
+    issystem tinyint(1) UNSIGNED DEFAULT '0' COMMENT '是否为系统',
+    isdelete tinyint(1) NOT NULL DEFAULT '0',
+    delinfo varchar(255) NOT NULL DEFAULT '',
+    PRIMARY KEY (id),
+    KEY isdelete (isdelete)
+    ) ENGINE=MyISAM;
 
 
 
@@ -1556,6 +1565,7 @@ CREATE TABLE `dzz_pichome_templatetag` (
   `pageid` int(11) UNSIGNED DEFAULT '0' COMMENT '单页id',
   `tagflag` varchar(255) DEFAULT NULL COMMENT '模板标签标志',
   `tagname` varchar(255) DEFAULT NULL COMMENT '模板标签名称',
+  `showtitle` tinyint(1) UNSIGNED DEFAULT '0' COMMENT '是否显示',
   `tagtype` varchar(255) DEFAULT '' COMMENT '模板标签类型',
   `tagval` text COMMENT '模板标签值',
   `dateline` int(11) UNSIGNED NOT NULL DEFAULT '0',
@@ -1641,9 +1651,9 @@ CREATE TABLE `dzz_pichome_vapp`  (
   `percent` tinyint(3) UNSIGNED NOT NULL DEFAULT 0 COMMENT '导入百分比',
   `state` tinyint(1) NOT NULL DEFAULT 0 COMMENT '0，未导入，1准备中，2导入中，3校验中，4已完成,-1导入失败',
   `filter` text NULL COMMENT '筛选项',
-  `share` text default NULL COMMENT '分享权限',
-  `download` text default NULL COMMENT '下载权限',
-  `view` text default NULL COMMENT '访问权限',
+  `share` text NOT NULL COMMENT '分享权限',
+  `download` text NOT NULL COMMENT '下载权限',
+  `view` text NOT NULL COMMENT '访问权限',
   `donum` int(11) UNSIGNED NOT NULL DEFAULT 0 COMMENT '已导入文件数',
   `charset` char(15) NOT NULL DEFAULT '' COMMENT '库编码类型',
   `type` tinyint(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT '0，eagle库，1本地目录库，2，billfish库，3pichome库',
@@ -1783,8 +1793,8 @@ CREATE TABLE `dzz_session` (
 
 DROP TABLE IF EXISTS `dzz_setting`;
 CREATE TABLE `dzz_setting` (
-  `skey` varchar(255) NOT NULL DEFAULT '',
-  `svalue` text default NULL,
+  `skey` varchar(200) NOT NULL DEFAULT '',
+  `svalue` text NOT NULL,
   PRIMARY KEY (`skey`)
 ) ENGINE=MyISAM;
 
@@ -1797,7 +1807,7 @@ CREATE TABLE `dzz_setting` (
 DROP TABLE IF EXISTS `dzz_shorturl`;
 CREATE TABLE `dzz_shorturl` (
   `sid` char(10) NOT NULL,
-  `url` text default NULL,
+  `url` text NOT NULL,
   `count` int(10) UNSIGNED NOT NULL DEFAULT '0',
   PRIMARY KEY (`sid`)
 ) ENGINE=MyISAM;
@@ -1835,7 +1845,7 @@ CREATE TABLE `dzz_thame` (
   `default` tinyint(1) UNSIGNED NOT NULL DEFAULT '0',
   `dateline` int(10) UNSIGNED NOT NULL DEFAULT '0',
   `disp` smallint(6) UNSIGNED NOT NULL DEFAULT '0',
-  `modules` text default NULL,
+  `modules` text NOT NULL,
   `color` varchar(255) NOT NULL DEFAULT '',
   `enable_color` tinyint(1) NOT NULL DEFAULT '0',
   `vendor` varchar(255) NOT NULL,
@@ -2011,10 +2021,10 @@ CREATE TABLE `dzz_usergroup_field` (
 DROP TABLE IF EXISTS `dzz_user_field`;
 CREATE TABLE `dzz_user_field` (
   `uid` int(10) UNSIGNED NOT NULL,
-  `docklist` text default NULL,
-  `screenlist` text default NULL,
-  `applist` text default NULL,
-  `noticebanlist` text default NULL,
+  `docklist` text NOT NULL,
+  `screenlist` text NOT NULL,
+  `applist` text NOT NULL,
+  `noticebanlist` text NOT NULL,
   `iconview` tinyint(1) NOT NULL DEFAULT '2',
   `iconposition` tinyint(1) NOT NULL DEFAULT '0',
   `direction` tinyint(1) NOT NULL DEFAULT '0',
@@ -2027,9 +2037,9 @@ CREATE TABLE `dzz_user_field` (
   `usesize` bigint(20) UNSIGNED NOT NULL DEFAULT '0',
   `addsize` bigint(20) UNSIGNED NOT NULL DEFAULT '0',
   `buysize` bigint(20) UNSIGNED NOT NULL DEFAULT '0',
-  `wins` text default NULL,
+  `wins` text NOT NULL,
   `perm` int(10) NOT NULL DEFAULT '0',
-  `privacy` text default NULL,
+  `privacy` text NOT NULL,
   `userspace` int(11) NOT NULL DEFAULT '0' COMMENT '用户空间大小，-1表示无空间，0表示不限制',
   UNIQUE KEY `uid` (`uid`) USING BTREE
 ) ENGINE=MyISAM;
@@ -2044,7 +2054,7 @@ DROP TABLE IF EXISTS `dzz_user_profile`;
 CREATE TABLE `dzz_user_profile` (
   `uid` int(10) UNSIGNED NOT NULL,
   `fieldid` varchar(30) NOT NULL DEFAULT '',
-  `value` text default NULL,
+  `value` text NOT NULL,
   `privacy` smallint(3) NOT NULL DEFAULT '0' COMMENT '资料权限',
   PRIMARY KEY (`uid`,`fieldid`)
 ) ENGINE=MyISAM;
@@ -2057,7 +2067,7 @@ CREATE TABLE `dzz_user_profile` (
 
 DROP TABLE IF EXISTS `dzz_user_profile_setting`;
 CREATE TABLE `dzz_user_profile_setting` (
-  `fieldid` varchar(255) NOT NULL DEFAULT '',
+  `fieldid` varchar(200) NOT NULL DEFAULT '',
   `available` tinyint(1) NOT NULL DEFAULT '0',
   `invisible` tinyint(1) NOT NULL DEFAULT '0',
   `needverify` tinyint(1) NOT NULL DEFAULT '0',
@@ -2072,9 +2082,9 @@ CREATE TABLE `dzz_user_profile_setting` (
   `allowsearch` tinyint(1) NOT NULL DEFAULT '0',
   `formtype` varchar(255) NOT NULL DEFAULT 'text',
   `size` smallint(6) UNSIGNED NOT NULL DEFAULT '0',
-  `choices` text default NULL,
+  `choices` text NOT NULL,
   `privacy` smallint(3) NOT NULL DEFAULT '0' COMMENT '资料权限',
-  `validate` text default NULL,
+  `validate` text NOT NULL,
   `customable` tinyint(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`fieldid`)
 ) ENGINE=MyISAM;
@@ -2172,7 +2182,7 @@ CREATE TABLE `dzz_user_verify_info` (
   `username` varchar(30) NOT NULL DEFAULT '',
   `verifytype` tinyint(1) NOT NULL DEFAULT '0' COMMENT ' 审核类型0:资料审核, 1:认证1, 2:认证2, 3:认证3, 4:认证4, 5:认证5',
   `flag` tinyint(1) NOT NULL DEFAULT '0' COMMENT ' -1:被拒绝 0:待审核 1:审核通过',
-  `field` text default NULL,
+  `field` text NOT NULL,
   `orgid` int(10) UNSIGNED NOT NULL DEFAULT '0',
   `dateline` int(10) UNSIGNED NOT NULL DEFAULT '0',
   PRIMARY KEY (`vid`),
@@ -2231,12 +2241,14 @@ CREATE TABLE IF NOT EXISTS `dzz_video_record` (
 
 DROP TABLE IF EXISTS `dzz_pichome_route`;
 CREATE TABLE `dzz_pichome_route` (
-  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `url` varchar(255) DEFAULT '' COMMENT '原始路径',
-  `path` varchar(255) DEFAULT NULL COMMENT '映射路径',
-  `dateline` int(11) UNSIGNED DEFAULT '0' COMMENT '修改时间',
-  PRIMARY KEY (`id`)
+    sid char(6)  NOT NULL,
+    url varchar(255) DEFAULT '' COMMENT '原始路径',
+    path char(30) DEFAULT NULL COMMENT '映射路径',
+    dateline int(11) UNSIGNED DEFAULT '0' COMMENT '修改时间',
+    PRIMARY KEY (sid),
+    UNIQUE KEY path (path) USING BTREE
 ) ENGINE=MyISAM;
+
 
 DROP TABLE IF EXISTS `dzz_pichome_resourcestab`;
 CREATE TABLE `dzz_pichome_resourcestab` (
@@ -2252,15 +2264,303 @@ CREATE TABLE `dzz_pichome_resourcestab` (
   KEY `appid` (`appid`)
 ) ENGINE=MyISAM;
 
+DROP TABLE IF EXISTS `dzz_tab`;
+CREATE TABLE `dzz_tab` (
+   `tid` int(11) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '标签id',
+   `tabname` varchar(255) DEFAULT NULL COMMENT '名称',
+   `gid` int(11) UNSIGNED DEFAULT '0' COMMENT '标签组id',
+   `sumnum` int(11) UNSIGNED DEFAULT '0' COMMENT '数量',
+   `icon` varchar(255) DEFAULT NULL COMMENT '图片',
+   `number` varchar(120) DEFAULT NULL COMMENT '编号',
+   `isdelete` tinyint(1) UNSIGNED NOT NULL DEFAULT '0' COMMENT '是否是回收站数据',
+   `dateline` int(11) UNSIGNED NOT NULL DEFAULT '0',
+   `updatedate` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '更新时间',
+   `views` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '查看次数',
+   `topping_at` int(11) unsigned DEFAULT '0' COMMENT '置顶时间',
+   `is_recommed` tinyint(1) unsigned DEFAULT '0' COMMENT '推荐',
+   `is_hidden` tinyint(1) unsigned DEFAULT '0' COMMENT '隐藏',
+   `uid` int(10) NOT NULL DEFAULT '0' COMMENT '创建人UID',
+   `username` varchar(255) NOT NULL DEFAULT '' COMMENT '创建人',
+   PRIMARY KEY (`tid`) USING BTREE,
+   KEY `gid` (`gid`),
+   KEY `isdelete` (`isdelete`),
+   KEY `sumnum` (`sumnum`),
+   KEY `dateline` (`dateline`),
+   KEY `updatedate` (`updatedate`)
+) ENGINE=MyISAM;
+
+DROP TABLE IF EXISTS `dzz_tab_relation`;
+CREATE TABLE `dzz_tab_relation` (
+ `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+ `tid` int(11) UNSIGNED NOT NULL DEFAULT 0 COMMENT '卡片id',
+ `rtid` int(11) UNSIGNED NULL DEFAULT 0 COMMENT '关联卡片id',
+ `gid` int(11) NULL DEFAULT NULL COMMENT '专辑id',
+ `rgid` int(11) UNSIGNED NULL DEFAULT 0 COMMENT '关联专辑id',
+ `filedname` varchar(120) DEFAULT NULL COMMENT '字段名称',
+ PRIMARY KEY (`id`) USING BTREE,
+ KEY `tid` (`tid`) USING BTREE,
+ KEY `rtid` (`rtid`) USING BTREE,
+ KEY `gid` (`gid`) USING BTREE,
+ KEY `rgid` (`rgid`) USING BTREE
+) ENGINE=MyISAM;
+
+
+--
+-- 表的结构 `dzz_tab_attr`
+--
+
+DROP TABLE IF EXISTS `dzz_tab_attr`;
+CREATE TABLE `dzz_tab_attr` (
+ `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+ `skey` varchar(120) DEFAULT NULL,
+ `svalue` text,
+ `tid` int(11) UNSIGNED DEFAULT '0',
+ PRIMARY KEY (`id`),
+ KEY `tid` (`tid`)
+) ENGINE=MyISAM;
+
+
+
+--
+-- 表的结构 `dzz_tab_cat`
+--
+DROP TABLE IF EXISTS `dzz_tab_cat`;
+CREATE TABLE `dzz_tab_cat` (
+`cid` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+`pcid` int(11) UNSIGNED DEFAULT '0',
+`catname` varchar(30) DEFAULT NULL,
+`pathkey` varchar(255) DEFAULT NULL,
+`gid` int(11) UNSIGNED NOT NULL DEFAULT '0',
+`num` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '卡片数量',
+`disp` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '排序',
+PRIMARY KEY (`cid`),
+KEY `pcid` (`pcid`),
+KEY `disp` (`disp`),
+KEY `gid` (`gid`)
+) ENGINE=MyISAM;
+
+
+
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `dzz_tab_cat_relation`
+--
+
+DROP TABLE IF EXISTS `dzz_tab_cat_relation`;
+CREATE TABLE `dzz_tab_cat_relation` (
+     `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+     `cid` int(11) UNSIGNED DEFAULT '0',
+     `gid` int(11) UNSIGNED DEFAULT '0',
+     `tid` int(11) UNSIGNED DEFAULT '0',
+     `dateline` int(11) UNSIGNED DEFAULT '0',
+     `topping_at` int(11) unsigned DEFAULT '0' COMMENT '置顶时间',
+     `is_recommed` tinyint(1) unsigned DEFAULT '0' COMMENT '推荐',
+     PRIMARY KEY (`id`),
+     KEY `cid` (`cid`),
+     KEY `gid` (`gid`),
+     KEY `tid` (`tid`)
+) ENGINE=MyISAM;
+
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `dzz_tab_facechkrecord`
+--
+
+DROP TABLE IF EXISTS `dzz_tab_facechkrecord`;
+CREATE TABLE `dzz_tab_facechkrecord` (
+      `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+      `aid` int(11) UNSIGNED NOT NULL DEFAULT '0',
+      `tabgroupid` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '卡片id',
+      `path` varchar(255) NOT NULL DEFAULT '' COMMENT '图片路径',
+      `ext` char(10) NOT NULL DEFAULT '' COMMENT '文件后缀',
+      `filesize` int(11) UNSIGNED DEFAULT '0' COMMENT '图片大小',
+      `faceid` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '阿里云人脸id',
+      `tid` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '卡片id',
+      `status` int(11) NOT NULL DEFAULT '0' COMMENT '0未识别，1已识别',
+      `isdelete` int(11) NOT NULL DEFAULT '0' COMMENT '1删除，标记不识别',
+      PRIMARY KEY (`id`),
+      KEY `aid` (`aid`),
+      KEY `tabgroupid` (`tabgroupid`),
+      KEY `faceid` (`faceid`),
+      KEY `tid` (`tid`)
+) ENGINE=MyISAM;
+
+
+
+
+--
+-- 表的结构 `dzz_tab_group`
+--
+DROP TABLE IF EXISTS `dzz_tab_group`;
+CREATE TABLE `dzz_tab_group` (
+  `gid` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) DEFAULT NULL,
+  `views` text COMMENT '查看权限',
+  `edits` text COMMENT '管理权限',
+  `edit` text COMMENT '编辑权限',
+  `shares` text COMMENT '分享权限',
+  `downloads` text COMMENT '下载权限',
+  `dateline` int(11) unsigned DEFAULT NULL,
+  `icon` varchar(255) DEFAULT NULL,
+  `searchfiled` text,
+  `formfiled` text,
+  `available` tinyint(1) unsigned NOT NULL DEFAULT '0' COMMENT '0未开启，1已开启',
+  `disp` int(11) unsigned DEFAULT '0' COMMENT '排序',
+  `issystem` tinyint(1) unsigned DEFAULT '0',
+  `cat` int(1) unsigned NOT NULL DEFAULT '0' COMMENT '1,人物库，0其它',
+  `icotype` smallint(1) unsigned NOT NULL DEFAULT '1' COMMENT '1,横图，2竖图，3方图',
+  `defaultico` varchar(255) NOT NULL DEFAULT '' COMMENT '默认封面图',
+  `extra` text COMMENT '拓展字段',
+  `isdelete` int(1) unsigned DEFAULT '0' COMMENT '是否是删除状态',
+  `showtype` tinyint(1) unsigned DEFAULT '0' COMMENT '展示模式，0图标，1列表',
+  `aliasname` varchar(255) DEFAULT '' COMMENT '字段别名',
+  `aliascat` varchar(255) DEFAULT NULL COMMENT '分类别名',
+  `aliasnumber` varchar(255) DEFAULT '' COMMENT '编号别名',
+  `filterstyle` tinyint(1) unsigned DEFAULT '0' COMMENT '0下拉，1平铺',
+  PRIMARY KEY (`gid`) USING BTREE,
+  KEY `available` (`available`),
+  KEY `isdelete` (`isdelete`),
+  KEY `issystem` (`issystem`,`cat`)
+) ENGINE=MyISAM;
+
+DROP TABLE IF EXISTS `dzz_tab_tagnum`;
+CREATE TABLE `dzz_tab_tagnum` (
+   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+   `tid` int(11) UNSIGNED DEFAULT '0' COMMENT '标签id',
+   `tabid` int(11) UNSIGNED DEFAULT '0' COMMENT '卡片id',
+   `gid` int(11) UNSIGNED DEFAULT '0' COMMENT '标签组id',
+   `nums` int(11) UNSIGNED DEFAULT '0' COMMENT '使用次数',
+   PRIMARY KEY (`id`),
+   KEY `tid` (`tid`),
+   KEY `tabid` (`tabid`),
+   KEY `gid` (`gid`),
+   KEY `nums` (`nums`)
+) ENGINE=MyISAM;
+
+DROP TABLE IF EXISTS `dzz_tab_banner`;
+CREATE TABLE `dzz_tab_banner`  (
+    `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+    `pid` int(11) unsigned NOT NULL default '0' COMMENT '父id',
+    `gid` int(11) unsigned DEFAULT '0' COMMENT '标签组id',
+    `uid` int(11) unsigned DEFAULT NULL COMMENT '创建人',
+    `name` char(30) DEFAULT NULL COMMENT '栏目名称',
+    `cate` tinyint(1) unsigned DEFAULT '0' COMMENT '栏目类型0文件;1单页,2专辑',
+    `content` varchar(1000) DEFAULT NULL COMMENT '栏目值',
+    `layout` char(30) DEFAULT '' COMMENT '展示方式',
+    `cid` int(11) unsigned DEFAULT '0' COMMENT '收集id',
+    `opentype` tinyint(1) unsigned DEFAULT '1' COMMENT '打开方式，1当前窗口打开',
+    `isshow` tinyint(1) unsigned DEFAULT '0' COMMENT '是否显示',
+    `create_at` int(11) unsigned DEFAULT '0' COMMENT '添加时间',
+    `update_at` int(11) unsigned DEFAULT '0' COMMENT '修改时间',
+    `disp` int(11) unsigned DEFAULT '0' COMMENT '排序',
+    `pathkey` varchar(1000) DEFAULT '' COMMENT '路径',
+    `showchildren` tinyint(1) unsigned DEFAULT '0' COMMENT '是否显示子级',
+    `childlayout` tinyint(1) unsigned DEFAULT '0' COMMENT '子级是否平铺',
+    `filter` text COMMENT '筛选项',
+    PRIMARY KEY (`id`) USING BTREE,
+    KEY `gid` (`gid`) USING BTREE,
+    KEY `uid` (`uid`) USING BTREE,
+    KEY `cate` (`cate`) USING BTREE,
+    KEY `disp` (`disp`) USING BTREE
+) ENGINE = MyISAM;
+
+-- ----------------------------
+-- Table structure for pichome_tab_bannerdata
+-- ----------------------------
+DROP TABLE IF EXISTS `dzz_tab_bannerdata`;
+CREATE TABLE `dzz_tab_bannerdata`  (
+    `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+    `gid` int(11) UNSIGNED NULL DEFAULT 0 COMMENT '对应专辑id',
+    `bid` int(11) UNSIGNED NULL DEFAULT 0 COMMENT '对应栏目id',
+    `name` varchar(120) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '块名称',
+    `dtype` tinyint(1) NULL DEFAULT NULL COMMENT '0,字段，1字段分类，2模块数据',
+    `dcontent` varchar(1000) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '块数据内容',
+    `dcondition` varchar(1000) NULL DEFAULT NULL COMMENT '块数据条件',
+    `disp` int(11) UNSIGNED NULL DEFAULT 0 COMMENT '排序',
+    `dateline` int(11) UNSIGNED NULL DEFAULT 0 COMMENT '修改时间',
+    PRIMARY KEY (`id`) USING BTREE,
+    KEY `bid` (`bid`) USING BTREE,
+    KEY `disp` (`disp`) USING BTREE,
+    KEY `gid` (`gid`) USING BTREE,
+    KEY `dtype` (`dtype`) USING BTREE
+) ENGINE = MyISAM;
+
+DROP TABLE IF EXISTS `dzz_tab_perm`;
+CREATE TABLE `dzz_tab_perm`  (
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `tid` int(11) UNSIGNED NULL DEFAULT 0 COMMENT '卡片id',
+  `idtype` tinyint(1) UNSIGNED NULL DEFAULT 0 COMMENT '0用户，1机构部门',
+  `idval` int(11) UNSIGNED NULL DEFAULT NULL COMMENT '用户或机构部门id',
+  `perm` int(11) UNSIGNED NULL DEFAULT NULL COMMENT '0',
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `tid` (`tid`) USING BTREE,
+  KEY `perm` (`perm`) USING BTREE
+) ENGINE = MyISAM;
+
+DROP TABLE IF EXISTS `dzz_tab_filedlock`;
+CREATE TABLE `dzz_tab_filedlock` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `flag` varchar(100) NOT NULL DEFAULT '' COMMENT '字段名称',
+  `tid` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '对应卡片id',
+  PRIMARY KEY (`id`),
+  KEY `flag` (`flag`),
+  KEY `tid` (`tid`)
+) ENGINE=MyISAM;
+
+DROP TABLE IF EXISTS `dzz_tab_stats`;
+CREATE TABLE `dzz_tab_stats` (
+  `tid` int(11) unsigned NOT NULL COMMENT '卡片id',
+  `gid` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '专辑id',
+  `infopercent` float unsigned DEFAULT '0' COMMENT '信息完整度',
+  `dateline` int(11) unsigned DEFAULT '0' COMMENT '更新时间',
+  PRIMARY KEY (`tid`)
+) ENGINE=MyISAM;
+
+DROP TABLE IF EXISTS `dzz_tab_statsmodel`;
+CREATE TABLE `dzz_tab_statsmodel` (
+   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+   `bid` int(11) unsigned DEFAULT '0' COMMENT '模块id',
+   `num` int(11) unsigned DEFAULT '0' COMMENT '数量',
+   `tid` int(11) unsigned DEFAULT '0' COMMENT 'tabid',
+   `gid` int(11) unsigned DEFAULT '0' COMMENT '专辑id',
+   PRIMARY KEY (`id`)
+) ENGINE=MyISAM;
+
+DROP TABLE IF EXISTS `dzz_tab_filedvalcount`;
+CREATE TABLE `dzz_tab_filedvalcount` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `tid` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '卡片id',
+  `filed` char(30) DEFAULT '' COMMENT '字段',
+  `valid` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '值id',
+  `gid` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '专辑id',
+  `hots` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '使用次数',
+      PRIMARY KEY (`id`)
+) ENGINE=MyISAM;
+
+DROP TABLE IF EXISTS `dzz_tab_filedval`;
+CREATE TABLE `dzz_tab_filedval` (
+ `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+ `filed` char(30) DEFAULT '' COMMENT '字段',
+ `tid` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '卡片id',
+ `valid` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '值id',
+ `gid` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '专辑id',
+ PRIMARY KEY (`id`)
+) ENGINE=MyISAM;
+
 DROP TABLE IF EXISTS `dzz_tab_rangedate`;
 CREATE TABLE `dzz_tab_rangedate` (
-  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `start` int(11) UNSIGNED DEFAULT '0' COMMENT '开始时间',
-  `end` int(11) UNSIGNED DEFAULT '0' COMMENT '结束时间',
-  `tid` int(11) UNSIGNED DEFAULT '0' COMMENT '卡片id',
-  `filedname` varchar(120) DEFAULT NULL COMMENT '字段名称',
-  PRIMARY KEY (`id`)
+ `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+ `start` int(11) UNSIGNED DEFAULT '0' COMMENT '开始时间',
+ `end` int(11) UNSIGNED DEFAULT '0' COMMENT '结束时间',
+ `tid` int(11) UNSIGNED DEFAULT '0' COMMENT '卡片id',
+ `filedname` varchar(120) DEFAULT NULL COMMENT '字段名称',
+ PRIMARY KEY (`id`)
 ) ENGINE=MyISAM;
+
 --
 -- 表的结构 `dzz_keyword_hots`
 --
@@ -2377,11 +2677,11 @@ DROP TABLE IF EXISTS `dzz_search_template`;
 CREATE TABLE dzz_search_template (
     tid int(10) NOT NULL AUTO_INCREMENT COMMENT '模板TID自增',
     title varchar(255) NOT NULL DEFAULT '' COMMENT '模板名称',
-    data text default NULL,
-    screen text default NULL COMMENT '筛选项',
-    pagesetting text default NULL COMMENT '偏好设置',
-    searchRange text default NULL COMMENT '搜索范围',
-    exts text default NULL COMMENT '限制的文件后缀',
+    data text NOT NULL,
+    screen text NOT NULL COMMENT '筛选项',
+    pagesetting text NOT NULL COMMENT '偏好设置',
+    searchRange text NOT NULL COMMENT '搜索范围',
+    exts text NOT NULL COMMENT '限制的文件后缀',
     dateline int(10) UNSIGNED NOT NULL DEFAULT '0' COMMENT '创建时间',
     disp smallint(6) NOT NULL DEFAULT '0' COMMENT '排序',
     PRIMARY KEY (tid),
@@ -2398,7 +2698,7 @@ PRIMARY KEY (`langflag`) USING BTREE
 
 DROP TABLE IF EXISTS `dzz_lang`;
 CREATE TABLE `dzz_lang` (
-`skey` varchar(255) NOT NULL,
+`skey` varchar(200) NOT NULL,
 `idtype` tinyint(1) NOT NULL COMMENT '0,文件，1tab字段，2tab字段值，3标签分类,4标签，5库',
 `svalue` mediumtext,
 `idvalue` char(32) DEFAULT NULL COMMENT 'id值',
@@ -2414,7 +2714,7 @@ KEY `valtype` (`valtype`)
 
 DROP TABLE IF EXISTS `dzz_lang_en_us`;
 CREATE TABLE `dzz_lang_en_us` (
-`skey` VARCHAR ( 255 ) NOT NULL,
+`skey` VARCHAR ( 200 ) NOT NULL,
 `idtype` TINYINT ( 1 ) NOT NULL,
 `idvalue` CHAR ( 32 ) DEFAULT NULL,
 `svalue` MEDIUMTEXT,
@@ -2431,7 +2731,7 @@ KEY `valtype` ( `valtype` )
 
 DROP TABLE IF EXISTS `dzz_lang_zh_cn`;
 CREATE TABLE `dzz_lang_zh_cn` (
-`skey` varchar(255) NOT NULL,
+`skey` varchar(200) NOT NULL,
 `idtype` tinyint(1) NOT NULL DEFAULT '0' COMMENT '0,文件，1tab字段，2tab字段值，3标签分类,4标签，5库',
 `idvalue` char(32) DEFAULT NULL,
 `svalue` mediumtext,
@@ -2445,6 +2745,15 @@ KEY `idtype` (`idtype`),
 KEY `idvalue` (`idvalue`),
 KEY `valtype` (`valtype`)
 ) ENGINE=MyISAM;
+
+DROP TABLE IF EXISTS pichome_lang_file;
+CREATE TABLE IF NOT EXISTS pichome_lang_file (
+    id int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+    rid char(32) NOT NULL DEFAULT '' COMMENT '文件id',
+    lang char(60) NOT NULL DEFAULT '' COMMENT '语言',
+    dateline int(11) UNSIGNED DEFAULT '0' COMMENT '时间',
+    PRIMARY KEY (id) USING BTREE
+    ) ENGINE=MyISAM;
 
 DROP TABLE IF EXISTS `dzz_lang_search`;
 CREATE TABLE `dzz_lang_search` (
@@ -2599,120 +2908,197 @@ PRIMARY KEY (`id`) USING BTREE,
 KEY `rid` (`rid`) USING BTREE
 ) ENGINE = MyISAM;
 
-DROP TABLE IF EXISTS `dzz_lang`;
-CREATE TABLE `dzz_lang` (
-`skey` varchar(255) NOT NULL,
-`idtype` tinyint(1) NOT NULL COMMENT '0,文件，1tab字段，2tab字段值，3标签分类,4标签，5库',
-`svalue` mediumtext,
-`idvalue` char(32) DEFAULT NULL COMMENT 'id值',
-`valtype` tinyint(1) UNSIGNED DEFAULT '0' COMMENT '0值，1搜索',
-`filed` varchar(100) DEFAULT '' COMMENT '字段值',
-`dateline` int(11) unsigned DEFAULT '0' COMMENT '更新时间',
-`deldate` int(11) unsigned DEFAULT '0' COMMENT '删除时间',
-PRIMARY KEY (`skey`) USING BTREE,
-KEY `idtype` (`idtype`),
-KEY `idval` (`idvalue`),
-KEY `valtype` (`valtype`)
-) ENGINE=MyISAM;
-
-DROP TABLE IF EXISTS `dzz_lang_en_us`;
-CREATE TABLE `dzz_lang_en_us` (
-`skey` varchar(255) NOT NULL,
-`idtype` tinyint(1) NOT NULL COMMENT '',
-`idvalue` char(32) DEFAULT NULL,
-`svalue` mediumtext,
-`valtype` tinyint(1) UNSIGNED DEFAULT '0',
-`filed` varchar(100) DEFAULT '' COMMENT '字段值',
-`dateline` int(11) unsigned DEFAULT '0' COMMENT '更新时间',
-`deldate` int(11) unsigned DEFAULT '0' COMMENT '删除时间',
-PRIMARY KEY (`skey`) USING BTREE,
-KEY `idtype` (`idtype`),
-KEY `idvalue` (`idvalue`),
-KEY `valtype` (`valtype`)
-) ENGINE=MyISAM;
-
-DROP TABLE IF EXISTS `dzz_lang_zh_cn`;
-CREATE TABLE `dzz_lang_zh_cn` (
-`skey` varchar(255) NOT NULL,
-`idtype` tinyint(1) NOT NULL DEFAULT '0' COMMENT '0,文件，1tab字段，2tab字段值，3标签分类,4标签，5库',
-`idvalue` char(32) DEFAULT NULL,
-`svalue` mediumtext,
-`valtype` tinyint(1) UNSIGNED DEFAULT '0',
-`filed` varchar(100) DEFAULT '' COMMENT '字段值',
-`dateline` int(11) unsigned DEFAULT '0' COMMENT '更新时间',
-`deldate` int(11) unsigned DEFAULT '0' COMMENT '删除时间',
-PRIMARY KEY (`skey`) USING BTREE,
-KEY `idtype` (`idtype`),
-KEY `idvalue` (`idvalue`),
-KEY `valtype` (`valtype`)
-) ENGINE=MyISAM;
-
-DROP TABLE IF EXISTS `dzz_lang_search`;
-CREATE TABLE `dzz_lang_search` (
-`skey` varchar(50) NOT NULL,
-`idtype` tinyint(1) UNSIGNED DEFAULT '0',
-`idvalue` char(32) DEFAULT NULL,
-`svalue` mediumtext,
-`lang` varchar(60) DEFAULT NULL COMMENT '对应语言',
-`dateline` int(11) unsigned DEFAULT '0' COMMENT '更新时间',
-PRIMARY KEY (`skey`),
-KEY `idtype` (`idtype`),
-KEY `idvalue` (`idvalue`),
-FULLTEXT KEY `svalue` (`svalue`)
-) ENGINE=MyISAM;
-
-
 DROP TABLE IF EXISTS `dzz_task_record`;
 CREATE TABLE `dzz_task_record` (
-`id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-`idtype` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '0,目录自动标注任务',
-`idvalue` varchar(255) NOT NULL COMMENT '任务目标id',
-`dateline` int(11) unsigned NOT NULL COMMENT '任务添加时间',
-`donum` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '任务执行个数',
-`totalnum` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '任务待执行总个数',
-`lastid` varchar(255) NOT NULL DEFAULT '' COMMENT '最后执行的任务对应id值',
-`lastdate` bigint(15) unsigned NOT NULL DEFAULT '0' COMMENT '最后执行的任务对应时间',
-`appid` char(6) NOT NULL DEFAULT '' COMMENT '库id',
+    `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+    `idtype` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '0,目录自动标注任务',
+    `idvalue` varchar(255) NOT NULL COMMENT '任务目标id',
+    `dateline` int(11) unsigned NOT NULL COMMENT '任务添加时间',
+    `donum` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '任务执行个数',
+    `totalnum` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '任务待执行总个数',
+    `lastid` varchar(255) NOT NULL DEFAULT '' COMMENT '最后执行的任务对应id值',
+    `lastdate` bigint(15) unsigned NOT NULL DEFAULT '0' COMMENT '最后执行的任务对应时间',
+    `appid` char(6) NOT NULL DEFAULT '' COMMENT '库id',
 PRIMARY KEY (`id`)
 ) ENGINE=MyISAM;
 
 DROP TABLE IF EXISTS `dzz_pichome_folder_autodata`;
 CREATE TABLE `dzz_pichome_folder_autodata` (
-`id` int(11) unsigned NOT NULL  AUTO_INCREMENT,
-`fid` char(19) NOT NULL DEFAULT '' COMMENT '目录id',
-`skey` varchar(255) DEFAULT NULL COMMENT '字段名称',
-`svalue` text COMMENT '字段值',
-`appid` char(6) DEFAULT NULL COMMENT '库id',
-PRIMARY KEY (`id`),
-KEY `fid` (`fid`),
-KEY `appid` (`appid`)
+    `id` int(11) unsigned NOT NULL  AUTO_INCREMENT,
+    `fid` char(19) NOT NULL DEFAULT '' COMMENT '目录id',
+    `skey` varchar(255) DEFAULT NULL COMMENT '字段名称',
+    `svalue` text COMMENT '字段值',
+    `appid` char(6) DEFAULT NULL COMMENT '库id',
+    PRIMARY KEY (`id`),
+    KEY `fid` (`fid`),
+    KEY `appid` (`appid`)
 ) ENGINE=MyISAM;
 
 DROP TABLE IF EXISTS `dzz_ollama_chat`;
 CREATE TABLE dzz_ollama_chat (
-id int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-idtype tinyint(1) UNSIGNED DEFAULT '0' COMMENT '0,aid,1,rid,2对话id',
-idval char(32) DEFAULT NULL COMMENT 'id值',
-uid int(11) UNSIGNED DEFAULT '0' COMMENT '用户id',
-role char(15) DEFAULT NULL COMMENT '角色，user,assistant',
-dateline int(11) UNSIGNED DEFAULT '0' COMMENT '时间',
-content mediumtext COMMENT '内容',
-totaltoken int(11) UNSIGNED DEFAULT '0' COMMENT '消耗token数',
-PRIMARY KEY (id) USING BTREE
+    id int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+    idtype tinyint(1) UNSIGNED DEFAULT '0' COMMENT '0,aid,1,rid,2对话id',
+    idval char(32) DEFAULT NULL COMMENT 'id值',
+    uid int(11) UNSIGNED DEFAULT '0' COMMENT '用户id',
+    role char(15) DEFAULT NULL COMMENT '角色，user,assistant',
+    dateline int(11) UNSIGNED DEFAULT '0' COMMENT '时间',
+    content mediumtext COMMENT '内容',
+    totaltoken int(11) UNSIGNED DEFAULT '0' COMMENT '消耗token数',
+    PRIMARY KEY (id) USING BTREE
 ) ENGINE=MyISAM;
 
 DROP TABLE IF EXISTS `dzz_ollama_imageprompt`;
 CREATE TABLE dzz_ollama_imageprompt (
-id int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-name varchar(60) DEFAULT '',
-prompt text,
-prompts text default NULL COMMENT 'json数据',
-cate tinyint(1) DEFAULT NULL COMMENT '0，文件名，1标签，2描述，3标签分类',
-isdefault tinyint(1) UNSIGNED DEFAULT '0' COMMENT '是否默认',
-status tinyint(1) UNSIGNED DEFAULT '0' COMMENT '是否开启',
-disp int(11) UNSIGNED DEFAULT '0' COMMENT '排序数字越小越靠前',
-dateline int(11) UNSIGNED DEFAULT '0',
-PRIMARY KEY (id) USING BTREE
+    id int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+    name varchar(60) DEFAULT '',
+    prompt text,
+    prompts text NOT NULL COMMENT 'json数据',
+    cate tinyint(1) DEFAULT NULL COMMENT '0，文件名，1标签，2描述，3标签分类',
+    isdefault tinyint(1) UNSIGNED DEFAULT '0' COMMENT '是否默认',
+    status tinyint(1) UNSIGNED DEFAULT '0' COMMENT '是否开启',
+    disp int(11) UNSIGNED DEFAULT '0' COMMENT '排序数字越小越靠前',
+    dateline int(11) UNSIGNED DEFAULT '0',
+    PRIMARY KEY (id) USING BTREE
+) ENGINE=MyISAM;
+
+DROP TABLE IF EXISTS dzz_pichome_sys;
+CREATE TABLE IF NOT EXISTS dzz_pichome_sys (
+    id int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+    rid char(32) DEFAULT '',
+    appid char(6) DEFAULT '',
+    labelname varchar(255) NOT NULL DEFAULT '',
+    PRIMARY KEY (id),
+    KEY rid (rid),
+    KEY appid (appid)
+    ) ENGINE=MyISAM;
+
+DROP TABLE IF EXISTS dzz_publish_list;
+CREATE TABLE `dzz_publish_list` (
+    id int(11) unsigned NOT NULL AUTO_INCREMENT,
+    ptype tinyint(1) UNSIGNED NOT NULL DEFAULT '0' COMMENT '1单文件，2多文件，3库，4单页，5智能数据;6合集',
+    pval text COMMENT '发布值id',
+    pname varchar(255) NOT NULL DEFAULT '' COMMENT '发布名称',
+    pdesc varchar(255) NOT NULL DEFAULT '' COMMENT '发布描述',
+    tid int(11) DEFAULT NULL COMMENT '模版id',
+    flag tinyint(1) UNSIGNED NOT NULL DEFAULT '0'  COMMENT '模版名称',
+    uid int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '发布用户id',
+    username varchar(30) NOT NULL DEFAULT '',
+    view text COMMENT '查看权限',
+    download text COMMENT '下载权限',
+    share text COMMENT '分享权限',
+    pageset text COMMENT '偏好设置',
+    filter text COMMENT '筛选项',
+    extra text COMMENT '拓展参数',
+    dateline int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '创建时间',
+    address char(30) DEFAULT '' COMMENT '短链接地址',
+    updatedate int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '修改时间',
+    pstatus tinyint(1) UNSIGNED NOT NULL DEFAULT '0' COMMENT '发布状态;0;未发布；1：已发布；2:回收站',
+    cview int(11) UNSIGNED DEFAULT '0' COMMENT '查看次数',
+    cdownload int(11) UNSIGNED DEFAULT '0' COMMENT '下载次数',
+    aids text  COMMENT '相关aids列表',
+    rpids text,
+    metakeywords varchar(255) NOT NULL DEFAULT '' COMMENT '页面关键词',
+    metadescription varchar(255) NOT NULL DEFAULT '' COMMENT '页面描述',
+    isdelete tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM;
+
+DROP TABLE IF EXISTS dzz_publish_template;
+CREATE TABLE `dzz_publish_template` (
+    id int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+    tname char(60) NOT NULL DEFAULT '' COMMENT '模版名称',
+    tdesc varchar(255) NOT NULL DEFAULT '' COMMENT '模板描述',
+    tflag varchar(60) NOT NULL DEFAULT '' COMMENT '模板标识符',
+    ttype tinyint(1) UNSIGNED NOT NULL DEFAULT '0' COMMENT '模版类型，1单文件，2多文件，3库，4单页，5智能数据;6合集	',
+    dateline int(11) UNSIGNED DEFAULT '0' COMMENT '添加时间',
+    cuse int(11) UNSIGNED NOT NULL DEFAULT '0',
+    tdir varchar(60) NOT NULL DEFAULT '',
+    exts varchar(1000) NOT NULL DEFAULT '' COMMENT '支持的文件后缀，多个使用逗号隔开，留空不限制',
+    tags varchar(1000) NOT NULL DEFAULT '' COMMENT '标签，多个使用逗号隔开',
+    version varchar(30) NOT NULL DEFAULT '1.0',
+    PRIMARY KEY (`id`)
+) ENGINE=MyISAM;
+
+DROP TABLE IF EXISTS dzz_publish_relation;
+CREATE TABLE dzz_publish_relation (
+    `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+    `pid` int(11) unsigned DEFAULT '0',
+    `rpid` int(11) unsigned DEFAULT '0',
+    `dateline` int(11) unsigned DEFAULT '0',
+    PRIMARY KEY (`id`)
+) ENGINE=MyISAM;
+
+DROP TABLE IF EXISTS dzz_intelligent;
+CREATE TABLE dzz_intelligent (
+    tid int(10) NOT NULL AUTO_INCREMENT COMMENT '模板TID自增',
+    title varchar(255) NOT NULL DEFAULT '' COMMENT '模板名称',
+    screen text NOT NULL COMMENT '筛选项',
+    pagesetting text NOT NULL COMMENT '偏好设置',
+    searchRange text NOT NULL COMMENT '搜索范围',
+    exts text NOT NULL COMMENT '限制的文件后缀',
+    tags text NOT NULL COMMENT '指定标签',
+    dateline int(10) UNSIGNED NOT NULL DEFAULT '0' COMMENT '创建时间',
+    disp smallint(6) NOT NULL DEFAULT '0' COMMENT '排序',
+    extra text NOT NULL COMMENT '扩展字段',
+    PRIMARY KEY (tid),
+    KEY disp (disp,dateline) USING BTREE
+) ENGINE=MyISAM;
+
+DROP TABLE IF EXISTS dzz_image_search_ali;
+CREATE TABLE dzz_image_search_ali (
+    id int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+    rid char(32) NOT NULL,
+    md5 char(32) NOT NULL,
+    aid int(11) UNSIGNED NOT NULL DEFAULT '0',
+    ext char(60) DEFAULT NULL COMMENT '文件后缀',
+    status tinyint(1) UNSIGNED NOT NULL DEFAULT '0' COMMENT '0,待入库；1入库成功；2入库失败',
+    retry int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '重试次数',
+    dateline int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '创建时间（如果文件修改时间会变）',
+    getmd5 tinyint(1) NOT NULL DEFAULT '0',
+    appid char(6) NOT NULL COMMENT 'appid',
+    PRIMARY KEY (id) USING BTREE,
+    KEY rid (rid) USING BTREE,
+    KEY retry (status,retry) USING BTREE
+) ENGINE=MyISAM;
+
+DROP TABLE IF EXISTS dzz_bailian_chat;
+CREATE TABLE pichome_bailian_chat (
+    id int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+    idtype tinyint(1) UNSIGNED DEFAULT '0' COMMENT '0,aid,1,rid,2对话id',
+    idval char(32) DEFAULT NULL COMMENT 'id值',
+    uid int(11) UNSIGNED DEFAULT '0' COMMENT '用户id',
+    role char(15) DEFAULT NULL COMMENT '角色，user,assistant',
+    dateline int(11) UNSIGNED DEFAULT '0' COMMENT '时间',
+    content mediumtext COMMENT '内容',
+    totaltoken int(11) UNSIGNED DEFAULT '0' COMMENT '消耗token数',
+    PRIMARY KEY (id) USING BTREE
+) ENGINE=MyISAM;
+
+DROP TABLE IF EXISTS dzz_bailian_imageprompt;
+CREATE TABLE dzz_bailian_imageprompt (
+    id int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+    name varchar(60) DEFAULT '',
+    prompt text,
+    prompts text NOT NULL COMMENT 'json数据',
+    cate tinyint(1) DEFAULT NULL COMMENT '0，文件名，1标签，2描述，3标签分类',
+    isdefault tinyint(1) UNSIGNED DEFAULT '0' COMMENT '是否默认',
+    status tinyint(1) UNSIGNED DEFAULT '0' COMMENT '是否开启',
+    disp int(11) UNSIGNED DEFAULT '0' COMMENT '排序数字越小越靠前',
+    dateline int(11) UNSIGNED DEFAULT '0',
+    PRIMARY KEY (id) USING BTREE
+) ENGINE=MyISAM;
+
+DROP TABLE IF EXISTS dzz_bailian_model;
+CREATE TABLE dzz_bailian_model (
+    id int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+    model varchar(255) NOT NULL,
+    name varchar(255) NOT NULL,
+    description text NOT NULL,
+    vendor varchar(255) NOT NULL DEFAULT '' COMMENT '模型供应商',
+    type varchar(255) NOT NULL DEFAULT '',
+    dateline int(10) NOT NULL DEFAULT '0',
+    PRIMARY KEY (id),
+    KEY dateline (dateline)
 ) ENGINE=MyISAM;
 
 

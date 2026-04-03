@@ -434,7 +434,7 @@
 					edit:false,
 					active:'basic',
 					type:'',
-					pathinfo:parseFloat('{$_G[setting][pathinfo]}'),
+					pathinfo:parseFloat('{$_G['setting']['pathinfo']}'),
 				},
 				SettingFormvisit:{
 					groups:[],
@@ -527,7 +527,7 @@
 			RightCopyUrl(url){
 				const self = this;
 				var input = document.createElement('input'); input.setAttribute('id', 'copyInput');
-				input.setAttribute('value', '{$_G[siteurl]}'+url);
+				input.setAttribute('value', '{$_G['siteurl']}'+url);
 				document.getElementsByTagName('body')[0].appendChild(input);
 				document.getElementById('copyInput').select();
 				document.execCommand('copy')

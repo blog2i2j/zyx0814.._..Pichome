@@ -1,0 +1,295 @@
+<div style="padding: 0 8px;" v-if="classifyType && LeftCurrenType =='filelist'">
+    <div class="file-headers">
+		<div></div>
+        <div @click.stop class="cannot-select">
+            <el-checkbox 
+                v-model="hassub" 
+                :true-label="1" 
+                :false-label="0" 
+                label="{lang show_sub_folder_content}"></el-checkbox>
+        </div>
+    </div>
+</div>
+<Image-Layout 
+	ref="RefImageLayout"
+	:layout="ImageProps.layout"
+	:props="ImageProps.operation"
+	:showmessage="ImageProps.ShowMessage"
+	url="index.php?mod=publish&op=ajax&do=getappdatalist"
+	:urlparam="ImageProps.urlparam"
+	@click="ImageDetails"
+	@returnparam="Imagereturnparam"
+	:scrollref="scrollref"
+	:isborder="false"
+	:screenshow="Screenshow"
+	:islikeness="true"
+	:hassub="hassub">
+	<template v-slot:operation="{ data }">
+		<template v-if="data.share || data.down">
+			<template v-if="ImageProps.layout=='rowGrid' || ImageProps.layout=='imageList' || ImageProps.layout=='waterFall'">
+				<div class="operation-box" @click.stop :style="{opacity:data.isdropdown?1:''}">
+					<el-dropdown @command="ImageOperation" @visible-change="data.isdropdown = !data.isdropdown">
+						<span class="operation-btn">
+							<el-icon><More-Filled /></el-icon>
+						</span>
+						<template #dropdown>
+							<el-dropdown-menu>
+								<el-dropdown-item 
+									v-if="data.share" 
+									:command="ImageOperationVal('share',data)">
+									<el-icon><Share /></el-icon>
+									{lang share}
+								</el-dropdown-item>
+								<el-dropdown-item v-if="data.download" 
+									:command="ImageOperationVal('down',data)"
+									@click.stop>
+									<el-icon><Download /></el-icon>
+									{lang download}
+								</el-dropdown-item>
+								<el-dropdown-item 
+									v-if="parseInt(data.collection)" 
+									:command="ImageOperationVal('collect',data)">
+									<el-icon><Collection /></el-icon>
+									{lang collect}
+								</el-dropdown-item>
+								<el-dropdown-item
+										v-if="parseInt(data.allowImageSearch)"
+										:command="ImageOperationVal('search',data)"
+										@click.stop>
+									<el-icon><Search /></el-icon>
+									{lang search_picture}
+								</el-dropdown-item>
+							</el-dropdown-menu>
+						</template>
+					</el-dropdown>
+				</div>
+			</template>
+			<template v-else>
+				<el-dropdown @command="ImageOperation">
+					<el-button style="margin-left: 12px;" icon="MoreFilled"></el-button>
+					<template #dropdown>
+						<el-dropdown-menu>
+							<el-dropdown-item 
+								v-if="data.share" 
+								:command="ImageOperationVal('share',data)">
+								<el-icon><Share /></el-icon>
+								{lang share}
+							</el-dropdown-item>
+							<el-dropdown-item v-if="data.download" 
+								:command="ImageOperationVal('down',data)"
+								class="circulars">
+								<el-icon><Download /></el-icon>
+								{lang download}
+							</el-dropdown-item>
+							<el-dropdown-item 
+								v-if="parseInt(data.collection)" 
+								:command="ImageOperationVal('collect',data)">
+								<el-icon><Collection /></el-icon>
+								{lang collect}
+							</el-dropdown-item>
+						</el-dropdown-menu>
+					</template>
+				</el-dropdown>
+			</template>
+		</template>
+		
+        
+    </template>
+</Image-Layout>
+<script type="text/javascript">
+	var MixinImage = {
+		data(){
+			return {
+				hassub:1,
+				ImageProps:{
+					layout:'rowGrid',//rowGrid,imageList,waterFall
+					ShowMessage:{
+						display:[],
+                    	other:null
+					},
+					urlparam:{},
+					operation:{
+						click:true,//节点是否可被选择
+	                    dblclick:false,//节点是否可被双击选择
+	                    ctrl:false,//是否开启ctrl选中
+	                    shift:false,//是否开启shift选中
+	                    contextmenu:false,//是否开启右键
+	                    drap:false,//是否开启拖动选中
+						checked:false,
+						allowImageSearch:false
+					}
+				},
+				ImageParam:{
+					checkedKdys:[]
+				},
+				ImageDataParam:{},
+				ImageDataIframe:null,
+			}
+		},
+
+		methods:{
+			ImageOperationVal(type,val){
+				return {
+					type:type,
+					val:val
+				};
+			},
+			async ImageOperation(data){
+				let self = this;
+				if(data.type == 'down'){
+					window.open('index.php?mod=banner&op=download&dpath='+data.val.dpath);
+				}else if(data.type == 'collect'){
+                    self.$refs.RefImageLayout.ImageQuickChangeCollect(data.val.rid)
+				}else if(data.type == 'share'){
+					self.shareDialog.visible=true;
+					self.shareDialog.id=data.val.rid;
+					self.shareDialog.stype=0;
+					self.shareDialog.title=data.val.name;
+				}else if(data.type == 'search'){
+
+
+					self.$nextTick(() => {
+						self.CommonGetImageData();
+					})
+					let img = new Image();
+					// 设置图片的源（URL）
+
+					img.src = data.val.icondata;
+					// 当图片加载完成时，获取其宽度和高度
+					img.onload = function() {
+						// 创建 canvas 并将图片绘制到 canvas 上
+						const canvas = document.createElement('canvas');
+						const ctx = canvas.getContext('2d');
+
+						// // 设置 canvas 的宽高为图片的宽高
+						canvas.width = img.width;
+						canvas.height = img.height;
+						// // 将图片绘制到 canvas 上
+						ctx.drawImage(img, 0, 0);
+						// 将 canvas 内容转换为 JPG 格式的 Base64
+						const jpgBase64 = canvas.toDataURL('image/jpeg', 0.8); // 0.8 是图片质量
+
+						if(self.CropBase){
+							self.CropBase();
+						}
+						let CancelToken = axios.CancelToken;
+						axios.post('index.php?mod=io&op=getAidByBase64', {
+							base64:jpgBase64
+						},{
+							cancelToken: new CancelToken(function executor(c) {
+								self.CropBase = c;
+							})
+						}).then(function (res) {
+							if(res.data.success){
+								self.searchdata.aid = res.data.aid;
+								self.searchdata.loading = false;
+								self.searchdata.img = res.data.img;
+								sessionStorage.setItem('cropimg'+self.DocumentAppid,res.data.img);
+								self.$nextTick(() => {
+									self.CommonGetImageData();
+								})
+							}else{
+								self.$message.error(res.data.msg || __lang.upload_failed);
+							}
+						}).catch(function (error) {
+							// console.log(error);
+						});
+					};
+				}
+			},
+			Imagereturnparam(data){//列表加载完成返回得参数
+				this.ImageDataParam = data;
+				var arr = [];
+				for(var i in this.ImageDataParam.data){
+					arr.push(this.ImageDataParam.data[i].dpath)
+				}
+				if(this.ImageDataIframe){
+					var params = this.CommonSetParam();
+					params['ispage'] = this.ImageDataParam.ismore;
+					params['page'] = this.ImageDataParam.page;
+					params['total'] = this.ImageDataParam.total;
+					params['totalpage'] = this.ImageDataParam.totalpage;
+					params['perpage'] = this.ImageDataParam.perpage;
+					params['pagetab'] = 'pichome';
+					params['moreurl'] = '{MOD_URL}&op=ajax&do=getappdatalist';
+					this.ImageDataIframe.sessionStorage.setItem('imgparam',JSON.stringify(params));
+					
+					this.ImageDataIframe.sessionStorage.setItem('imgs',arr.join(','));
+				}else{
+					sessionStorage.setItem('imgs',arr.join(','));
+				}
+				
+			},
+			ImagePageTurning(dpath){//详情翻页事件
+				const self = this;
+				self.$refs.RefImageLayout.SetScrollbarTop(dpath);
+				self.HandleElScrollbar();
+			},
+			HandleElScrollbar(){
+				var self = this;
+				self.$refs.RefImageLayout.HandleElScrollbar();
+			},
+			ImageDetails(item){//双击事件
+				const self = this;
+				var arr = [];
+				for(var i in this.ImageDataParam.data){
+					arr.push(this.ImageDataParam.data[i].dpath)
+				}
+				let curr = this.ImageDataParam.data.find(function(current){
+					return current.rid == item.id;
+				});
+				let index = this.ImageDataParam.data.findIndex(function(current){
+					return current.dpath == item.id;
+				});
+
+				if(this.OpenDetailType == 'new' && this.ispc){
+					var params = this.CommonSetParam();
+					params['ispage'] = this.ImageDataParam.ismore;
+					params['page'] = this.ImageDataParam.page;
+					params['total'] = this.ImageDataParam.total;
+					params['totalpage'] = this.ImageDataParam.totalpage;
+					params['perpage'] = this.ImageDataParam.perpage;
+					params['moreurl'] = '{MOD_URL}h&op=ajax&do=getappdatalist';
+					this.ImageDataIframe = window.open('index.php?mod=details#path='+curr.dpath,'details');
+					this.ImageDataIframe.sessionStorage.setItem('imgparam',JSON.stringify(params));
+					this.ImageDataIframe.sessionStorage.setItem('imgs',arr.join(','));
+					this.ImageDataIframe.sessionStorage.setItem('selectindex',index);
+					this.ImageDataIframe.sessionStorage.setItem('href','{MOD_URL}&id={$pid}');
+					this.ImageDataIframe.sessionStorage.setItem('fidname','classify');
+				}else{
+
+
+					sessionStorage.setItem('href','{MOD_URL}&id={$pid}');
+					sessionStorage.setItem('selectindex', index);
+					sessionStorage.setItem('fidname','classify');
+					let div = document.createElement("div");
+					div.className = 'Details-Iframe';
+					let div1 = document.createElement("div");
+					div1.className = 'Details-Iframe-wrapper';
+					div.onclick=function(){
+						let div2 = document.querySelector('.Details-Iframe');
+						document.body.removeChild(div2);
+					}
+					div.append(div1);
+					document.body.appendChild(div);
+					let iframe = document.createElement("iframe");
+					iframe.style.opacity='0';
+					div1.append(iframe);
+					iframe.src =  'index.php?mod=details&opentype=current#path='+curr.dpath;
+
+				}
+				window.removeEventListener('message', this.ImageDetailsMessage)
+				window.addEventListener('message', this.ImageDetailsMessage)
+			},
+			ImageDetailsMessage(event){
+		      	if (event.origin !== window.location.origin) {
+		        	return;
+		      	}
+		      	this.ImagePageTurning(event.data.dpath);
+			},
+		},
+		mounted(){
+			var self = this;
+		}
+	};
+</script>

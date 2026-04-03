@@ -1,0 +1,273 @@
+<!--{template common/container/pc/header_start}-->
+<link rel="stylesheet" href="static/scss/default/index.css?{VERHASH}">
+<script type="text/javascript" src="static/vue_components/screen/index.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/vue_components/ImageLayout/index.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/vue_components/collectdialog/index.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/vue_components/HeaderSort/index.js?{VERHASH}"></script>
+<link rel="stylesheet" type="text/css" href="static/scss/layout.css?{VERHASH}"/>
+<style>
+	#Details_Iframe {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		z-index: 6000;
+	}
+</style>
+<script>
+    function debounce(fun, delay) {
+		var time;
+		return function(args) {
+			var that = this;
+			var _args = args;
+			if (time) clearTimeout(time);
+			time = setTimeout(function() {
+				fun.call(that, _args)
+			}, delay)
+		}
+	};
+	function URLdecode(str) {
+		var ret = "";
+		for(var i=0;i<str.length;i++) {
+			var chr = str.charAt(i);
+			if(chr == "+") {
+				ret += " ";
+			}else if(chr=="%") {
+				var asc = str.substring(i+1,i+3);
+				if(parseInt("0x"+asc)>0x7f) {
+					ret += decodeURI("%"+ str.substring(i+1,i+9));
+					i += 8;
+				}else {
+					ret += String.fromCharCode(parseInt("0x"+asc));
+					i += 2;
+				}
+			}else {
+				ret += chr;
+			}
+		}
+		return ret;
+	};
+	function handleSize(size) {
+		if (!size)
+			return "0K";
+		var num = 1024.00; //byte
+		if (size < num)
+			return size + "B";
+		if (size < Math.pow(num, 2))
+			return (size / num).toFixed(2) + "K"; //kb
+		if (size < Math.pow(num, 3))
+			return (size / Math.pow(num, 2)).toFixed(2) + "M"; //M
+		if (size < Math.pow(num, 4))
+			return (size / Math.pow(num, 3)).toFixed(2) + "G"; //G
+		return (size / Math.pow(num, 4)).toFixed(2) + "T"; //T
+	};
+	function GetDateVal(type){
+		var str = '';
+		var start = new Date();
+		var end = new Date();
+		switch(type){
+			case __lang.filter_range_day:
+			break;
+			case __lang.filter_range_yesterday:
+				end.setTime(end.getTime() - 3600 * 1000 * 24);
+				start.setTime(start.getTime() - 3600 * 1000 * 24);
+			break;
+			case __lang.filter_range_week:
+				start.setTime(start.getTime() - 3600 * 1000 * 24 * 6);
+			break;
+			case __lang.filter_range_month:
+				start.setTime(start.getTime() - 3600 * 1000 * 24 * 29);
+			break;
+			case __lang.filter_range_month3:
+				start.setTime(start.getTime() - 3600 * 1000 * 24 * 89);
+			break;
+			case __lang.filter_range_year:
+				start.setTime(start.getTime() - 3600 * 1000 * 24 * 364);
+			break;
+		}
+		str = start.getFullYear()+'-'+(start.getMonth()+1)+'-'+start.getDate()+'_'+end.getFullYear()+'-'+(end.getMonth()+1)+'-'+end.getDate();
+		return str;
+	}
+
+	function CopyTxt(item,text){
+		var input = document.createElement('input'); input.setAttribute('id', 'copyInput');
+		input.setAttribute('value', text);
+		document.getElementsByTagName('body')[0].appendChild(input);
+		document.getElementById('copyInput').select();
+		document.execCommand('copy')
+		item.$message({
+		  message: __lang.copy_clipboard,
+		  type: 'success'
+		});
+		document.getElementById('copyInput').remove();
+	};
+	function setcookie(cookieName, cookieValue, seconds, path, domain, secure) {
+		if(cookieValue == '' || seconds < 0) {
+			cookieValue = '';
+			seconds = -2592000;
+		}
+		if(seconds) {
+			var expires = new Date();
+			expires.setTime(expires.getTime() + seconds * 1000);
+		}
+		domain = !domain ? cookiedomain : domain;
+		path = !path ? cookiepath : path;
+		document.cookie = escape(cookiepre + cookieName) + '=' + escape(cookieValue)
+			+ (expires ? '; expires=' + expires.toGMTString() : '')
+			+ (path ? '; path=' + path : '/')
+			+ (domain ? '; domain=' + domain : '')
+			+ (secure ? '; secure' : '');
+	}
+</script>
+<!--{template common/container/pc/header_end}-->
+<div id="dzzoffice">
+	<el-container>
+        <el-header class="page-header"  height="60px" style="--el-header-padding: 0 8px;">
+            <!--{template pc/components/all/header}-->
+        </el-header>
+        <el-container>
+            <el-header v-show="Screenshow" height="50px" style="padding: 0px 8px;padding-bottom: 4px;">
+				<dzz-screen
+					ref="ScreenBoxRef"
+					:resize="DocumentResize"
+					:props="ScreenProps"
+					:headerkeyword="HeaderKeyword"
+					:defaultparam="ScreenParam"
+					:hassub="ImageDataIsExpanded"
+					@submit="CommonGetImageData">
+				</dzz-screen>
+            </el-header>
+            <el-main class="dzz-container" style="padding: 0px;overflow: hidden;position: relative;">
+				<el-scrollbar 
+					id="main_scrollbar" 
+					ref="MainscrollbarRef" 
+					@scroll="HandleElScrollbar">
+					<!--{template pc/components/all/image}-->
+					<el-backtop target="#main_scrollbar>.el-scrollbar__wrap" :right="RightWidth + 20" :bottom="20"></el-backtop>
+				</el-scrollbar>
+            </el-main>
+        </el-container>
+	</el-container>
+	<div id="Details_Iframe" v-if="DetailsIframe">
+		<iframe id="iframesrc" ref="iframesrc" :src="DetailsIframe" width="100%" height="100%" style="border: 0;"></iframe>
+	</div>
+	<!--{template pc/components/all/common}-->
+	
+</div>
+<script>
+	var WindowThis = null;
+	const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch, computed, onBeforeUpdate } = Vue;
+	const dzzoffice = createApp({
+		data(){
+			return {
+				DocumentAdminId:'$_G['adminid']',
+				DocumentName:__lang.all_collect,
+				DocumentType:'all',
+				DocumentPerm:'5',
+				Leftshareid:'',
+				LeftActiveid:'',
+
+				DocumentResize:0,
+				DocumentAppid:'',
+				DocumentCtrl:false,
+				DocumentDropActive:false,
+				DocumentDropActive1:false,
+				OpenDetailType:'new',
+				DetailsIframe :'',
+				DocumentThemeColor:'',//dark
+				scrollref:null,
+				DocumentVapp:{appname:'',type:0},
+				Screenshow:true,
+				ScreenParam:{
+					appid:''
+				},
+				ScreenProps:{
+					optionload:'index.php?mod=collection&op=ajax&operation=getscreen',
+					contentload:'index.php?mod=collection&op=ajax&operation=searchmenu_num',
+					isclassify:false,//分类是否显示
+				}
+			}
+		},
+		watch:{
+			DocumentThemeColor:{
+				handler(newval){
+					document.querySelector('html').className = newval
+				},
+				deep:true,
+				// immediate:true
+			},
+			DocumentAppid:{
+				handler(val){
+					this.ScreenParam.appid = val;
+				},
+				deep:true,
+				immediate: true
+			},
+		},
+		created(){
+			<!--{if intval($_G['setting']['pathinfo'])}-->
+			let param = '{$_GET['hashparams']}';
+			if(param){
+				param = JSON.parse(param)
+				this.DocumentAppid = param.appid;
+			}else{
+				this.DocumentAppid = this.CommonGetHashParam('appid');
+			}
+			<!--{else}-->
+			this.DocumentAppid = this.CommonGetHashParam('appid');
+			<!--{/if}-->
+			if(this.DocumentAppid){
+				this.ScreenParam.appid = this.DocumentAppid;
+				var ShowScreen = sessionStorage.getItem('showscreen')? sessionStorage.getItem('showscreen'):1;
+				if(parseInt(ShowScreen)){
+					this.Screenshow = true;
+				}else{
+					this.Screenshow = false;
+				}
+			}
+		},
+		mixins:[CommonMixin,HeaderMixin,MixinImage],
+		
+		methods:{
+			DocumentThemeChange(){
+				if(this.DocumentThemeColor=='light'){
+					this.DocumentThemeColor='dark';
+					localStorage.setItem('theme','dark');
+				}else{
+					this.DocumentThemeColor='light';
+					localStorage.setItem('theme','light');
+				}
+				
+			}
+		},
+		
+		mounted(){
+			var self = this;
+			WindowThis = this;
+			self.CommonInit();
+			this.scrollref = self.$refs.MainscrollbarRef;
+			window.onresize = function(){
+				self.DocumentResize += 1;
+			};
+		},
+		components:{
+			comavatar,
+			comsort
+		}
+	});
+	dzzoffice.use(ElementPlus, {
+		locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+	});
+	for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+		dzzoffice.component(key, component)
+	}
+	dzzoffice.use(ImageLayout);
+	dzzoffice.use(DzzScreen);
+	dzzoffice.use(DzzCollectdialog);
+	dzzoffice.component('international',international);
+	// 屏蔽警告信息
+	dzzoffice.config.warnHandler = function(){return null};
+	dzzoffice.mount('#dzzoffice');
+</script>
+<!--{template common/container/pc/footer}-->

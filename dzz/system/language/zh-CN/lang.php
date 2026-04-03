@@ -10,7 +10,6 @@
 
 $lang = array
 (
-    'app_name'=>'通知中心',
     'app_notice'=>'通知',
     'noapp_notice'=>'还没有通知',
     'lookallapp_notice'=>'查看所有通知',

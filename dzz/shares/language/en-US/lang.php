@@ -18,5 +18,4 @@ $lang = array (
     'password_share'=>'Please enter the extraction password',
     'password_share_error'=>'Extraction password is incorrect',
 
-
 );

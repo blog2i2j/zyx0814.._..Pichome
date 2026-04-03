@@ -33,7 +33,7 @@
                     placeholder="{lang share_endtime}"></el-date-picker>
             <el-text class="form-item-helper">{lang share_endtime_tip}</el-text>
         </el-form-item>
-        <el-form-item label="{lang share_perm}" prop="perm">
+        <el-form-item label="{lang share_perm}" prop="perm" v-if="ShareAddDialogForm.allowdownload">
             <el-checkbox  v-model="ShareAddDialogForm.perm" name="perm">
                 {lang download}
             </el-checkbox>
@@ -103,9 +103,11 @@
         data() {
             return {
                 shareDialog: {
+                    sid:0,
                     title:'',
-                    id:'',
+                    filepaths:[],
                     stype:0,
+                    sperm:0,
                     visible: false,
                     shareAddBtnLoading:false,
                     shareData: {
@@ -113,13 +115,16 @@
                     }
                 },
                 ShareAddDialogForm: {
-                    id:'',
+                    sid:0,
+                    filepaths:[],
                     stype:'',
                     title:'',
                     times:0,
                     password:'',
                     fendtime:'',
                     perm:true,
+                    sperm:0,
+                    allowdownload:1
                 },
                 rules: {
                     title: [
@@ -131,17 +136,31 @@
         methods: {
             getShareData() {
                 let self = this;
-                if(self.shareDialog.id==''){
+                if(self.shareDialog.filepaths.length<1){
                     return false;
                 }
                 axios.post('index.php?mod=shares&op=ajax&do=getShareDataById', {
-                    id: self.shareDialog.id,
+                    sid: self.shareDialog.sid,
+                    filepaths: self.shareDialog.filepaths,
                     stype: self.shareDialog.stype,
+                    sperm: self.shareDialog.sperm
                 }).then(function (response) {
                     if (response.data.success) {
                         self.ShareAddDialogForm = response.data.data;
+                        self.ShareAddDialogForm.perm = response.data.data.perm  ? true : false;
                         self.shareDialog.shareData = response.data.sharedata;
                     } else {
+                        self.shareDialog={
+                            sid:0,
+                            title:'',
+                            filepaths:[],
+                            stype:0,
+
+                            shareAddBtnLoading:false,
+                            shareData: {
+                                sid:0
+                            }
+                        }
                         self.$message(response.data.msg);
                     }
                 });
@@ -152,18 +171,20 @@
                     if (valid) {
                         self.shareAddBtnLoading = true;
                         let param={
-                            id: self.ShareAddDialogForm.id,
+                            sid: self.ShareAddDialogForm.sid,
+                            filepaths: self.shareDialog.filepaths,
                             stype: self.ShareAddDialogForm.stype,
                             title: self.ShareAddDialogForm.title,
                             times: self.ShareAddDialogForm.times,
                             password: self.ShareAddDialogForm.password,
                             fendtime: self.ShareAddDialogForm.fendtime,
-                            perm: self.ShareAddDialogForm.perm?true:false,
+                            perm: (self.ShareAddDialogForm.perm && self.ShareAddDialogForm.allowdownload)?true:false,
+                            sperm:self.ShareAddDialogForm.sperm
                         }
 
                         axios.post('index.php?mod=shares&op=ajax&do=shareAddSubmit', param).then(function (response) {
                             if (response.data.success) {
-                                self.shareDialog.shareData = response.data.data;
+
                                 self.RightCopyUrl(response.data.data.fshareurl);
                                 self.shareDialog.visible = false;
                             } else {

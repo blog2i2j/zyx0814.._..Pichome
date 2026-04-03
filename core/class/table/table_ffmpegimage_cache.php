@@ -19,7 +19,7 @@ class table_ffmpegimage_cache extends dzz_table
 
         parent::__construct();
     }
-    public function insert($setarr){
+    public function insert($setarr, $return_insert_id = false, $replace = false, $silent = false){
         $path = trim($setarr['path']);
         if(!$path) return false;
         if($id = DB::result_first("select id from %t where path = %s",array($this->_table,$path))){

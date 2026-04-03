@@ -336,7 +336,7 @@ $lang = array (
 	'crosswise_arrange'=>'Horizontal arrangement',
 	'page_background'=>'Page background',
 	'background'=>'Background',
-	
+	'backgroundcolor'=>'Background Color',
 	'number'=>'Quantity',
 	'checked'=>'Selected',
 	'file_number_type'=>'Files/Folders',
@@ -931,7 +931,7 @@ content.</p>
 </p>
 You only need to reset your password by clicking the link below within three days of submitting your request：<br />
 
-<a href="{siteurl}user.php?mod=login&op=logging&action=getpasswd&amp;uid={uid}&amp;id={idstring}" target="_blank">{siteurl}user.php?mod=getpasswd&amp;uid={uid}&amp;id={idstring}</a>
+<a href="{siteurl}user.php?mod=login&op=logging&action=getpasswd&amp;uid={uid}&amp;id={idstring}" target="_blank">{siteurl}user.php?mod=login&op=logging&action=getpasswd&amp;uid={uid}&amp;id={idstring}</a>
 <br />
 (If the above is not a link form, please manually paste the address into the browser address bar and then visit)</p>
 
@@ -2025,4 +2025,6 @@ Sincerely<br />
 	'similarity'=>'Similarity',
 	'drop_the_image'=>'Drag & drop images, or paste with Ctrl+V after screenshot',
 	'Image_format_support'=>'Image format support',
+    'deng'=>'And so on',
+	'text_color'=>'Text color',
 );

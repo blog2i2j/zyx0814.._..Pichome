@@ -62,9 +62,8 @@ $mime = dzz_mime::get_type($ext);
 
 if (is_file($url)) {
     $name = $filename;
-    $filename = $url;
     $start = 0;
-    $total = filesize($filename);
+    $total = filesize($url);
     header("Cache-Control: private, max-age=2592000, pre-check=2592000");
     header("Pragma: private");
     header("Expires: " . date(DATE_RFC822, strtotime(" 30 day")));
@@ -73,38 +72,39 @@ if (is_file($url)) {
         $attachment = 'attachment; filename*='.CHARSET.'\'\'' . $name;
     } elseif (!preg_match("/Chrome/", $_SERVER["HTTP_USER_AGENT"]) && preg_match("/Safari/", $_SERVER["HTTP_USER_AGENT"])) {
         $name = trim($name,'"');
-        $filename = rawurlencode($name); // 注意：rawurlencode与urlencode的区别
-        $attachment = 'attachment; filename*='.CHARSET.'\'\'' . $filename;
+        $name = rawurlencode($name); // 注意：rawurlencode与urlencode的区别
+        $attachment = 'attachment; filename*='.CHARSET.'\'\'' . $name;
     } else{
         $attachment = 'attachment; filename='.$name;
     }
 
-     header('content-disposition:'.$attachment);
+    // header('content-disposition:'.$attachment);
     if (isset($_SERVER['HTTP_RANGE'])) {
         $range = str_replace('=', '-', $_SERVER['HTTP_RANGE']);
         $range = explode('-', $range);
         if (isset($range[2]) && intval($range[2]) > 0) {
             $end = trim($range[2]);
+            header('HTTP/1.1 206 Partial Content');
         } else {
             $end = $total - 1;
+            header('HTTP/1.1 200 OK');
         }
         $start = trim($range[1]);
         $size = $end - $start + 1;
 
-        header('HTTP/1.1 206 Partial Content');
+        //header('HTTP/1.1 206 Partial Content');
         header('Content-Length:' . $size);
         header('Content-Range: bytes ' . $start . '-' . $end . '/' . $total);
 
     } else {
         $size = $end = $total;
-
         header('HTTP/1.1 200 OK');
         header('Content-Length:' . $size);
         header('Content-Range: bytes 0-' . ($total - 1) . '/' . $total);
     }
     header('Accenpt-Ranges: bytes');
     header('Content-Type:' . $mime);
-    $fp = fopen($filename, 'rb');
+    $fp = fopen($url, 'rb');
     fseek($fp, $start, 0);
 
     $cur = $start;

@@ -41,7 +41,7 @@ class perm {
 
         );
     }
-    public function setPerm($actions,$perm=0){
+    public static function setPerm($actions,$perm=0){
         if(!is_array($actions)) $actions=array($actions);
         $powerarr=self::getPowerArr();
         foreach($actions as $action){
@@ -65,14 +65,14 @@ class perm {
 
     }
 
-     public  function delPower($action,$perm=0)
+     public static function delPower($action,$perm=0)
     {
         $powerarr=self::getPowerArr();
         //删除权限，先将预删除的权限取反，再进行与操作
         if (isset($powerarr[$action])) return  $perm & ~intval($powerarr[$action]);
     }
 
-    public  function isPower($action,$perm=0)
+    public static function isPower($action,$perm=0)
     {
         $powerarr=self::getPowerArr();
         //权限比较时，进行与操作，得到0的话，表示没有权限

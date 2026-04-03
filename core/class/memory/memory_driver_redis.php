@@ -37,7 +37,7 @@ class memory_driver_redis
 		}
 		return false;
 	}
-	function &instance() {
+    public function &instance() {
 		static $object;
 		if(empty($object)) {
 			$object = new memory_driver_redis();
@@ -46,15 +46,19 @@ class memory_driver_redis
 		return $object;
 	}
 
-	function get($key) {
+    public function get($key) {
 		if(is_array($key)) {
 			return $this->getMulti($key);
 		}
 		return $this->obj->get($key);
 	}
 
-	function getMulti($keys) {
-		$result = $this->obj->getMultiple($keys);
+    public function getMulti($keys) {
+        if(method_exists($this->obj, 'getMultiple')){
+           $result = $this->obj->getMultiple($keys);
+        }else if(method_exists($this->obj, 'mget')){
+            $result = $this->obj->mget($keys);
+        }
 		$newresult = array();
 		$index = 0;
 		foreach($keys as $key) {
@@ -67,11 +71,11 @@ class memory_driver_redis
 		return $newresult;
 	}
 
-	function select($db=0) {
+    public function select($db=0) {
 		return $this->obj->select($db);
 	}
 
-	function set($key, $value, $ttl = 0) {
+    public function set($key, $value, $ttl = 0) {
 		if($ttl) {
 			return $this->obj->setex($key, $ttl, $value);
 		} else {
@@ -79,11 +83,11 @@ class memory_driver_redis
 		}
 	}
 
-	function rm($key) {
+    public function rm($key) {
 		return $this->obj->delete($key);
 	}
 
-	function setMulti($arr, $ttl=0) {
+    public function setMulti($arr, $ttl=0) {
 		if(!is_array($arr)) {
 			return FALSE;
 		}
@@ -93,79 +97,79 @@ class memory_driver_redis
 		return TRUE;
 	}
 
-	function inc($key, $step = 1) {
+    public function inc($key, $step = 1) {
 		return $this->obj->incr($key, $step);
 	}
 
-	function dec($key, $step = 1) {
+    public function dec($key, $step = 1) {
 		return $this->obj->decr($key, $step);
 	}
 
-	function getSet($key, $value) {
+    public function getSet($key, $value) {
 		return $this->obj->getSet($key, $value);
 	}
 
-	function sADD($key, $value) {
+    public function sADD($key, $value) {
 		return $this->obj->sADD($key, $value);
 	}
 
-	function sRemove($key, $value) {
+    public function sRemove($key, $value) {
 		return $this->obj->sRemove($key, $value);
 	}
 
-	function sMembers($key) {
+    public function sMembers($key) {
 		return $this->obj->sMembers($key);
 	}
 
-	function sIsMember($key, $member) {
+    public function sIsMember($key, $member) {
 		return $this->obj->sismember($key, $member);
 	}
 
-	function keys($key) {
+    public function keys($key) {
 		return $this->obj->keys($key);
 	}
 
-	function expire($key, $second){
+    public function expire($key, $second){
 		return $this->obj->expire($key, $second);
 	}
 
-	function sCard($key) {
+    public function sCard($key) {
 		return $this->obj->sCard($key);
 	}
 
-	function hSet($key, $field, $value) {
+    public function hSet($key, $field, $value) {
 		return $this->obj->hSet($key, $field, $value);
 	}
 
-	function hDel($key, $field) {
+    public function hDel($key, $field) {
 		return $this->obj->hDel($key, $field);
 	}
 
-	function hLen($key) {
+    public function hLen($key) {
 		return $this->obj->hLen($key);
 	}
 
-	function hVals($key) {
+    public function hVals($key) {
 		return $this->obj->hVals($key);
 	}
 
-	function hIncrBy($key, $field, $incr){
+    public function hIncrBy($key, $field, $incr){
 		return $this->obj->hIncrBy($key, $field, $incr);
 	}
 
-	function hGetAll($key) {
+    public function hGetAll($key) {
 		return $this->obj->hGetAll($key);
 	}
 
-	function sort($key, $opt) {
+    public function sort($key, $opt) {
 		return $this->obj->sort($key, $opt);
 	}
 
-	function exists($key) {
+    public function exists($key) {
 		return $this->obj->exists($key);
 	}
 
-	function clear() {
+    public function clear() {
 		return $this->obj->flushAll();
 	}
 }

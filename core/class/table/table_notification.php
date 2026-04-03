@@ -76,7 +76,7 @@ class table_notification extends dzz_table
 		$type = $type ? ' AND '.DB::field('type', $type) : '';
 		
 		$new = $new != '-1' ? ' AND '.DB::field('new', $new) : '';
-		return DB::result_first("SELECT COUNT(*) FROM %t WHERE uid=%d %i %i %i", array($this->_table, $uid, $new, $category, $type));
+		return DB::result_first("SELECT COUNT(*) FROM %t WHERE uid=%d %i %i", array($this->_table, $uid, $new,  $type));
 	}
 
 	public function fetch_all_by_uid($uid, $new, $type, $start, $perpage) {

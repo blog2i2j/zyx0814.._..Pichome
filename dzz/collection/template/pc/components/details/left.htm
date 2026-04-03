@@ -1,0 +1,601 @@
+<div class="left-main" style="height: calc(100% - 40px);">
+    <el-scrollbar @scroll="DocumentHideAllPop">
+        
+        <div class="tree"style="padding-right: 10px;padding-top: 10px;">
+            <div style="position: relative;height: 100%;padding-right: 10px;">
+				<el-tree
+					v-if="LeftTree.show"
+					class="left-tree"
+					ref="lefttree"
+					:load="LeftGetTreeData"
+					lazy
+					indent="8"
+					highlight-current
+					node-key="cid"
+					accordion
+					:expand-on-click-node="false"
+					:filter-node-method="LeftTreeDataFilterNode"
+					@node-contextmenu="LeftTreeContextmenu"
+					:default-expanded-keys="LeftTree.expandedkeys"
+					:props="LeftTree.DefaultProps" 
+					:current-node-key="LeftActiveid"
+					@node-click="LeftNodeClick">
+					<template  #default="{ node, data }">
+						<div 
+							class="custom-tree-node" 
+							:class="{'tree-node-color':node.level==1?LeftActiveidParent==data.cid:LeftActiveidParent==data.ppcid}">
+							<el-icon class="icon">
+								<template v-if="data.cid == 'user'">
+									<User />
+								</template>
+								<template v-else>
+									<template v-if="node.expanded">
+										<Folder-Opened />
+									</template>
+									<template v-else>
+										<Folder />
+									</template>
+								</template>
+								
+							</el-icon>
+							<template v-if="node.data.isRename">
+								<el-input 
+									v-model.trim="data.catname" 
+									size="small"
+									:ref="'treeinput'+data.cid"
+									maxlength="20" 
+									placeholder="{lang please_input}"
+									@keyup.enter.native="LefttreeinputRename" 
+									@blur="LefttreeinputRename" />
+							</template>
+							<template v-else>
+								<div class="name" :ref="'treename'+data.cid" v-cloak v-html="data.pcatname"></div>
+								<div class="num" v-if="node.expanded && parseInt(data.nosubfilenum)>0">{{data.nosubfilenum}}</div>
+								<div class="num" v-if="!node.expanded && parseInt(data.filenum)>0">{{data.filenum}}</div>
+							</template>
+						</div>
+					</template>
+				</el-tree>
+            </div>
+        </div>
+        
+    </el-scrollbar>
+	<div class="left-search">
+        <el-input
+            v-model="LeftfilterText" 
+            placeholder="{lang search_folder}"
+            clearable 
+            size="medium"
+            prefix-icon="search"
+            @clear="LeftFilterInputclear"
+            @input="LeftFilterInput"></el-input>
+    </div>
+</div>
+<el-dialog
+	custom-class="LeftTreeDialog"
+    v-model="LeftTreeDialog.Visible"
+    title="{lang delete_category}"
+	:close-on-click-modal="false"
+	:close-on-press-escape="false"
+	:show-close="false"
+    width="30%">
+	<p>{lang delete_category_tips} " {{LeftTreeDialog.title}} " ？</p>
+    <template #footer>
+      <span class="dialog-footer">
+			<el-button @click="LeftTreeDialog.Visible = false" :disabled="LeftTreeDialog.loading">{lang cancel}</el-button>
+			<el-button type="primary" @click="LeftTreeDelete" :loading="LeftTreeDialog.loading">{lang confirms}</el-button>
+      </span>
+    </template>
+</el-dialog>
+<el-popover
+	popper-class="isdropdown header-dropdown-menu"
+    v-model:visible="LeftTree.Menu.visible"
+	:popper-style="{top: LeftTree.Menu.top, left: LeftTree.Menu.left}"
+	trigger="contextmenu"
+	width="auto"
+	ref="treeMenu"
+	:show-arrow="false">
+    <ul class="el-dropdown-menu">
+		<li 
+			class="el-dropdown-menu__item" 
+			@click.stop="LeftTreeOperation('rename')">
+			<el-icon><Edit-Pen /></el-icon>
+            {lang rename}
+		</li>
+		<el-divider style="margin: 4px 0;"></el-divider>
+		<li
+			class="el-dropdown-menu__item" 
+			@click="LeftTreeOperation('add')">
+			<el-icon><Folder-Add /></el-icon>
+            {lang Create_peer}
+		</li>
+		<li
+			class="el-dropdown-menu__item" 
+			@click="LeftTreeOperation('addchild')">
+			<el-icon><Folder-Add /></el-icon>
+            {lang Create_Child}
+		</li>
+		<el-divider style="margin: 4px 0;"></el-divider>
+		<li
+			class="el-dropdown-menu__item" 
+			@click="LeftTreeOperation('delete')">
+			<el-icon><Delete /></el-icon>
+            {lang delete_category}
+		</li>
+	</ul>
+</el-popover>
+<el-dialog
+    v-model="LeftTreeDialogAdd.Visible"
+    :title="LeftTreeDialogAdd.title"
+	:close-on-click-modal="false"
+	:close-on-press-escape="false"
+	:show-close="!LeftTreeDialogAdd.loading">
+	<el-form>
+		<el-form-item label="{lang name}：">
+			<div class="language-box">
+				<el-input v-model="LeftTreeDialogAdd.name" @input="LeftTreeDialogAddTitleChange" clearable></el-input>
+				<language 
+				v-if="LeftTreeDialogAdd.langkey" 
+				:langkey="LeftTreeDialogAdd.langkey.catname" 
+				@change="LeftTreeDialogAddTitle"></language>
+			</div>
+		  	
+		</el-form-item>
+	  	</el-form>
+    <template #footer>
+      <span class="dialog-footer">
+			<el-button @click="LeftTreeDialogAdd.Visible = false" :disabled="LeftTreeDialogAdd.loading">{lang cancel}</el-button>
+			<el-button type="primary" @click="LefttreeinputRename" :loading="LeftTreeDialogAdd.loading">{lang confirms}</el-button>
+      </span>
+    </template>
+</el-dialog>
+<script type="text/javascript">
+	var LeftMixin = {
+		data(){
+			return {
+				LeftfilterText:'',
+				Leftclid:'$clid',
+				Leftshareid:'$shareid',
+				LeftActiveid:'all',
+				LeftActiveidParent:'all',
+				LeftTreePopover:{
+					show:false,
+					node:null,
+					renameFid:null,
+					left:0,
+					top:0
+				},
+				LeftTreeDialogAdd:{
+					type:'',
+					title:'',
+					langkey:'',
+					name:'',
+					Visible:false,
+					loading:false
+				},
+				LeftTree:{
+					node:'',
+					resolve:'',
+					expandedkeys:[],
+					alreadyexpandedkeys:[],
+					oldexpandedkeys:[],
+					show:true,
+					
+					DefaultProps: {
+						children: 'children',
+						label: 'catname',
+						isLeaf: 'leaf'
+					},
+					Menu:{
+						visible:false,
+						id:'',
+						left:0,
+						top:0
+					},
+					loading:true
+				},
+				LeftTreeDialog:{
+					cid:null,
+					Visible:false,
+					title:'',
+					loading:false
+				},
+			}
+		},
+		watch:{
+	
+		},
+		methods:{
+			LeftNodeClick(data){
+				var self = this;
+				if(this.LeftActiveid == data.cid){
+					return false;
+				}
+				if(parseInt(data.pcid)>0){
+					this.LeftActiveidParent = data.ppcid;
+				}else{
+					this.LeftActiveidParent = data.cid;
+				}
+				if(self.$refs.ScreenPopoverRef && self.$refs.ScreenPopoverRef.length){
+					for(var s in self.$refs.ScreenPopoverRef){
+						self.$refs.ScreenPopoverRef[s].doClose();
+					}
+				}
+				// self.HeaderPopoverSearchHide()
+				this.LeftActiveid = data.cid;
+				if(this.LeftActiveid == 'user'){
+					location.hash='id=user';
+					this.UserCreate();
+				}else{
+					if(this.LeftActiveid == 'all' || this.LeftActiveid == 'not' || data.leaf){
+						this.ImageDataIsExpanded = 0;
+					}else{
+						this.ImageDataIsExpanded = 1;
+					}
+					self.$nextTick(function(){
+						self.CommonDeleteAll();
+						self.CommonGetImageData();
+					});
+					
+				}
+			},
+			LeftFilterInputclear(){
+				var self = this;
+				self.LeftTree.show = false;
+				self.LeftTree.alreadyexpandedkeys = [];
+				self.LeftTree.expandedkeys = self.LeftTree.oldexpandedkeys;
+				self.$nextTick(function(){
+					self.LeftTree.show = true;
+				})
+			},
+			LeftFilterInput:debounce(async function(val){//输入
+				var self = this;
+				if(val){
+					self.LeftTree.show = false;
+					self.LeftTree.alreadyexpandedkeys = [];
+					var res = await axios.post(MOD_URL+'&op=ajax&operation=searchcat',{
+						clid:self.Leftclid,
+						keyword:val
+					});
+					var json = res.data;
+					var data = [];
+					for(var i in json.success){
+						var item = json.success[i];
+						var pathkey = item.pathkey.replaceAll('_','').split('-');
+						if(pathkey.length>1){
+							pathkey.pop();
+						}
+						if(pathkey.length){
+							for(var p in pathkey){
+								if(data.indexOf(parseInt(pathkey[p]))<0){
+									data.push(parseInt(pathkey[p]));
+								}
+							}
+						}
+					}
+					self.LeftTree.expandedkeys = data;
+					self.$nextTick(function(){
+						self.LeftTree.show = true;
+					})
+			
+				}
+				
+			},800),
+			LeftTreeDialogAddTitle(value){
+				this.LeftTreeDialogAdd.name = value;
+				this.LeftTreePopover.node.data.catname = value;
+				this.LeftTreePopover.node.data.pcatname = value;
+			},
+			LeftTreeDialogAddTitleChange(value){
+				this.LeftTreePopover.node.data.catname = value;
+			},
+			async LeftTreeOperation(type){
+				var self = this;
+				this.LeftTree.Menu.visible = false;
+				switch(type){
+					case 'rename':
+						this.LeftTreeDialogAdd.title = '{lang rename}';
+						this.LeftTreeDialogAdd.name = this.LeftTreePopover.node.data.catname;
+						this.LeftTreeDialogAdd.langkey = this.LeftTreePopover.node.data.langkey || '';
+						this.LeftTreeDialogAdd.Visible = true;
+					break;
+					case 'addparent':
+						this.LeftTreePopover.node = this.LeftTree.node;
+						this.LeftTreeOperation('add')
+					break;
+					case 'add':
+					case 'addchild':
+						if(this.LeftTreePopover.node.level>=1){
+							var pcid = this.LeftTreePopover.node.data.pcid;
+							if(type == 'addchild'){
+								pcid = this.LeftTreePopover.node.data.cid;
+							}
+						}else{
+							var pcid = '';
+						}
+						var {data: res} = await axios.post('index.php?mod=collection&op=collect&do=addcollectcat',{
+							clid:self.Leftclid,
+							pcid:pcid,
+							catname:'{lang none_name_folder}'
+						});
+						if(res.error){
+							self.$message.error(res.error || __lang.add_unsuccess)
+							return false;
+						}
+						var str = {
+							cid:res.data.cid,
+							catname:'{lang none_name_folder}',
+							pcatname:'{lang none_name_folder}',
+							filenum:0,
+							nosubfilenum:0,
+							children:[],
+							langkey:res.data.langkey,
+							leaf:true,
+							isRename:true,
+							pathkey:res.data.pathkey,
+							pcid:pcid
+						};
+
+						if(type == 'addchild'){
+							if(this.LeftTreePopover.node.loaded){
+								this.LeftTreePopover.node.expanded = true;
+								self.$refs.lefttree.append(str,this.LeftTree.Menu.cid);
+								self.$nextTick(function(){
+									var node = self.$refs.lefttree.getNode(res.data.cid);
+									self.LeftTreePopover.node = node;
+									setTimeout(function() {
+										self.$refs['treeinput'+res.data.cid].select();
+									}, 300);
+								});
+							}else{
+								this.LeftTreePopover.renameFid = res.data.cid;
+								this.LeftTreePopover.node.expand();
+							}
+						}else{
+							if(this.LeftTreePopover.node.level>0){
+								self.$refs.lefttree.insertAfter(str,this.LeftTreePopover.node.data.cid);
+							}else{
+								let usernode = self.$refs.lefttree.getNode('user');
+								self.$refs['lefttree'].insertBefore(str,usernode);
+							}
+							self.$nextTick(function(){
+								var node = self.$refs.lefttree.getNode(res.data.cid);
+								self.LeftTreePopover.node = node;
+								setTimeout(function() {
+									self.$refs['treeinput'+res.data.cid].select();
+								}, 300);
+							});
+						}
+					break;
+					case 'delete':
+						this.LeftTreeDialog.cid = this.LeftTreePopover.node.data.cid;
+						if(parseInt(this.LeftTreePopover.node.data.filenum)){
+							this.LeftTreeDialog.title = this.LeftTreePopover.node.data.catname;
+							this.LeftTreeDialog.Visible = true;
+						}else{
+							this.LeftTreeDelete();
+						}
+						
+					break;
+				}
+			},
+			LeftTreeContextmenu(event,data,node){
+				<!--{if intval($perm)>1}-->
+				if(data.cid == 'user' || data.cid == 'not' || data.cid == 'all'){
+					return false;
+				}
+				const self = this;
+				this.LeftTree.Menu.cid = data.cid;
+				self.LeftTreePopover.node = node;
+				let menu = self.$refs.treeMenu.popperRef.contentRef;
+				var evt = event || window.event;
+				var clientWidth = document.documentElement.clientWidth || document.body.clientWidth ;
+				var scrollLeft = document.documentElement.scrollLeft || document.body.scrollLeft;
+							
+				var clientHeight = document.documentElement.clientHeight || document.body.clientHeight ;
+				var scrollTop = document.documentElement.scrollTop || document.body.scrollTop ;
+				
+				//给left和top分别赋值为鼠标的位置；
+				// menu.style.left = evt.pageX+"px";
+				// menu.style.top = evt.pageY+"px";
+				this.LeftTree.Menu.left = evt.pageX+"px";
+				this.LeftTree.Menu.top = evt.pageY+"px";
+				//如果鼠标右边放不下菜单，就把left的值的改了
+				if(evt.pageX+100>clientWidth+scrollLeft){//菜单应该在鼠标左边；
+					var left1 = evt.pageX-100;
+					// menu.style.left = left1+"px";
+					this.LeftTree.Menu.left = left1+"px";
+				}
+				//如果鼠标下边放不下菜单，就把top的值的改了
+				if(evt.pageY+100>clientHeight+scrollTop){
+					var top1 = (evt.pageY-100);
+					// menu.style.top = top1+"px";
+					this.LeftTree.Menu.top = top1+"px";
+				}
+				self.$nextTick(function(){
+					self.LeftTree.Menu.visible = true;
+				});
+
+				<!--{/if}-->
+			},
+
+			async LefttreeinputRename(){//重命名
+				var self = this;
+				if(this.LeftTreePopover.node.data.catname == ''){
+					this.LeftTreePopover.node.data.catname = this.LeftTreePopover.node.data.pcatname;
+					this.LeftTreePopover.node.data.isRename = false;
+					return false;
+				}
+				if(this.LeftTreePopover.node.data.catname != this.LeftTreePopover.node.data.pcatname){
+					var res = await axios.post(MOD_URL+'&op=collect&do=addcollectcat',{
+						clid:self.Leftclid,
+						pcid:this.LeftTreePopover.node.data.pcid,
+						cid:this.LeftTreePopover.node.data.cid,
+						catname:this.LeftTreePopover.node.data.catname
+					});
+					if(res.data.success){
+						this.LeftTreePopover.node.data.pcatname = this.LeftTreePopover.node.data.catname;
+						this.LeftTreePopover.node.data.isRename = false;
+					}else{
+						self.$message({
+							type:'error',
+							message:__lang.modification_error
+						});
+						this.LeftTreePopover.node.data.catname = this.LeftTreePopover.node.data.pcatname;
+						this.LeftTreePopover.node.data.isRename = false;
+					}
+				}else{
+					this.LeftTreePopover.node.data.isRename = false;
+				}
+				this.LeftTreeDialogAdd.Visible = false;
+			},
+			LeftDialogOpened(){
+				var self = this;
+				self.$refs.addClassifyInput.focus();
+			},
+			LeftDialogClose(){
+				var self = this;
+				self.LeftTree.formdata.catname = '';
+				self.LeftTree.formdata.loading = false;
+				self.$refs['FormLeftRef'].resetFields();
+			},
+			async LeftGetTreeData(node,resolve){
+				var self = this;
+				var param = {};
+				var data = [];
+				if(node.level == 0){
+					
+					var collectdata = $collectdata;
+					this.LeftTree.node = node;
+					this.LeftTree.resolve = resolve;
+					param = {
+						level:0
+					}
+				}else{
+					param = {
+						pcid:node.data.cid
+					}
+				}
+				if(self.Leftshareid){
+					param['shareid'] = self.Leftshareid;
+				}else{
+					param['clid'] = self.Leftclid;
+				}
+				var res = await axios.post(MOD_URL+'&op=ajax&operation=getcollectcat',param);
+				var json = res.data;
+				var arr = [];
+				for(var i in json.success){
+					var item = json.success[i];
+					item['isRename'] = false;
+					if(node.level == 1){
+						item['ppcid'] = param.pcid;
+					}else if(node.level > 1){
+						item['ppcid'] = node.data.ppcid;
+					}
+					if(self.LeftfilterText){
+						if(self.LeftTree.expandedkeys.indexOf(item.cid)>-1 || item['catname'].indexOf(self.LeftfilterText) != -1){
+							item['pcatname'] = self.handleHighlight(item['catname'],self.LeftfilterText);
+							data.push(item);
+						}
+					}else{
+						item['pcatname'] = item['catname'];
+						data.push(item);
+					}
+
+				}
+				
+				if(!self.LeftfilterText && node.level == 0 && !self.Leftshareid){
+					
+					data.push({
+						cid:'user',
+						catname:__lang.member,
+						leaf:true,
+						clid:0,
+						pcatname: __lang.member,
+						filenum:collectdata['usernum']
+					});
+				}
+				resolve(data);
+				// self.$nextTick(function(){
+				// 	self.LeftGetTreeDataFinish();
+				// });
+			},
+
+			LeftTreeDataFilterNode(value, data) {
+				if (!value) return true;
+				return data.catname.indexOf(value) !== -1;
+			},
+			handleHighlight(text,words){//高亮文字
+                //匹配每一个特殊字符 ，进行转义
+                var specialStr = ["*", ".", "?", "+", "$", "^", "[", "]", "{", "}", "|", "\\", "(", ")", "/", "%"]; 
+                specialStr.forEach(item => {
+                    if(words.indexOf(item) != -1) {
+                        words = words.replace(new RegExp("\\" + item, 'g'), "\\" + item);
+                    }
+                })
+                //匹配整个关键词
+                let re = new RegExp(words, 'g');
+                if(re.test(text)) {
+                    text = text.replace(re, '<span class="highlight">$&</span>');
+                }
+                return text;
+            },
+			async LeftTreeDelete(){//分类删除
+				var self = this;
+				this.LeftTreeDialog.loading = true;
+				var res = await axios.post(MOD_URL+'&op=collect&do=delcollectcat',{
+					cid:self.LeftTree.Menu.cid
+				});
+				if(res.data.success){
+					self.$refs.lefttree.remove(self.LeftTree.Menu.cid);
+					window.location.reload();
+				}else{
+					self.$message({
+						type:'error',
+						message:__lang.delete_unsuccess
+					});
+				}
+				this.LeftTreeDialog.Visible = false;
+				this.LeftTreeDialog.loading = false;
+			},
+			LeftCreate(){
+				var self = this;
+				var hash=location.hash;
+				var url=hash.replace('#','');
+				var arr = url.split('&');
+				for(var i in arr){
+					var farr = arr[i].split('=');
+					switch(farr[0]){
+						case 'id':
+							if(farr[1] == 'all' || farr[1] == 'not' || farr[1] == 'user'){
+								self.LeftActiveid = farr[1];
+								self.LeftActiveidParent = farr[1];
+							}else{
+								self.LeftActiveid = parseInt(farr[1]);
+								self.LeftActiveidParent = parseInt(farr[1]);
+								this.GetLeftexpandedkeys();
+							}
+							
+						break;
+					}
+				}
+				if(self.LeftActiveid == 'user'){
+					this.UserCreate();
+				}else{
+					this.CommonInit();
+				}
+				
+			},
+			LeftMounted(){
+				var self = this;
+				$(document).click(function(e){
+					var target = $(e.target).closest('#LefrMenu');
+					var id = target.attr('id');
+					if(!id || id != 'LefrMenu'){
+						self.LeftTree.Menu.dialogVisible = false;
+					}
+				})
+			}
+		}
+	}
+</script>

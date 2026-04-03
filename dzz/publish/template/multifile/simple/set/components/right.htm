@@ -1,0 +1,457 @@
+<el-tabs 
+	v-model="RightactiveName" 
+	v-if="!DataLoading"
+	style="width: 100%;" 
+	@tab-click="handleClick">
+    <el-tab-pane label="{lang setting_basic}" name="tool">
+        <el-scrollbar>
+            <el-form 
+                :model="RightformBasic" 
+                label-position="top" 
+                label-suffix=":"
+                style="width: 100%;">
+				<el-form-item label="{lang page_title}">
+					<el-input v-model="RightformBasic.pname"></el-input>
+				</el-form-item>
+				<el-form-item label="{lang cover}">
+					<el-upload
+							class="avatar-uploader cover"
+							action="{MOD_URL}&op=admin&operation=uploadimg"
+							:show-file-list="false"
+							name="files"
+							accept="image/*"
+							:on-success="handleCoverUploaLogodSuccess">
+						<template v-if="RightformLike._file_cover.src">
+							<img :src="RightformLike._file_cover.src" class="avatar" />
+							<el-icon class="close-img" @click.stop="handleCloseImg('cover')"><Close-Bold /></el-icon>
+						</template>
+						<template v-else>
+							<el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+						</template>
+					</el-upload>
+				</el-form-item>
+				<el-form-item label="{lang collect}">
+					<el-select
+							v-model="RightformBasic.collection"
+							multiple
+							style="width: 100%">
+						<el-option
+								v-for="item in RightformBasic.options"
+								:key="item.value"
+								:label="item.label"
+								:value="item.value"
+						></el-option>
+					</el-select>
+				</el-form-item>
+				<el-form-item label="{lang metadescription}">
+					<el-input v-model="RightformBasic.metadescription"  :autosize="{ minRows: 2, maxRows: 4 }"  type="textarea"></el-input>
+				</el-form-item>
+				<el-form-item label="{lang metakeywords}">
+					<el-input v-model="RightformBasic.metakeywords" :autosize="{ minRows: 2, maxRows: 4 }"  type="textarea"></el-input>
+				</el-form-item>
+
+				<el-form-item label="{lang address}">
+					<div style="display: flex;width: 100%;">
+						<el-input v-model="RightformBasic.address" style="flex: 1;"></el-input>
+						<!-- <el-button style="margin-left: 6px;" icon="CopyDocument"></el-button> -->
+					</div>
+				</el-form-item>
+				<el-form-item label="{lang perm_view}">
+					<orguser-select 
+						defaulttype="view" 
+						@change="SettingUserChange" 
+						:defaultheckeds="SettingFormvisit.checked" 
+						:defaultexpanded="SettingFormvisit.expanded" 
+						:defaultdata="SettingFormvisit.data"></orguser-select>
+				</el-form-item>
+				<el-form-item label="{lang perm_download}">
+					<orguser-select 
+						defaulttype="down" 
+						@change="SettingUserChange" 
+						:defaultheckeds="SettingFormdown.checked" 
+						:defaultexpanded="SettingFormdown.expanded" 
+						:defaultdata="SettingFormdown.data"></orguser-select>
+				</el-form-item>
+				<el-form-item label="{lang perm_share}">
+					<orguser-select 
+						defaulttype="share" 
+						@change="SettingUserChange" 
+						:defaultheckeds="SettingFormshare.checked" 
+						:defaultexpanded="SettingFormshare.expanded" 
+						:defaultdata="SettingFormshare.data"></orguser-select>
+				</el-form-item>
+
+			</el-form>
+        </el-scrollbar>
+        
+    </el-tab-pane>
+	<el-tab-pane label="{lang setting_preference}" name="like">
+        <el-scrollbar>
+            <el-form 
+                :model="RightformLike" 
+                label-position="top" 
+                label-suffix=":"
+                style="width: 100%;">
+				<el-form-item label="{lang cover_image}">
+					<el-upload
+						class="avatar-uploader"
+						action="{MOD_URL}&op=admin&operation=uploadimg"
+						:show-file-list="false"
+						name="files"
+						accept="image/*"
+						:on-success="handleUploadSuccess"
+						:before-upload="handleUploadChange">
+						<template v-if="RightformLike._file_carousel.aid">
+							<img :src="RightformLike._file_carousel.src" class="avatar" />
+							<el-icon class="close-img" @click.stop="handleCloseImg"><Close-Bold /></el-icon>
+						</template>
+						<template v-else>
+							<el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+						</template>
+					</el-upload>
+				</el-form-item>
+				<el-form-item label="{lang title}">
+					<el-input v-model="RightformLike.name"></el-input>
+				</el-form-item>
+				<el-form-item label="{lang description}">
+					<div class="editor—wrapper" style="border: var(--el-border);z-index: 10000">
+						<div class="toolbar-container" style="border-bottom: var(--el-border);" ref="DomToolbar"><!-- 工具栏 --></div>
+						<div class="editor-container" ref="DomEditor"><!-- 编辑器 --></div>
+					</div>
+				</el-form-item>
+				<el-form-item label="{lang suffix_name}">
+					<el-radio-group v-model="RightformLike.exit">
+						<el-radio :label="0" border>{lang not_show}</el-radio>
+						<el-radio :label="1" border>{lang show}</el-radio>
+					</el-radio-group>
+				</el-form-item>
+				<el-form-item label="{lang theme}">
+					<el-space wrap>
+						<template v-for="item in colorval">
+							<div class="color-box" :style="{background:item}" @click="handleColor(item)">
+								<el-icon v-if="item == RightformLike.coloractive"><Check /></el-icon>
+							</div>
+						</template>
+					</el-space>
+				</el-form-item>
+				<el-form-item label="{lang page_top}">
+					<el-radio-group v-model="RightformLike.topEnable" style="width: 100%;">
+						<el-radio border style="margin-bottom: 6px;width: 40%;" :label="1">{lang enable}</el-radio>
+						<el-radio border style="margin-bottom: 6px;width: 40%;" :label="0">{lang close}</el-radio>
+					</el-radio-group>
+				</el-form-item>
+				<el-form-item label="{lang topNavigation}" v-if="RightformLike.topEnable">
+					<el-radio-group v-model="RightformLike.topNavigation" style="width: 100%;">
+						<el-radio border style="margin-bottom: 6px;width: 40%;" :label="1">{lang enable}</el-radio>
+						<el-radio border style="margin-bottom: 6px;width: 40%;" :label="0">{lang close}</el-radio>
+					</el-radio-group>
+				</el-form-item>
+				<el-form-item label="{lang bottomEnable}">
+					<el-radio-group v-model="RightformLike.bottomEnable" style="width: 100%;">
+						<el-radio border style="margin-bottom: 6px;width: 40%;" :label="1">{lang enable}</el-radio>
+						<el-radio border style="margin-bottom: 6px;width: 40%;" :label="0">{lang close}</el-radio>
+					</el-radio-group>
+				</el-form-item>
+
+				<el-form-item label="{lang bottomNavigation}" v-if="RightformLike.bottomEnable">
+					<el-radio-group v-model="RightformLike.bottomNavigation" style="width: 100%;">
+						<el-radio border style="margin-bottom: 6px;width: 40%;" :label="1">{lang enable}</el-radio>
+						<el-radio border style="margin-bottom: 6px;width: 40%;" :label="0">{lang close}</el-radio>
+					</el-radio-group>
+				</el-form-item>
+				<el-form-item label="{lang bottomTitle}" v-if="RightformLike.bottomEnable">
+					<el-input
+							v-model="RightformLike._textarea_bottomtitle"
+							:autosize="{ minRows: 2, maxRows: 4 }"
+							type="textarea"></el-input>
+				</el-form-item>
+				<el-form-item label="{lang beian}" v-if="RightformLike.bottomEnable">
+					<el-input v-model="RightformLike.beian"></el-input>
+				</el-form-item>
+				<el-form-item label="{lang beianmps}" v-if="RightformLike.bottomEnable">
+					<el-input v-model="RightformLike.beianmps"></el-input>
+				</el-form-item>
+			</el-form>
+        </el-scrollbar>
+        
+    </el-tab-pane>
+
+</el-tabs>
+<script type="text/javascript">
+	var RightMixin = {
+		data(){
+			return {
+				RightactiveName:'tool',
+                RightformBasic:{
+                    pname:'',
+                    metakeywords:'',
+                    metadescription:'',
+                    address:'',
+					collection:[],
+					options: []
+                },
+				RightformLike:{
+                    _file_carousel:{src:'',aid:0},
+					name:'',
+					_html_desc:'',
+					coloractive:'#0A8875',
+					background:'#DAEDEA',
+					exit:0,
+					topEnable:0,
+					bottomEnable:0,
+					bottomNavigation:0,
+					topNavigation:0,
+					_textarea_bottomtitle:'',
+					beian:'',
+					beianmps:'',
+					_file_cover:{src:'',aid:0},
+                },
+				imageUrl:'',
+				colorval:['#0A8875','#9E9E9E','#607D8B','#4CAF50','#FF9800','#FF5722','#00BCD4','#03A9F4','#4285F4','#3F51B5','#673AB7','#DB4437'],
+				backgroundval:['#DAEDEA','#F0F0F0','#E7ECEE','#E4F3E5','#FFF0D9','#FFE6DE','#D9F5F9','#D9F2FD','#E3EDFD','#ECEEF8','#F0EBF8','#FAE3E1'],
+                editorCreated:false
+			}
+		},
+        watch:{
+
+		},
+		created() {
+
+        },
+		methods:{
+			handleCloseImg(type){
+				if(type == 'cover'){
+					this.RightformLike._file_cover = {src:'',aid:0};
+				}else{
+					this.RightformLike._file_carousel = {src:'',aid:0};
+				}
+			},
+
+			handleCoverUploaLogodSuccess(data){
+				let self = this;
+				if(data.files && data.files.length && data.files[0].data){
+					this.RightformLike._file_cover = {src:data.files[0].data.img,aid:data.files[0].data.aid};
+				}else if(data.files && data.files.length && data.files[0].error){
+					self.$message.error(data.files[0].error);
+				}else{
+					self.$message.error(__lang.upload_failed);
+				}
+
+			},
+			handleClick(tab,e){
+
+				if(tab.paneName == 'like' && !this.editorCreated) {
+					this.handleEditor();
+				}
+			},
+
+			handleUploadChange(rawFile){
+				if (rawFile.type !== 'image/jpeg' && rawFile.type !== 'image/png' && rawFile.type !== 'image/gif' && rawFile.type !== 'image/webp'  && rawFile.type !== 'image/jpg') {
+
+					ElementPlus.ElMessage.error('Must be picture format!');
+					return false
+				}
+				return true
+			},
+            handleUploadSuccess(data){
+				this.RightformLike._file_carousel = {src:data.files[0].data.img,aid:data.files[0].data.aid};
+            },
+			handleColor(val){
+				if(this.RightformLike.coloractive == val)return false;
+				let index = this.colorval.indexOf(val);
+				let background = this.backgroundval[index];
+				this.RightformLike.coloractive = val;
+				this.RightformLike.background = background;
+			},
+            async addPosition(type){
+                let self = this;
+                let visit = {};
+				let share = {};
+				let download = {};
+                if(parseFloat(self.SettingFormvisit.status)){
+					visit = 0;
+				}else if(self.SettingFormvisit.groups && self.SettingFormvisit.groups.length && self.SettingFormvisit.groups.indexOf('unlimit')>-1){
+					visit = 1;
+				}else{
+					if(self.SettingFormvisit.groups && self.SettingFormvisit.groups.length){
+						visit['groups'] = self.SettingFormvisit.groups;
+					}
+					if(self.SettingFormvisit.uids && self.SettingFormvisit.uids.length){
+						visit['uids'] = self.SettingFormvisit.uids;
+					}
+				}
+                if(parseFloat(self.SettingFormshare.status)){
+					share = 0;
+				}else if(self.SettingFormshare.groups && self.SettingFormshare.groups.length && self.SettingFormshare.groups.indexOf('unlimit')>-1){
+					share = 1;
+				}else{
+					if(self.SettingFormshare.groups && self.SettingFormshare.groups.length){
+						share['groups'] = self.SettingFormshare.groups;
+					}
+					if(self.SettingFormshare.uids && self.SettingFormshare.uids.length){
+						share['uids'] = self.SettingFormshare.uids;
+					}
+				}
+			
+				if(parseFloat(self.SettingFormdown.status)){
+					download = 0;
+				}else if(self.SettingFormdown.groups && self.SettingFormdown.groups.length && self.SettingFormdown.groups.indexOf('unlimit')>-1){
+					download = 1;
+				}else{
+					if(self.SettingFormdown.groups && self.SettingFormdown.groups.length){
+						download['groups'] = self.SettingFormdown.groups;
+					}
+					if(self.SettingFormdown.uids && self.SettingFormdown.uids.length){
+						download['uids'] = self.SettingFormdown.uids;
+					}
+				}
+				this.IsIframe = false;
+				let pageset = JSON.parse(JSON.stringify(this.RightformLike));
+				
+				pageset['_file_carousel'] = parseFloat(this.RightformLike._file_carousel.aid)?[this.RightformLike._file_carousel.aid]:[];
+				if(this.RightformLike._file_cover.aid > 0){
+					pageset['_file_cover'] = {aid:this.RightformLike._file_cover.aid,src:''};
+				}else{
+					pageset['_file_cover'] = {aid:0,src:this.RightformLike._file_cover.src};
+				}
+				let param = {
+					formhash:'{FORMHASH}',
+					submit:true,
+                    id:this.documentid,
+					ptype:'{$data['ptype']}',
+					pval:'{$data['pval']}',
+                    pname:this.RightformBasic.pname,
+                    metakeywords:this.RightformBasic.metakeywords,
+                    metadescription:this.RightformBasic.metadescription,
+                    address:this.RightformBasic.address,
+					rpids:this.RightformBasic.collection,
+                    view:visit,
+                    download:download,
+                    share:share,
+					pageset:pageset
+                };
+				if(type!=='save'){
+					param['pstatus'] = 1;
+				}
+				let {data: res} = await axios.post('{MOD_URL}&op=admin&operation=basic',param);
+				this.IsIframe = true;
+            },
+            SettingUserChange(data,type){
+				var str = {
+					groups:[],
+					uids:[],
+					data:[],
+					checked:[],
+					expanded:[],
+					status:0
+				}
+				if(data && data.length){
+					for(var i in data){
+						var item = data[i];
+						if(item.type == 'unlimit'){
+							str.groups.push('unlimit');
+							break;
+						}
+						if(item.type == 'user'){
+							str.uids.push(item.id);
+						}else{
+							str.groups.push(item.id);
+						}
+						str.data.push(item);
+					}
+				}else{
+					str.status = 1;
+				}
+                if(type == 'view'){
+                    this.SettingFormvisit = str;
+                }else if(type == 'down'){
+                    this.SettingFormdown = str;
+                }else if(type == 'share'){
+                    this.SettingFormshare = str;
+                }
+			},
+			handleEditor(){
+				let self = this;
+				let DomToolbar = self.$refs.DomToolbar;
+				let DomEditor = self.$refs.DomEditor;
+				let { createEditor, createToolbar } = window.wangEditor;
+				let uploadImage = {
+					server: '{MOD_URL}&op=admin&operation=uploadimg',
+					timeout: 5 * 1000, // 5s
+					maxNumberOfFiles: 1,
+					allowedFileTypes: ['image/*'],
+					fieldName: 'files',
+					meta: {},
+					headers: { Accept: 'text/x-json' },
+					maxFileSize: 10 * 1024 * 1024, // 10M
+					base64LimitSize: 5 * 1024, // insert base64 format, if file's size less than 5kb
+					onBeforeUpload(file) {
+						var tt = '';
+						for(var x in file){
+							var formData = new FormData();
+							formData.append('files', file[x].data);
+							file[x].meta = formData
+						}
+						return file; // prevent upload
+					},
+					customInsert(res, insertFn) {
+						var url = res.files[0].data.img || '';
+						var alt = res.files[0].name || '';
+						var href = res.files[0].href || '';
+						insertFn(url, alt, href)
+					},
+					onFailed(file, res) {
+						ElementPlus.ElMessage.error(__lang.upload_failed);
+					},
+					onError(file, err, res) {
+						ElementPlus.ElMessage.error(__lang.upload_error);
+					},
+				};
+				let editorConfig = {
+					placeholder: __lang.content,
+					MENU_CONF:{
+						uploadImage:uploadImage,
+					},
+					onChange(editor) {
+						var html = editor.getHtml();
+						self.RightformLike._html_desc = html;
+					}
+				};
+
+				let editor = createEditor({
+					selector: DomEditor,
+					html: self.RightformLike._html_desc,
+					config: editorConfig,
+					mode:'simple',
+				});
+				createToolbar({
+					editor,
+					selector: DomToolbar,
+					config: {
+						insertKeys :{
+							index: 25, // 插入的位置，基于当前的 toolbarKeys
+							keys: ['divider']
+						},
+						excludeKeys:[
+							'blockquote',
+							'group-more-style',
+							'through',
+							'color',
+							'bgColor',
+							'clearStyle',
+							'todo',
+							'justifyLeft',
+							'justifyRight',
+							'justifyCenter',
+							'insertVideo',
+							'insertTable',
+							'codeBlock'
+						]
+					},
+					mode:'simple',
+				});
+				this.editorCreated=true;
+			}
+		}
+	};
+</script>

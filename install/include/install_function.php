@@ -63,6 +63,7 @@ function check_db($dbhost, $dbuser, $dbpw, $dbname, $tablepre) {
 	}
 	$mysqlmode = function_exists('mysqli_connect') ? 'mysqli' : 'mysql';
 	if($mysqlmode=='mysqli'){
+        $unix_socket='';
 		//兼容支持域名直接带有端口的情况
 		if(strpos($dbhost,':')!==false){
 			list($dbhost,$port)=explode(':',$dbhost);
@@ -72,8 +73,13 @@ function check_db($dbhost, $dbuser, $dbpw, $dbname, $tablepre) {
 			$dbhost='localhost';
 		}
 		if(empty($port)) $port='3306';
-		
-		$link =  new mysqli($dbhost, $dbuser, $dbpw, '', $port, $unix_socket);
+
+        try {
+		    $link =  new \mysqli($dbhost, $dbuser, $dbpw, '', $port, $unix_socket);
+        } catch (\mysqli_sql_exception $e) {
+            $error_msg =  $e->getMessage();
+            die($error_msg);
+        }
 		$errno =  $link->connect_errno;
 		$error =  $link->connect_error;
 	}else{
@@ -205,6 +211,7 @@ function show_env_result(&$env_items, &$func_items, &$filesock_items) {
 		if($key == 'php' && strcmp($item['current'], $item['r']) < 0) {
 			show_msg('php_version_too_low', $item['current'], 0);
 		}
+
 		if($key == 'php' && strcmp($item['current'], $item['m']) >=0) {
 			show_msg('php_version_too_low', $item['current'], 0);
 		}
@@ -684,8 +691,8 @@ function runquery($sql) {
 
 	$sql = str_replace("\r", "\n", str_replace(' '.ORIG_TABLEPRE, ' '.$tablepre, $sql));
 	$sql = str_replace("\r", "\n", str_replace(' `'.ORIG_TABLEPRE, ' `'.$tablepre, $sql));
-    $sql = str_replace("\r", "\n", str_replace(' pichome_', ' '.$tablepre, $sql));
-    $sql = str_replace("\r", "\n", str_replace(' `pichome_', ' `'.$tablepre, $sql));
+	$sql = str_replace("\r", "\n", str_replace(' pichome_', ' '.$tablepre, $sql));
+	$sql = str_replace("\r", "\n", str_replace(' `pichome_', ' `'.$tablepre, $sql));
 	$ret = array();
 	$num = 0;
 	foreach(explode(";\n", trim($sql)) as $query) {
@@ -700,9 +707,9 @@ function runquery($sql) {
 	foreach($ret as $query) {
 		$query = trim($query);
 		if($query) {
-
 			if(substr($query, 0, 12) == 'CREATE TABLE') {
 				$name = str_replace('`','',preg_replace("/CREATE TABLE\s+([`a-z0-9_`]+)\s+.*/is", "\\1", $query));
+
 				$db->query(createtable($query, $db->version()));
 				showjsmessage(lang('create_table').' '.$name.' ... '.lang('succeed'));
 			} else {
@@ -1180,11 +1187,10 @@ function createmachinecode(){
     $onlineip = $_SERVER['REMOTE_ADDR'];
     $mcode = 'PH'.$chars[date('y')%60].$chars[date('n')].
         $chars[date('j')].$chars[date('G')].$chars[date('i')].
-        $chars[date('s')].substr(md5($onlineip.TIMESTAMP), 0, 4).random(4);
+        $chars[date('s')].substr(md5($onlineip.time()), 0, 4).random(4);
     return $mcode;
 }
 function upgradeinformation($sitename,$machinecode) {
-   
     $update = array();
     $update[ 'mcode' ] = $machinecode;
     $update[ 'usum' ] = 1;
@@ -1194,8 +1200,8 @@ function upgradeinformation($sitename,$machinecode) {
     $update[ 'version_level' ] = CORE_VERSION_LEVEL;
     $update[ 'release' ] = CORE_RELEASE;
     $update[ 'fixbug' ] = CORE_FIXBUG;
-    $update[ 'license_version' ] = LICENSE_VERSION;
-    $update[ 'license_limit' ] = LICENSE_LIMIT;
+   // $update[ 'license_version' ] = LICENSE_VERSION;
+  //  $update[ 'license_limit' ] = LICENSE_LIMIT;
     $data = '';
     foreach ( $update as $key => $value ) {
       $data .= $key . '=' . rawurlencode( $value ) . '&';

@@ -1,0 +1,18 @@
+<header class="page-header"  height="60px" width="100%">
+    <a class="h-left" href="$_G['siteurl']">
+        <img class="logo" src="data/attachment/sitelogo/sitelogo.png?{VERHASH}" style="max-height:50px;" />
+        <a style="text-decoration: none"  href="$_G['siteurl']"><strong  style="color:var(--el-text-color-primary);font-size:18px">$_G['setting']['sitename'] </strong></a>
+    </a>
+    <div class="h-center">
+        <!--{if !empty($topmenu)}-->
+        <div class="menu-container">
+            <ul class="main-menu">
+                $topmenu
+            </ul>
+        </div>
+        <!--{/if}-->
+    </div>
+    <div class="h-right">
+        {eval echo avatar_block($_G['uid']);}
+    </div>
+</header>

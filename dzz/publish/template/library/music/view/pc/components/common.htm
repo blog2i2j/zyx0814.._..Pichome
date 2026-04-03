@@ -1,0 +1,164 @@
+<script type="text/javascript">
+	const CommonMixin = {
+		data(){
+			return {
+			}
+		},
+		methods:{
+			async CommonGetImageData(type){
+				let self = this;
+				self.CommonSetHash();//设置hash
+				self.imgparam = self.CommonSetParam();//获取提交参数
+				self.$nextTick(function(){
+					self.TableGetData();
+				});
+			},
+			CommonSetHash(){
+				let self = this;
+				let ScreenParam = self.$refs.ScreenBoxRef.GetParam('hash');
+				let OrderParam = self.HeaderRightBtnGetParam();
+                // let OrderParam = {};
+				let Params = {}
+				if(self.DocumentAppid){
+					Params['appid'] = self.DocumentAppid;
+				}
+				if(self.searchdata.aid){
+					Params['aid'] = self.searchdata.aid;
+				}
+				if(self.HeaderKeyword){
+					Params['keyword'] = self.HeaderKeyword;
+				}
+				if(self.classifyType){
+					if(self.LeftCurrenType == 'notclassify'){
+						Params['type'] = 'notclassify';
+					}else if(self.LeftCurrenType == 'nottag'){
+						Params['type'] = 'nottag';
+					}else if(self.LeftCurrenType == 'filelist'){
+						Params['fid'] = this.LeftTree.Currentkey;
+					}
+				}
+				Params['page'] = self.pageset.page;
+				Params = {...Params,...ScreenParam,...OrderParam};
+				let arr = [];
+				for(let key in Params){
+					arr.push(key+'='+Params[key]);
+				}
+				let hash = arr.join('&');
+				location.hash=hash;
+			},
+			CommonSetParam(){
+				let self = this;
+				let Params = {};
+				let ScreenParam = self.$refs.ScreenBoxRef.GetParam();
+				let OrderParam = self.HeaderRightBtnGetParam();
+				Params['pid'] = '$id';
+				if(self.DocumentAppid){
+					Params['appid'] = self.DocumentAppid;
+				}
+				if(self.searchdata.aid){
+					Params['aid'] = self.searchdata.aid;
+				}
+				if(self.HeaderKeyword){
+					Params['keyword'] = self.HeaderKeyword;
+				}
+				if(ScreenParam && ScreenParam.classify){
+					this.ScreenParam.fids = ScreenParam.classify
+				}
+				if(self.classifyType){
+					if(self.LeftCurrenType == 'notclassify'){
+						Params['fids'] = 'notclassify';
+					}else if(self.LeftCurrenType == 'nottag'){
+						Params['tag'] = 'nottag';
+					}else if(self.LeftCurrenType == 'filelist'){
+						Params['fids'] = this.LeftTree.Currentkey;
+						if(!ScreenParam.classify){
+							this.ScreenParam.fids = this.LeftTree.Currentkey;
+						}
+					}
+				}
+				Params['perpage'] = self.pageset.perpage;
+				Params['page'] = self.pageset.page;
+				// Params['hassub'] = self.ImageDataIsExpanded;
+				
+				return {...Params,...ScreenParam,...OrderParam};
+			},
+            CommonGetHashParam(name,url){
+
+                if(!url){
+                    url=location.hash;
+                }
+                if (!name) {
+                    return '';
+                }
+                let reg = new RegExp("(^#|&)" + name + "=([^&]*)(&|$)");
+                if (!url) {
+                    return '';
+                }
+                let r = url.match(reg);
+                if (r !== null) {
+                    return decodeURIComponent(r[2]);
+                }
+            },
+			CommonDeleteAll(){
+				const self = this;
+				this.HeaderKeyword = '';
+				self.$refs.ScreenBoxRef.DeleteAll();
+				this.CommonGetImageData();
+				
+			},
+			async CommonInit(){
+				const self = this;
+				//主题颜色
+				let theme = localStorage.getItem('theme');
+				if(theme){
+					this.DocumentThemeColor=theme;
+				}else{
+					this.DocumentThemeColor = 'light'
+				}
+				if(this.classifyType){
+					if(this.LeftTree.Currentkey){
+						const {data: res} = await axios.post('{MOD_URL}&op=ajax&do=getParentsByFid', {
+							pid:'$id',
+							fid:this.LeftTree.Currentkey
+						});
+						this.LeftTree.defaultOpenkeys = res.data;
+					}
+					this.LeftInit();
+				}else{
+					this.LeftTree.Currentkey = '';
+				}
+				
+				
+				this.screenType.type = this.DataPageset && this.DataPageset.filterstyle?parseInt(this.DataPageset.filterstyle):0;
+				
+				
+
+				self.$nextTick(function(){
+					self.CommonGetImageData();
+				})
+			},
+			CommonHighlight(text,words){
+				// 默认的标签，如果没有指定，使用span
+				let i, len = words.length,
+				re;
+				//匹配每一个特殊字符 ，进行转义
+				let specialStr = ["*", ".", "?", "+", "$", "^", "[", "]", "{", "}", "|", "\\", "(", ")", "/", "%"]; 
+				for (let index = 0; index < specialStr.length; index++) {
+					const item = specialStr[index];
+					if(words.indexOf(item) != -1) {
+						words = words.replace(new RegExp("\\" + item, 'g'), "\\" + item);
+					}
+				}
+				// $.each(specialStr, function(i, item) {
+					
+				// });
+				//匹配整个关键词
+				re = new RegExp(words, 'g');
+				if(re.test(text)) {
+					text = text.replace(re, '<span class="highlight">$&</span>');
+				}
+				return text;
+			},
+		}
+	}
+</script>

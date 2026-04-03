@@ -1,0 +1,233 @@
+<el-dialog
+	title="{lang add_templat}"
+	:close-on-click-modal="false"
+	v-model="Catalogue.dialogVisible"
+	>
+	<el-form label-width="auto" :model="Catalogue" ref="createSettingForm">
+		<el-form-item label="{lang searchName}" prop="SettingForm.title" :rules="[{ required: true, message: '{lang name_cannot_empty}'}]">
+			<div class="language-box">
+				<el-input v-model="Catalogue.SettingForm.title" ></el-input>
+			</div>
+		</el-form-item>
+
+		<el-form-item label="{lang searchRange}" >
+			<library-select
+
+					:defaulttype="'create_'+Catalogue.SettingForm.appid"
+					@change="createSearchRangeChange"
+					:defaultheckeds="Catalogue.SearchRange.checked"
+					:defaultexpanded="Catalogue.SearchRange.expanded"
+					:defaultdata="Catalogue.SearchRange.data"
+					:isunlimit="true"
+					placeholder="{lang all}"
+					:defaultcheckedtype="['library','folder','unlimit']"></library-select>
+			<el-text tag="p" type="info" size="small" truncated>{lang searchRange_tips}</el-text>
+		</el-form-item>
+		<el-form-item label="{lang nameContain}">
+			<el-input type="input" v-model="Catalogue.SettingForm.searchName" ></el-input>
+			<el-text tag="p" type="info" size="small" truncated>{lang nameContain_tips}</el-text>
+		</el-form-item>
+		<el-form-item label="{lang searchExts}">
+			<el-input type="textarea" v-model="Catalogue.SettingForm.searchExts" ></el-input>
+			<el-text tag="p" type="info" size="small" truncated>{lang searchExts_tips}</el-text>
+		</el-form-item>
+		<el-form-item label="{lang searchtags}">
+			<div class="searchtags">
+				<el-tag style="margin:0 10px 5px 0"
+						v-for="tag in Catalogue.SettingForm.tags"
+						:key="tag"
+						closable
+						:disable-transitions="false"
+						@close="createTagClose(tag)"
+				>
+					{{ tag }}
+				</el-tag>
+				<template v-if="Catalogue.taginputVisible">
+					<el-input
+							ref="createInputRef"
+							v-model="Catalogue.taginputValue"
+							style="width:80px;"
+							size="small"
+							@input="createInputConfirm"
+							@keyup.enter="createTagInputConfirm"
+							@blur="createTagInputConfirm"
+
+					/>
+				</template>
+				<template v-else>
+					<el-button  class="button-new-tag" size="small" @click="showTagInputCreate">
+						+ {lang newTag}
+					</el-button>
+				</template>
+			</div>
+
+		</el-form-item>
+		<el-form-item label="{lang searchGrade}">
+			<el-checkbox-group v-model="Catalogue.SettingForm.grade" @change="CreateEditStatus('grade')">
+				<el-checkbox border  :label="0" name="grade" style="margin-bottom: 6px;">
+					{lang no_limit}
+				</el-checkbox>
+				<el-checkbox border :label="item" name="grade" v-for="(item,key) in [1,2,3,4,5]" style="margin-bottom: 6px;">
+					{lang grade}{{item}}
+				</el-checkbox>
+			</el-checkbox-group>
+
+		</el-form-item>
+	</el-form>
+	
+
+	<template #footer>
+        <span class="dialog-footer">
+            <el-button @click="Catalogue.dialogVisible = false">{lang cancel}</el-button>
+            <el-button type="primary" @click="CatalogueSubmit">{lang submit}</el-button>
+        </span>
+    </template>
+	
+</el-dialog>
+<script type="text/javascript">
+	var CreatedMixin = {
+		data(){
+			return {
+				Catalogue:{
+
+					dialogVisible:false,
+					taginputVisible:false,
+					taginputValue:'',
+					SettingForm:{
+						tid:'',
+						title:'',
+						disp:0,
+						searchExts:'',
+						searchName:'',
+						tags:[],
+						grade:[0],
+					},
+					SearchRange:{
+						ids:[],
+						data:[],
+						checked:[],
+						expanded:[],
+						status:1
+					},
+				},
+
+			}
+		},
+		methods:{
+			showTagInputCreate() {
+				let self=this;
+				this.Catalogue.taginputVisible = true;
+				nextTick(() => {
+					self.$refs.createInputRef.focus()
+				});
+			},
+			createTagClose(tag)  {
+				this.Catalogue.SettingForm.tags.splice(this.Catalogue.SettingForm.tags.indexOf(tag), 1)
+			},
+			createTagInputConfirm() {
+				if (this.Catalogue.taginputValue) {
+					this.Catalogue.SettingForm.tags.push(this.Catalogue.taginputValue)
+				}else{
+					this.Catalogue.taginputVisible = false;
+				}
+
+				this.Catalogue.taginputValue = ''
+			},
+			createSearchRangeChange(data){
+
+				var str = {
+					ids:[],
+					data:[],
+					checked:[],
+					expanded:[],
+				}
+				if(data && data.length){
+					for(var i in data){
+						var item = data[i];
+						str.ids.push(item.id);
+						str.data.push(item);
+					}
+					this.Catalogue.SearchRange = str;
+				}else{
+					this.Catalogue.SearchRange = str;
+				}
+			},
+			CreateEditStatus(flag){
+				let self = this;
+
+				if(flag=='grade'){
+
+					self.$nextTick(function(){
+						if(self.Catalogue.SettingForm.grade.length<1) {
+							self.Catalogue.SettingForm.grade = [0];
+						}else{
+							if(self.Catalogue.SettingForm.grade.length >1){
+								if(self.Catalogue.SettingForm.grade.indexOf(0)>=self.Catalogue.SettingForm.grade.length-1){
+									self.Catalogue.SettingForm.grade=[0];
+								}else if(self.Catalogue.SettingForm.grade.indexOf(0)>-1){
+									self.Catalogue.SettingForm.grade.splice(self.Catalogue.SettingForm.grade.indexOf(0),1);
+								}
+							}
+						}
+					});
+
+				}
+
+			},
+			async CatalogueSubmit(){
+				var self = this;
+				self.loading = true;
+                self.$refs.createSettingForm.validate(async function(valid){
+                    if (valid) {
+
+						var res = await axios.post(MOD_URL+'&op=setting&do=create',{
+							title:self.Catalogue.SettingForm.title,
+							disp:self.Catalogue.SettingForm.disp,
+							searchRange:self.Catalogue.SearchRange.ids,
+							exts:self.Catalogue.SettingForm.searchExts,
+							tags:self.Catalogue.SettingForm.tags,
+							grade:self.Catalogue.SettingForm.grade,
+							searchName:self.Catalogue.SettingForm.searchName,
+						});
+						self.loading = false;
+						if(res == 'intercept'){
+							return false;
+						}
+						var json = res.data;
+						if(json.success){
+							//self.tableData.push(json.data);;
+							self.Catalogue={
+								taginputValue:'',
+								SettingForm:{
+									tid:'',
+									title:'',
+									disp:0,
+									searchExts:'',
+									searchName:'',
+									tags:[],
+									grade:[],
+								},
+								SearchRange:{
+									ids:[],
+									data:[],
+									checked:[],
+									expanded:[],
+									status:1
+								},
+							}
+							window.location.reload();
+						}else{
+							self.$message.error(json.msg);
+						}
+                    } else {
+                        // console.log('error submit!!');
+                        return false;
+                    }
+
+                });
+
+
+			},
+		}
+	}
+</script>

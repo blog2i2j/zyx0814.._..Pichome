@@ -24,7 +24,7 @@ class image {
 
 	var $extension = array();
 
-	function image($params=array()) {
+	function __construct($params=array()) {
 		global $_G;
 
 		$this->extension['gd'] = extension_loaded('gd');
@@ -120,6 +120,8 @@ class image {
 	function init($method, $source, $target,$nosuffix = 0) {
 		global $_G;
 		$this->errorcode = 0;
+        $this->extension['gd'] = extension_loaded('gd');
+        $this->extension['imagick'] = extension_loaded('imagick');
 		if(empty($source)) {
 			return -2;
 		}
@@ -421,8 +423,8 @@ class image {
 					list($startx, $starty, $cutw, $cuth) = $this->sizevalue(1);
 					$dst_photo = imagecreatetruecolor($cutw, $cuth);
 					if($this->imginfo['mime']=='image/png'){
-						imagealphablending($$dst_photo,false);//这里很重要,意思是不合并颜色,直接用$img图像颜色替换,包括透明色;
-						imagesavealpha($$dst_photo,true);//这里很重要,意思是不要丢了$thumb图像的透明色;
+						imagealphablending($dst_photo,false);//这里很重要,意思是不合并颜色,直接用$img图像颜色替换,包括透明色;
+						imagesavealpha($dst_photo,true);//这里很重要,意思是不要丢了$thumb图像的透明色;
 					}
 					imagecopymerge($dst_photo, $attach_photo, 0, 0, $startx, $starty, $cutw, $cuth, 100);
 					$thumb_photo = imagecreatetruecolor($this->param['thumbwidth'], $this->param['thumbheight']);
@@ -491,9 +493,12 @@ class image {
 		switch($this->param['thumbtype']) {
 			case 'fixnone':
 			case 1:
+                $im = new Imagick(realpath($this->source));
+                $this->autoRotateImage($im);
+                $this->imginfo['width']=$im->getImageWidth();
+                $this->imginfo['height']=$im->getImageHeight();
 				if($this->imginfo['width'] >= $this->param['thumbwidth'] || $this->imginfo['height'] >= $this->param['thumbheight']) {
-				    $im = new Imagick(realpath($this->source));
-					$this->autoRotateImage($im);
+
 					$im->stripImage(); //去除图片信息
 					$im->setIteratorIndex(0);
 					$newsize=$this->scaleImage($this->param['thumbwidth'], $this->param['thumbheight'],$im->getImageWidth(),$im->getImageHeight());
@@ -516,13 +521,15 @@ class image {
 				break;
 			case 'fixwr':
 			case 2:
+                $im = new Imagick(realpath($this->source));
+                $this->autoRotateImage($im);
+                $this->imginfo['width']=$im->getImageWidth();
+                $this->imginfo['height']=$im->getImageHeight();
 				if(!($this->imginfo['width'] <= $this->param['thumbwidth'] || $this->imginfo['height'] <= $this->param['thumbheight'])) {
 					
 					list($startx, $starty, $cutw, $cuth) = $this->sizevalue(1);
 					
-					$im = new Imagick();
-					$im->readImage(realpath($this->source));
-					$this->autoRotateImage($im);
+
 					$im->stripImage(); //去除图片信息
 					$im->setIteratorIndex(0);
 					$im->cropImage($cutw, $cuth, $startx, $starty);
@@ -560,13 +567,12 @@ class image {
 						return -3;
 					}
 					$im->destroy();
-				} else {
+				}
+                else {
 					$startx = -($this->param['thumbwidth'] - $this->imginfo['width']) / 2;
 					$starty = -($this->param['thumbheight'] - $this->imginfo['height']) / 2;
 
-					$im = new Imagick();
-					$im->readImage(realpath($this->source));
-					$this->autoRotateImage($im);
+
 					$im->stripImage(); //去除图片信息
 					$im->setIteratorIndex(0);
 					$im->cropImage($this->param['thumbwidth'], $this->param['thumbheight'], $startx, $starty);
@@ -606,24 +612,45 @@ class image {
 		}
 		return 1;
 	}
-	function autoRotateImage($image) {
-		$orientation = $image->getImageOrientation();
-		switch($orientation) {
-			case imagick::ORIENTATION_BOTTOMRIGHT: 
-				$image->rotateimage("#000", 180); // rotate 180 degrees
-				break;
-
-			case imagick::ORIENTATION_RIGHTTOP:
-				$image->rotateimage("#000", 90); // rotate 90 degrees CW
-				break;
-
-			case imagick::ORIENTATION_LEFTBOTTOM: 
-				$image->rotateimage("#000", -90); // rotate 90 degrees CCW
-				break;
-		}
+	function autoRotateImage($imgick) {
+		$orientation = $imgick->getImageOrientation();
+        switch ($orientation) {
+            case \imagick::ORIENTATION_TOPRIGHT:
+                // 水平翻转
+                $imgick->flopImage();
+                break;
+            case \imagick::ORIENTATION_BOTTOMRIGHT:
+                // 旋转180度
+                $imgick->rotateImage(new ImagickPixel(), 180);
+                break;
+            case \imagick::ORIENTATION_BOTTOMLEFT:
+                // 垂直翻转
+                $imgick->flipImage();
+                break;
+            case \imagick::ORIENTATION_LEFTTOP:
+                // 旋转90度并水平翻转
+                $imgick->rotateImage(new ImagickPixel(), 90);
+                $imgick->flopImage();
+                break;
+            case \imagick::ORIENTATION_RIGHTTOP:
+                // 旋转90度
+                $imgick->rotateImage(new ImagickPixel(), 90);
+                break;
+            case \imagick::ORIENTATION_RIGHTBOTTOM:
+                // 旋转270度并水平翻转
+                $imgick->rotateImage(new ImagickPixel(), 270);
+                $imgick->flopImage();
+                break;
+            case \imagick::ORIENTATION_LEFTBOTTOM:
+                // 旋转270度
+                $imgick->rotateImage(new ImagickPixel(), 270);
+                break;
+            case \imagick::ORIENTATION_TOPLEFT:
+                break;
+        }
 
 		// Now that it's auto-rotated, make sure the EXIF data is correct in case the EXIF gets saved with the image!
-		$image->setImageOrientation(imagick::ORIENTATION_TOPLEFT);
+        $imgick->setImageOrientation(\imagick::ORIENTATION_TOPLEFT);
 	}
 	function Cropper_GD() {
 		$image = $this->loadsource();

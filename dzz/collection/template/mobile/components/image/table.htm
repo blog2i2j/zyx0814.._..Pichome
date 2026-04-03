@@ -1,0 +1,55 @@
+<script type="text/javascript">
+	var ImgageTableMixin = {
+		data(){
+			return {
+				imgageTable:{
+					maxNewtop:0,
+					perpage : 0,
+					fixedH:60,
+					StoreImgdatas:[],
+				},
+			}
+		},
+		methods:{
+			ImagesTablelayoutCompute(){
+				var self = this;
+				if(self.ParamImages.type == 'refresh' || !self.ParamImages.data.length){
+					self.imgageTable.perpage = 0;
+					var documentW = document.body.clientWidth;
+					var boxWidth = documentW-8;
+					$('#imgContainer').width(boxWidth);
+					self.imgageTable.maxNewtop = 0;
+					self.imgageTable.StoreImgdatas = [];
+					self.ParamImages.Newdatas = [];
+				}
+				
+			
+				if(!self.ParamImages.data.length){
+					$('#imgContainer').height(0);
+					return false;
+				}
+				
+				
+				var arr = [];
+				var i = 0;
+				for(var index = self.imgageTable.perpage; index < self.ParamImages.data.length;++index){
+					var item = JSON.parse(JSON.stringify(self.ParamImages.data[index]));
+					arr[i] = item;
+					arr[i]['ptop'] = self.imgageTable.maxNewtop;
+					self.imgageTable.maxNewtop += self.imgageTable.fixedH;
+					arr[i]['pbottom'] = self.imgageTable.maxNewtop ;
+					arr[i]['isodd'] = index%2?true:false;
+					i++;
+				}
+				self.imgageTable.perpage = self.ParamImages.data.length;
+				if(self.ParamImages.type == 'append'){
+					self.imgageTable.StoreImgdatas.push.apply(self.imgageTable.StoreImgdatas,arr);
+				}else{
+					self.imgageTable.StoreImgdatas = arr;
+				}
+				$('#imgContainer').height(self.imgageTable.maxNewtop+60);
+				self.ImagesLayoutScrollShow()
+			}
+		}
+	};
+</script>

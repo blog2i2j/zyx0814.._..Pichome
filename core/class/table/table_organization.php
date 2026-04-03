@@ -58,7 +58,7 @@ class table_organization extends dzz_table
 		return array();
 	}
 	//插入数据
-	public function insert($arr){
+	public function insert($arr,$return_insert_id = false,$replace = false,$silent = false){
 		if($orgid=parent::insert($arr,1)){
 			if(intval($arr['aid'])){//如果有头像图片，增加copys
 				C::t('attachment')->add_by_aid(intval($arr['aid']));
@@ -166,7 +166,7 @@ class table_organization extends dzz_table
         if (parent::delete($orgid)) {
 			
 			//删除对应事件
-			C::t('resources_event')->delete_by_gid($orgid);
+			//C::t('resources_event')->delete_by_gid($orgid);
 			//删除对应用户
 			C::t('organization_user')->delete_by_orgid($orgid);
 			//删除对应管理员
@@ -536,26 +536,7 @@ class table_organization extends dzz_table
     public function update_by_orgid($orgid, $setarr, $synwx = 1)
     {
         if (!$org = self::fetch($orgid)) return false;
-        if (isset($setarr['orgname'])) {
-            $fid = $org['fid'];
-            $name = self::get_uniqueName_by_forgid($org['forgid'], getstr($setarr['orgname']), $orgid);
-            /*if (C::t('folder')->rename_by_fid($fid, $name)) {
-                if (parent::update($orgid, array('orgname' => $name))) {
-                    $body_data = array('username' => getglobal('username'), 'oldname' => $org['orgname'], 'newname' => $name);
-                    $event_body = 'update_group_name';
-                    C::t('resources_event')->addevent_by_pfid($org['fid'], $event_body, 'update_groupname', $body_data, $orgid, '', $org['orgname']);//记录事件 
-                    if( $synwx && $org['type']==0) self::syn_organization($orgid);
-                }
-                unset($setarr['orgname']);
-            }*/
 
-        }
-		
-        if (isset($setarr['perm']) && $setarr['perm']) {
-            $fid = $org['fid'];
-            C::t('folder')->update($fid, array('perm' => $setarr['perm']));
-            unset($setarr['perm']);
-        }
         if (isset($setarr['desc'])) {
             $setarr['desc'] = htmlspecialchars($setarr['desc']);
         }
@@ -573,10 +554,10 @@ class table_organization extends dzz_table
 				}
 			}
             $org = array_merge($org, $setarr);
-            if(empty($org['fid']))  self::setFolderByOrgid($org['orgid']);
+            //if(empty($org['fid']))  self::setFolderByOrgid($org['orgid']);
             //$body_data = array('username' => getglobal('username'));
-           // $event_body = 'update_group_setting';
-           // C::t('resources_event')->addevent_by_pfid($org['fid'], $event_body, 'update_setting', $body_data, $orgid, '', $org['orgname']);//记录事件
+            //$event_body = 'update_group_setting';
+            //C::t('resources_event')->addevent_by_pfid($org['fid'], $event_body, 'update_setting', $body_data, $orgid, '', $org['orgname']);//记录事件
             self::setPathkeyByOrgid($orgid);  
             if( $synwx &&  $org['type']==0 ) self::syn_organization($orgid);
             return true;

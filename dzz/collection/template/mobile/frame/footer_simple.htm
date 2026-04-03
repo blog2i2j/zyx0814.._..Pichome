@@ -1,0 +1,12 @@
+<!--{eval output();}-->
+<!--{eval updatesession();}-->
+<!--{if $_G['uid']}-->
+	<!--{if !isset($_G['cookie']['checkupgrade'])}-->
+<script type="text/javascript">jQuery.getScript('misc.php?mod=upgrade&action=checkupgrade&rand=$_G['timestamp']');</script>
+	<!--{/if}-->
+<!--{/if}-->
+<!--{if $_G['setting']['statcode']}-->
+	$_G['setting']['statcode']
+<!--{/if}-->
+</body>
+</html>

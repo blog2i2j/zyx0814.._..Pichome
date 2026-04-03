@@ -1,0 +1,173 @@
+<!--{template common/container/pc/header_start}-->
+<link rel="stylesheet" href="static/scss/default/index.css?{VERHASH}">
+<link rel="stylesheet" href="static/scss/common.css?{VERHASH}">
+<link rel="stylesheet" type="text/css" href="{MOD_PATH}/template/singlefile/image/view/pc/assets/css/index.css?{VERHASH}"/>
+<script type="text/javascript" src="{MOD_PATH}/template/library/default/view/pc/assets/js/navigationmenu.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/vue_components/sharedialog/index.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/jszip/jszip.min.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/jszip/FileSaver.min.js?{VERHASH}"></script>
+<!--{template common/container/pc/header_end}-->
+<div id="dzzoffice">
+	<el-container>
+
+		<!--{template singlefile/image/view/pc/components/header}-->
+
+		<el-main style="padding: 0;" id="ImgScroll" class="dzz-container ">
+			<div class="container-centent container" :class="pageset.pageWidth">
+				<div class="title-wrapper block" v-if="pageset.name">
+					<el-text class="title">{{pageset.name}}</el-text>
+				</div>
+
+				<div class="actions">
+					<div class="left">
+						<el-text type="info" ><el-icon><Calendar /></el-icon> {{pdata.fdateline}}</el-text>
+						<el-text type="info" style="margin-left:0.5em"><el-icon><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M24 36C35.0457 36 44 24 44 24C44 24 35.0457 12 24 12C12.9543 12 4 24 4 24C4 24 12.9543 36 24 36Z" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/><path d="M24 29C26.7614 29 29 26.7614 29 24C29 21.2386 26.7614 19 24 19C21.2386 19 19 21.2386 19 24C19 26.7614 21.2386 29 24 29Z" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/></svg></el-icon> {{pdata.hots}}</el-text>
+					</div>
+					<div class="right">
+
+						<el-button v-if="parseInt(pdata.download)>0" type="text" link  @click="handleDown"><el-icon><Download /></el-icon> {lang download}</el-button>
+						<el-button v-if="parseInt(pdata.share)>0" type="text" link   @click="handleShare"><el-icon><Share /></el-icon> {lang share}</el-button>
+					</div>
+				</div>
+				<div class="content-wrapper" :class="imagesData.iniframe?'inframe':''">
+					<!--{template singlefile/image/view/pc/components/image}-->
+				</div>
+				<div class="desc-wrapper block" v-if="pageset._html_desc" >
+					<div class="content editor-content-view" v-html="pageset._html_desc"></div>
+				</div>
+
+			</div>
+			<el-footer v-if="pageset.bottomEnable" style="margin-top:20px;">
+				<!--{template singlefile/image/view/pc/components/footer}-->
+			</el-footer>
+		</el-main>
+
+	</el-container>
+	<!--分享对话框加载-->
+	<!--{eval  include template('shareAddDialog','./dzz/shares/template/')}-->
+</div>
+
+<script type="text/javascript">
+	const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch, computed, onBeforeUpdate , onUnmounted } = Vue;
+	const dzzoffice = createApp({
+		el: '#dzzoffice',
+		data() {
+			return {
+				DocumentThemeColor:'',//dark,
+
+				ispc:parseInt('$ispc'),
+				pdata:$json_data,
+				pageset:$json_pageset,
+				content:''
+			}
+		},
+		watch: {
+
+			DocumentThemeColor:{
+				handler(newval){
+					document.querySelector('html').className = newval
+				},
+				deep:true,
+				// immediate:true
+			}
+		},
+		created() {
+			let theme = localStorage.getItem('theme');
+			if(theme){
+				this.DocumentThemeColor=theme;
+			}else{
+				this.DocumentThemeColor = 'light'
+			}
+			this.GetImgData(this.pdata.resourcesdata);
+		},
+		mixins:[HeaderMixins,ShareAddDialogMixin,ImageViewMixin],
+		methods: {
+			handleDown(){
+				if(this.previews.length>0){
+					this.JsZipDown();
+				}else {
+					window.open('{MOD_URL}&op=download&dpath=' + this.pdata.resourcesdata.dpath);
+				}
+			},
+			JsZipDown(){
+				let self = this;
+				const names = [];
+				let ZipName = this.pdata.pname;
+				const imageUrls = [];
+
+				this.previews.data.forEach((data,key) => {
+					imageUrls.push(data.originalimg);
+					names.push({
+						ext:data.ext,
+						name:data.name
+					});
+				});
+
+				// // 创建一个新的JSZip实例
+				const zip = new JSZip();
+				// // 异步处理每个图片地址
+				Promise.all(imageUrls.map(url => self.fetchImage(url))).then(images => {
+					// 将每个图片的Blob对象添加到JSZip实例中
+					images.forEach((image, index) => {
+						const fileName = names[index].name+'.'+names[index].ext; // 假设文件名从image1.jpg开始
+						zip.file(fileName, image);
+					});
+
+					// 生成ZIP文件并触发下载
+					return zip.generateAsync({ type: 'blob' });
+				}).then(content => {
+					saveAs(content, ZipName+'.zip');
+				}).catch(error => {
+					console.error('Error downloading images:', error);
+				});
+
+			},
+			fetchImage(url) {
+				return fetch(url).then(response => {
+					if (!response.ok) {
+						throw new Error('HTTP error! status: 200');
+					}
+					return response.blob();
+				});
+			},
+			handleShare(){
+				this.shareDialog.title = this.pdata.resourcesdata.name;
+				this.shareDialog.filepaths =[this.pdata.resourcesdata.rid];
+				this.shareDialog.visible=true;
+				this.shareDialog.stype=0;
+
+			},
+
+			DocumentThemeChange(){
+				if(this.DocumentThemeColor=='light'){
+					this.DocumentThemeColor='dark';
+					localStorage.setItem('theme','dark');
+				}else{
+					this.DocumentThemeColor='light';
+					localStorage.setItem('theme','light');
+				}
+			},
+		},
+		mounted() {
+
+		},
+		components: {
+			comavatar,
+			international,
+			navigationmenu,
+			DzzShareDialog
+		},
+
+	});
+	dzzoffice.use(ElementPlus, {
+		locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+	});
+	for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+		dzzoffice.component(key, component)
+	}
+
+	// 屏蔽警告信息
+	dzzoffice.config.warnHandler = function(){return null};
+	dzzoffice.mount('#dzzoffice');
+</script>
+<!--{template common/container/pc/footer}-->

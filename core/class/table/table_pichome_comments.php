@@ -15,7 +15,7 @@
             parent::__construct();
         }
         
-        public function insert($setarr)
+        public function insert($setarr, $return_insert_id = false, $replace = false, $silent = false)
         {
             if (DB::result_first("select count(*) from %t where id = %s", array($this->_table, $setarr['id']))) {
                 parent::update($setarr['id'], $setarr);

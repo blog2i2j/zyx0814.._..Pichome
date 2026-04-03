@@ -1,0 +1,239 @@
+<!--{template mobile/frame/header_simple_start}-->
+<link rel="stylesheet" type="text/css" href="static/scss/layout.css?{VERHASH}" />
+<link rel="stylesheet" type="text/css" href="{MOD_PATH}/css/mobile/details.css?{VERHASH}" />
+<link rel="stylesheet" type="text/css" href="{MOD_PATH}/css/mobile/image.css?{VERHASH}" />
+<link rel="stylesheet" type="text/css" href="{MOD_PATH}/css/mobile/popupsearch.css?{VERHASH}"/>
+<link rel="stylesheet" type="text/css" href="{MOD_PATH}/css/mobile/screen.css?{VERHASH}" />
+<style type="text/css">
+	.van-popover[data-popper-placement=bottom-end] .van-popover__arrow{
+		right: -3px;
+	}
+	.van-popover__action{
+		width: auto;
+	}
+	.van-popover--light .van-popover__action:active{
+		background-color: var(--bg-poperHover);
+	}
+	.Details-Iframe{
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		z-index: 6000;
+	}
+	.Details-Iframe iframe {
+		border: 0;
+		width: 100%;
+		height: 100%;
+	}
+</style>
+<!--{template mobile/frame/header_simple_end}-->
+<div id="dzzoffice">
+	
+	<van-nav-bar
+		class="header-top"
+		:class="ParamFooter.IsShow=='up'?'':'headerhide'"
+		:title="DocumentName"
+		left-text=""
+		@click-left="location.href='index.php?mod=collection&op=view'"
+		left-arrow>
+	</van-nav-bar>
+	<!-- <van-notice-bar v-if="Documentupgrade.Visible" class="pic-notice" :class="ParamFooter.IsShow=='up'?'':'noticehide'" left-icon="volume-o" mode="closeable" scrollable :text="Documentupgrade.text"></van-notice-bar> -->
+	<div class="pic-container">
+		<!--{template mobile/components/image/index}-->
+		
+	</div>
+	
+	<footer class="pic-toolbar" :class="ParamFooter.IsShow=='up'?'footershow':'footerhide'">
+		<div class="tabbar">
+			<template v-for="item in ParamFooter.data">
+				<template v-if="item.show">
+					<template v-if="item.type == 'user'">
+						<div class="tab-item" @click="location.href='user.php?mod=my'">
+							<div id="dzz_avatar_img">
+							{eval echo avatar_block($_G['uid']);}
+							</div>
+						</div>
+					</template>
+					<template v-else>
+						<div class="tab-item" @click="handleFooterClick(item.type)">
+							<i :class="item.icon" style="position: relative;">
+								<template v-if="item.type == 'search'">
+									<div v-if="ParamSearch.keyword" class="van-info van-info--dot van-sidebar-item__info"></div>
+								</template>
+								<template v-else-if="item.type == 'screen'">
+									<div v-if="ParamScreen.ActiveNum" class="van-info van-info--dot van-sidebar-item__info"></div>
+								</template>
+							</i>
+						</div>
+					</template>
+				</template>
+	
+				
+			</template>
+		</div>
+	</footer>
+	
+	<!--{template mobile/components/details/JsSearch}-->
+	<!--{template mobile/components/JsMy}-->
+	<!--{template mobile/components/image/Jsindex}-->
+	<!--{template mobile/components/JsSort}-->
+	<!--{template mobile/components/screen/index}-->
+	<!--{template mobile/components/details/JsCommon}-->
+</div>
+<script type="text/javascript">
+	var pvue = new Vue({ 
+		el: '#dzzoffice',
+		data: function() {
+			return {
+				Documentupgrade:{
+					text:'',
+					Visible:false,
+				},
+				DocumentName:__lang.all_collect,
+				DocumentAdminId:'$_G['adminid']',
+				DocumentPerm:4,
+				Documentshareid:'',
+				ParamFooter:{
+					IsShow:'up',
+					data:{
+						clear:{type:'clear',icon:'icon ri-brush-3-line',show:false},
+						search:{type:'search',icon:'icon ri-search-line',show:true},
+						screen:{type:'screen',icon:'icon ri-filter-2-fill',show:false},
+						sort:{type:'sort',icon:'icon ri-arrow-up-down-fill',show:true},
+						user:{type:'user',icon:'',show:true},
+						// clearcheck:{type:'clearcheck',icon:'icon ri-brush-3-line',show:false},
+						// collectcheck:{type:'collectcheck',icon:'icon ri-star-fill',show:false},
+						// outcheck:{type:'outcheck',icon:'icon ri-close-fill',show:false},
+					}
+				},
+				ParamDataInit:{
+					keyword:'',
+					asc: "desc",
+					order: 1,
+					page: 1,
+					classify:'',
+					tag:'',
+					color:'',
+					link:'',
+					desc:'',
+					duration:'',
+					wsize:'',
+					hsize:'',
+					ext:'',
+					shape:'',
+					shapesize:'',
+					grade:'',
+					btime:'',
+					dateline:'',
+					mtime:''
+				},
+				ParamData:{},
+				ParamBasic:{
+					clid:'$clid',
+					page: 1,
+					perpage: 50,
+					total: 0,
+					totalpage:0,
+				},
+			};
+		},
+		watch: {
+			
+		},
+		mixins:[CommonMixin,MyMixin,SearchMixin,ImagesMixin,SortMixin,ScreenMixin],
+		created() {
+			var pagesetting = $pagesetting;
+			if(pagesetting){
+				var show = [];
+				<!--{if $_G['uid']}-->
+				if(pagesetting.show){
+					show = pagesetting.show.split(',');
+				}
+				<!--{else}-->
+				var fshow = sessionStorage.getItem('InformationShow');
+				if(fshow){
+					if(fshow == 'not'){
+						show = [];
+					}else{
+						show = fshow.split(',');
+					}
+					
+				}else{
+					if(pagesetting.show){
+						show = pagesetting.show.split(',');
+					}
+				}
+				<!--{/if}-->
+				<!--{if $_G['uid']}-->
+				var other = pagesetting.other;
+				var Layout = pagesetting.layout;
+				var order = parseInt(pagesetting.sort);
+				var asc =  pagesetting.desc;
+				<!--{else}-->
+				var other = sessionStorage.getItem('InformationOther');
+				if(!other){
+					other = pagesetting.other;
+				}
+				var Layout = sessionStorage.getItem('Layout');
+				if(!Layout){
+					Layout = pagesetting.layout;
+				}
+				
+				var order = sessionStorage.getItem('order');
+				if(!order){
+					order = parseInt(pagesetting.sort);
+				}
+				var asc = sessionStorage.getItem('asc');
+				if(!asc){
+					asc =  pagesetting.desc;
+				}
+				<!--{/if}-->
+				this.ParamSort.showinformation.value = show;
+				this.ParamSort.otherinformation.value = other || 'btime';
+				this.ParamSort.layout.value = Layout || 'waterFall';
+				this.ParamSort.Sorttype.value = order || 1;
+				this.ParamSort.sortorder.value = asc || 'desc';
+				
+				this.ParamDataInit.order = order || 1;
+				this.ParamDataInit.asc = asc || 'desc';
+			}
+			this.CommonhandleHash('refresh');
+			this.CommonGetScreenData();
+		},
+		methods: {
+			
+			handleFooterClick(type){
+				var self = this;
+				if(type == 'search'){
+					this.ParamSearch.PopupVisible = true;
+				}else if(type == 'screen'){
+					this.ParamScreen.PopupVisible = true;
+				}else if(type == 'sort'){
+					this.ParamSort.PopupVisible = true;
+				}else if(type == 'clear'){
+					this.ParamSearch.keyword = '';
+					this.ScreenReset();
+					this.CommonSetFooterBadge();
+					this.CommonhandleHash();
+				}else if(type == 'outcheck'){
+					this.ParamImages.operation.lids = [];
+					this.ParamImages.checked = false;
+				}else if(type == 'collectcheck'){
+					if(!self.ParamImages.operation.lids.length){
+						self.$notify({ type: 'warning', message: __lang.please_select_file });
+						return false;
+					}
+					this.ParamImages.operation.type = 'collect';
+					this.ImagesClassify.PopupVisible = true;
+				}
+				
+			}
+		},
+		mounted() {
+			this.ImagesMounted();
+		}
+	});
+</script>
+<!--{template mobile/frame/footer_simple}-->

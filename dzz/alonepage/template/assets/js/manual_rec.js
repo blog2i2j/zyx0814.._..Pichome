@@ -10,6 +10,11 @@ const Tmpmanual_recTable = {
             required:true,
             type: Object,
             default:{},
+        },
+        licenseversion:{
+            required:true,
+            type: Number,
+            default:0
         }
     },
     template:`
@@ -69,6 +74,8 @@ const Tmpmanual_recTable = {
                             <el-option :label="Lang.text9" value="1"></el-option>
                             <el-option :label="Lang.text10" value="2"></el-option>
                             <el-option :label="Lang.text11" value="3"></el-option>
+                            <el-option v-if="licenseversion>1" :label="Lang.text12" value="4"></el-option>
+                            <el-option :label="Lang.text13" value="5"></el-option>
                         </el-select>
                         <template v-if="parseInt(scope.row.link) == 0">
                             <el-input v-model="scope.row.linkval"></el-input>
@@ -83,7 +90,7 @@ const Tmpmanual_recTable = {
                                 <el-option v-for="item in typecollection.alonepage" :label="item.pagename" :value="item.id" :key="item.id"></el-option>
                             </el-select>
                         </template>
-                        <template v-else-if="parseInt(scope.row.link) == 4">
+                        <template v-else-if="licenseversion>1 && parseInt(scope.row.link) == 4">
                             <el-select v-model="scope.row.linkval" style="width: 100%">
                                 <el-option v-for="item in typecollection.tab" :label="item.name" :value="item.gid" :key="item.gid"></el-option>
                             </el-select>
@@ -97,6 +104,17 @@ const Tmpmanual_recTable = {
                                 :emitPath="false"
                                 :props="{value:'id',label:'bannername',checkStrictly:true}" 
                                 clearable></el-cascader>
+                        </template>
+                         <template v-else-if="parseInt(scope.row.link) == 5">
+                            <el-select 
+                                v-model="scope.row.linkval" 
+                                filterable
+                                remote
+                                :remote-method="getCollectList"
+                                :loading="DataLoading"
+                                style="width: 100%">
+                                <el-option v-for="item in DataList1" :label="item.name" :value="item.id" :key="item.id"></el-option>
+                            </el-select>
                         </template>
                     </div>
                 </template>
@@ -123,9 +141,13 @@ const Tmpmanual_recTable = {
             text9:__lang.library,
             text10:__lang.page,
             text11:__lang.column,
+            text12:__lang.album,
+            text13:__lang.publish,
         };
         let DomTable = ref(null);
         let curRowIndex = ref(null);//当前第几个上传
+        let DataList1 = ref([]);
+        let DataLoading = ref(false);
         if(props.model && props.model.length){
             props.model.forEach(item => {
                 item.key = getId();
@@ -137,28 +159,48 @@ const Tmpmanual_recTable = {
             let rund = Math.ceil(Math.random()*1000)
             let id = date + '' + rund;
             return id;
-        };
+        }
         function handleadd(){//添加
             let str = {key:getId(),title:'',img:'',aid:0,link:'0',linkval:''};
             props.model.push(str);
-        };
+        }
         function handledelete(index){//删除
             props.model.splice(index,1);
-        };
+        }
         function handleImgDelte(index){//图片删除
             props.model[index].aid = 0;
             props.model[index].url = '';
             props.model[index].img = '';
-        };
+        }
         function handleUploadSucess(response, file, fileList){//上传成功
             if(response.files && response.files.length){
                 let files = response.files[0];
-                props.model[curRowIndex.value].aid = files.data.aid;
-                props.model[curRowIndex.value].img = files.name;
-                props.model[curRowIndex.value].url = files.data.img;
+                if(files.error){
+                    ElementPlus.ElMessage({message:files.error,type:'error'});
+                }else if( files.data) {
+                    props.model[curRowIndex.value].aid = files.data.aid;
+                    props.model[curRowIndex.value].img = files.name;
+                    props.model[curRowIndex.value].url = files.data.img;
+                }
             }
 
-        };
+        }
+        async function getPublishList(query){
+            DataLoading.loading = true;
+            let ids=[];
+            props.model.forEach(item => {
+                if(item.link==5) ids.push(item.linkval);
+            });
+            const {data: res} = await axios.post(BasicUrl+'getPublishList',{q: query,ids:ids});
+            if(res.success){
+                DataList1.value = res.data;
+            }else{
+                ElementPlus.ElMessage.error(res.msg || __lang.get_data_fail);
+            }
+            DataLoading.loading = false;
+        }
+
+        getPublishList();
         onMounted(function(){//排序
             let tbody = DomTable.value.$el.querySelector('.el-table__body-wrapper tbody');
             Sortable.create(tbody, {
@@ -177,8 +219,11 @@ const Tmpmanual_recTable = {
             handledelete,
             curRowIndex,
             handleUploadSucess,
-            handleImgDelte
-        }
+            handleImgDelte,
+            DataList1,
+            DataLoading,
+            getPublishList
+        };
     }
 }
 const Tmpmanual_rec = {

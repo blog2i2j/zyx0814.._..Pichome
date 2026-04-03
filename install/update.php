@@ -9,8 +9,7 @@
 
 define('CURSCRIPT', 'misc');
 require __DIR__ . '/../core/coreBase.php';
-require_once __DIR__ . '/../core/class/class_Color.php';
-
+require_once  __DIR__ . '/../core/class/class_Color.php';
 @set_time_limit(0);
 error_reporting(0);
 $cachelist = array();
@@ -23,17 +22,11 @@ $dzz->init_user = false;
 $dzz->init_session = false;
 $dzz->init_misc = false;
 $dzz->init();
-
-
-
 $config = array(
     'dbcharset' => $_G['config']['db']['1']['dbcharset'],
     'charset' => $_G['config']['output']['charset'],
     'tablepre' => $_G['config']['db']['1']['tablepre']
 );
-
-
-
 $theurl = 'update.php';
 
 $_G['siteurl'] = preg_replace('/\/install\/$/i', '/', $_G['siteurl']);
@@ -152,6 +145,7 @@ function q_createtable($sql, $dbcharset)
 if (empty($_GET['step'])) $_GET['step'] = 'start';
 
 if ($_GET['step'] == 'start') {
+
     if (!C::t('setting')->fetch('bbclosed')) {
         C::t('setting')->update('bbclosed', 1);
         require_once libfile('function/cache');
@@ -162,7 +156,8 @@ if ($_GET['step'] == 'start') {
 			请确保当前目录下 ./data/install.sql 文件为最新版本。<br><br>
 			<a href="' . $theurl . '?step=prepare' . ($_GET['from'] ? '&from=' . rawurlencode($_GET['from']) . '&frommd5=' . rawurlencode($_GET['frommd5']) : '') . '">准备完毕，升级开始</a>');
 
-} elseif ($_GET['step'] == 'waitingdb') {
+}
+elseif ($_GET['step'] == 'waitingdb') {
     $query = DB::fetch_all("SHOW FULL PROCESSLIST");
     foreach ($query as $row) {
         if (in_array(md5($row['Info']), $_GET['sql'])) {
@@ -182,22 +177,23 @@ if ($_GET['step'] == 'start') {
         $time = 20;
     }
     show_msg($msg, $theurl . $url, $time * 1000, 0, $notice);
-} elseif ($_GET['step'] == 'prepare') {
+}
+elseif ($_GET['step'] == 'prepare') {
     $repeat = array();
-    unset($_G['config']['security']['querysafe']['daction']['4']);
-    save_config_file(DZZ_ROOT. './config/config.php',$_G['config'],[],[]);
-    /*//检查数据库表 app_market 中有无appurl重复的情况；
-    foreach(DB::fetch_all("select appid,appurl from ".DB::table('app_market')." where 1") as $value){
-        if(in_array($value['appurl'],$repeat)){
-            C::t('app_market')->update($value['appid'],array('appurl'=>$value['appurl'].'&appid='.$value['appid']));
-        }
-        $repeat[]=$value['appurl'];
-    }*/
 
+    //处理pichome_route表
+    if(DB::result_first("SHOW COLUMNS FROM  ".$config['tablepre']."pichome_route LIKE 'id'")) {
+        $query = DB::query("RENAME TABLE  " . $config['tablepre'] . 'pichome_route' . " TO " . $config['tablepre'] . 'pichome_route1');
+        $query = DB::query("ALTER TABLE  " . $config['tablepre'] . 'pichome_route1' . "  ADD COLUMN sid char(6) NOT NULL  DEFAULT '1'");
+        $query = DB::query("update  " . $config['tablepre'] . 'pichome_route1' . " set sid = path where 1");
+        $query = DB::query("ALTER TABLE  " . $config['tablepre'] . 'pichome_route1' . "  DROP COLUMN id");
+        $query = DB::query("ALTER TABLE  " . $config['tablepre'] . 'pichome_route1' . " ADD PRIMARY KEY ( `sid` )");
+        $query = DB::query("RENAME TABLE  " . $config['tablepre'] . 'pichome_route1' . " TO " . $config['tablepre'] . 'pichome_route');
+    }
     show_msg('准备完毕，进入下一步数据库结构升级', $theurl . '?step=sql');
 } elseif ($_GET['step'] == 'sql') {
     $sql = implode('', file($sqlfile));
-    preg_match_all("/CREATE\s+TABLE.+?(dzz|oaooa)\_(.+?)\s*\((.+?)\)\s*(ENGINE|TYPE)\s*=\s*(\w+)/is", $sql, $matches);
+    preg_match_all("/CREATE\s+TABLE.+?(dzz|pichome|fp)\_(.+?)\s*\((.+?)\)\s*(ENGINE|TYPE)\s*=\s*(\w+)/is", $sql, $matches);
     $newtables = empty($matches[2]) ? array() : str_replace('`', '', $matches[2]);
 
     $newsqls = empty($matches[0]) ? array() : $matches[0];
@@ -227,9 +223,13 @@ if ($_GET['step'] == 'start') {
         }
         $usql = $maths[1] . $type;
         $usql = str_replace("CREATE TABLE IF NOT EXISTS dzz_", 'CREATE TABLE IF NOT EXISTS ' . $config['tablepre'], $usql);
+        $usql = str_replace("CREATE TABLE IF NOT EXISTS pichome_", 'CREATE TABLE IF NOT EXISTS ' . $config['tablepre'], $usql);
         $usql = str_replace("CREATE TABLE IF NOT EXISTS `dzz_", 'CREATE TABLE IF NOT EXISTS `' . $config['tablepre'], $usql);
+        $usql = str_replace("CREATE TABLE IF NOT EXISTS `pichome_", 'CREATE TABLE IF NOT EXISTS `' . $config['tablepre'], $usql);
         $usql = str_replace("CREATE TABLE dzz_", 'CREATE TABLE ' . $config['tablepre'], $usql);
+        $usql = str_replace("CREATE TABLE pichome_", 'CREATE TABLE ' . $config['tablepre'], $usql);
         $usql = str_replace("CREATE TABLE `dzz_", 'CREATE TABLE `' . $config['tablepre'], $usql);
+        $usql = str_replace("CREATE TABLE `pichome_", 'CREATE TABLE `' . $config['tablepre'], $usql);
         if (!DB::query($usql, 'SILENT')) {
             show_msg('添加表 ' . DB::table($newtable) . ' 出错,请手工执行以下SQL语句后,再重新运行本升级程序:<br><br>' . dhtmlspecialchars($usql));
         } else {
@@ -246,8 +246,8 @@ if ($_GET['step'] == 'start') {
             if ($key == 'PRIMARY') {
                 if ($value != $oldcols[$key]) {
                     if (!empty($oldcols[$key])) {
-                        $baktab = DB::table($newtable . '_bak');
-                        if (!in_array($baktab, $tablist)) {
+                        $baktab =DB::table($newtable . '_bak');
+                        if(!in_array($baktab,$tablist)){
                             $usql = "RENAME TABLE " . DB::table($newtable) . " TO " . DB::table($newtable . '_bak');
                             if (!DB::query($usql, 'SILENT')) {
                                 show_msg('升级表 ' . DB::table($newtable) . ' 出错,请手工执行以下升级语句后,再重新运行本升级程序:<br><br><b>升级SQL语句</b>:<div style=\"position:absolute;font-size:11px;font-family:verdana,arial;background:#EBEBEB;padding:0.5em;\">' . dhtmlspecialchars($usql) . "</div><br><b>Error</b>: " . DB::error() . "<br><b>Errno.</b>: " . DB::errno());
@@ -324,363 +324,509 @@ if ($_GET['step'] == 'start') {
 } elseif ($_GET['step'] == 'data') {
     //如果没有识别码，增加识别码
     if (!$_GET['dp']) {
-        //appmarket表增加数据
-        if (!DB::result_first("select appid from %t where identifier = %s", array('app_market', 'aiXhimage'))) {
-            DB::insert('app_market', array(
-                'mid' => 0,
-                'appname' => '星火图片理解',
-                'appico' => 'appico/202404/29/095905euqa4ujagqqttlu1.png',
-                'appdesc' => '',
-                'appurl' => '{dzzscript}?mod=aiXhimage',
-                'appadminurl' => '{dzzscript}?mod=aiXhimage&op=setting',
-                'noticeurl' => '',
-                'dateline' => 0,
-                'disp' => 0,
-                'vendor' => '',
-                'haveflash' => 0,
-                'isshow' => 1,
-                'havetask' => 0,
-                'hideInMarket' => 1,
-                'feature' => '',
-                'fileext' => '',
-                'group' => 3,
-                'orgid' => 0,
-                'position' => 0,
-                'system' => 0,
-                'identifier' => 'aiXhimage', 'app_path' => 'dzz', 'available' => 1, 'version' => '1.0',
-                'upgrade_version' => '', 'check_upgrade_time' => 0, 'extra' => 'a:1:{s:11:\"installfile\";s:11:\"install.php\";}', 'uids' => '', 'showadmin' => 1));
+        //appmarket语言包应用
+        if(!DB::result_first("select appid from %t where identifier = %s",array('app_market','lang'))){
+            DB::insert('app_market',
+                array(
+                    'mid'=>0,
+                    'appname'=>'多语言',
+                    'appico'=>'appico/201712/21/lang.png',
+                    'appdesc'=>'',
+                    'appurl'=>'{dzzscript}?mod=lang',
+                    'appadminurl'=>'{dzzscript}?mod=lang&op=admin',
+                    'noticeurl'=>'',
+                    'dateline'=>0,
+                    'disp'=>0,
+                    'vendor'=>'',
+                    'haveflash'=>0,
+                    'isshow'=>0,
+                    'havetask'=>0,
+                    'hideInMarket'=>1,
+                    'feature'=>'',
+                    'fileext'=>'',
+                    'group'=>0,
+                    'orgid'=>0,
+                    'position'=>0,
+                    'system'=>0,
+                    'identifier'=>'lang',
+                    'app_path'=> 'dzz',
+                    'available' =>1,
+                    'version'=>'1.0',
+                    'upgrade_version'=>'',
+                    'check_upgrade_time'=> 0,
+                    'extra'=>'a:1:{s:11:\"installfile\";s:11:\"install.php\";}',
+                    'uids'=> '',
+                    'showadmin'=>1
+                )
+            );
         }
-        if (!$appid=DB::result_first("select appid from %t where identifier = %s", array('app_market', 'ollama'))) {
+
+
+        //增加分享应用
+        if(!DB::result_first("select appid from %t where identifier = %s",array('app_market','shares'))){
             $appid=DB::insert('app_market', array(
-                'appname' => 'ollama图片理解',
-                'appico' => 'appico/202501/26/154415eck9acekzp9uaj41.png',
-                'appdesc' => '',
-                'appurl' => '{dzzscript}?mod=ollama',
-                'appadminurl' => '{dzzscript}?mod=ollama&op=setting',
-                'noticeurl' => '',
-                'dateline' => 0,
-                'disp' => 0,
-                'vendor' => '',
-                'haveflash' => 0,
-                'isshow' => 1,
-                'havetask' => 0,
-                'hideInMarket' => 1,
-                'feature' => '',
-                'fileext' => '',
-                'group' => 3,
-                'orgid' => 0,
-                'position' => 0,
-                'system' => 0,
-                'identifier' => 'ollama', 'app_path' => 'dzz', 'available' => 1, 'version' => '1.0',
-                'upgrade_version' => '', 'check_upgrade_time' => 0, 'extra' => 'a:1:{s:11:\"installfile\";s:11:\"install.php\";}', 'uids' => '', 'showadmin' => 1),1);
+                'mid'=>0,
+                'appname'=>'分享',
+                'appico'=>'appico/201712/21/share.png',
+                'appdesc'=>'',
+                'appurl'=>'{dzzscript}?mod=shares',
+                'appadminurl'=>'{dzzscript}?mod=shares&op=admin',
+                'noticeurl'=>'',
+                'dateline'=>0,
+                'disp'=>0,
+                'vendor'=>'',
+                'haveflash'=>0,
+                'isshow'=>0,
+                'havetask'=>0,
+                'hideInMarket'=>1,
+                'feature'=>'',
+                'fileext'=>'',
+                'group'=>0,
+                'orgid'=>0,
+                'position'=>0,
+                'system'=>0,
+                'identifier'=>'shares',
+                'app_path'=> 'dzz',
+                'available' =>1,
+                'version'=>'1.0',
+                'upgrade_version'=>'',
+                'check_upgrade_time'=> 0,
+                'extra'=>'N;',
+                'uids'=> '',
+                'showadmin'=>0),1);
+            if($appid){ //增加hooks
+                //处理分享相关挂载点
+//INSERT INTO `dzz_hooks` VALUES(73, 13, 'getMyNavigation', 'getMyNavigation', 1, 0, 'dzz\\shares\\classes\\mynavigation', 1, 0);
+                if ($hid=DB::result_first("select id from %t where addons = %s", array('hooks', 'dzz\shares\classes\mynavigation'))) {
+                    DB::update('hooks', array('app_market_id' => $appid), array('id' => $hid));
+                }else{
+                    DB::insert('hooks', array(
+                        'app_market_id' => $appid,
+                        'name' => 'getMyNavigation',
+                        'description' => 'getMyNavigation',
+                        'type' => 1,
+                        'update_time' => 0,
+                        'addons' => 'dzz\shares\classes\mynavigation',
+                        'status' => 1,
+                        'priority' => 0
+                    ), false, true);
+                }
 
-        }
-        if($appid){
-            //处理ollama相关挂载点
-
-            if ($hid=DB::result_first("select id from %t where addons = %s", array('hooks', 'dzz\ollama\classes\pichomedatadeleteafter'))) {
-                DB::update('hooks', array('app_market_id' => $appid,'priority'=>100), array('id' => $hid));
-            }else{
-                DB::insert('hooks', array(
-                    'app_market_id' => $appid,
-                    'name' => 'pichomedatadeleteafter',
-                    'description' => '删除库文件时清除ai记录',
-                    'type' => 1,
-                    'update_time' => 0,
-                    'addons' => 'dzz\ollama\classes\pichomedatadeleteafter',
-                    'status' => 1,
-                    'priority' => 100
-                ), false, true);
-            }
-            if ($hid=DB::result_first("select id from %t where addons = %s", array('hooks', 'dzz\ollama\classes\attachmentDelAfter'))) {
-                DB::update('hooks', array('app_market_id' => $appid,'priority'=>100), array('id' => $hid));
-            }else{
-                DB::insert('hooks', array(
-                    'app_market_id' => $appid,
-                    'name' => 'attachmentDelAfter',
-                    'description' => '删除附件表时清除对应ai记录',
-                    'type' => 1,
-                    'update_time' => 0,
-                    'addons' => 'dzz\ollama\classes\attachmentDelAfter',
-                    'status' => 1,
-                    'priority' => 100
-                ), false, true);
-            }
-            if ($hid=DB::result_first("select id from %t where addons = %s", array('hooks', 'dzz\ollama\classes\ImageAIkey'))) {
-                DB::update('hooks', array('app_market_id' => $appid,'priority'=>100), array('id' => $hid));
-            }else{
-                DB::insert('hooks', array(
-                    'app_market_id' => $appid,
-                    'name' => 'ImageAIkey',
-                    'description' => '编辑文件数据过滤',
-                    'type' => 1,
-                    'update_time' => 0,
-                    'addons' => 'dzz\ollama\classes\ImageAIkey',
-                    'status' => 1,
-                    'priority' => 100
-                ), false, true);
-            }
-             if ($hid=DB::result_first("select id from %t where addons = %s", array('hooks', 'dzz\ollama\classes\ImagetagAnddesc'))) {
-                 DB::update('hooks', array('app_market_id' => $appid,'priority'=>100), array('id' => $hid));
-             }else{
-                 DB::insert('hooks', array(
-                     'app_market_id' => $appid,
-                     'name' => 'ImagetagAnddesc',
-                     'description' => 'ai获取图片标签和描述',
-                     'type' => 1,
-                     'update_time' => 0,
-                     'addons' => 'dzz\ollama\classes\ImagetagAnddesc',
-                     'status' => 1,
-                     'priority' => 100
-                 ), false, true);
-             }
-
-        }
-
-        //更新语言包表数据
-        $langarr = [
-            
-            [
-                'langflag'=>'zh-CN',
-                'isdefault'=>1,
-                'state'=>1
-            ],
-            [
-                'langflag'=>'en-US',
-                'isdefault'=>0,
-                'state'=>0
-            ]
-        ];
-
-         foreach ($langarr as $v) {
-            if (!DB::result_first("select langflag from %t where langflag = %s", array('language', $v['langflag']))) {
-                DB::insert('language', $v);
             }
         }
-        //更新计划任务
-        $cornarr = [
-            [
-                'available' => 1,
-                'type' => 'system',
-                'name' => '定时执行ai批量处理到任务表',
-                'filename' => 'cron_ai_checkaicrontotask.php',
-                'lastrun' => 1714468447,
-                'nextrun' => 1714468500,
-                'weekday' => -1,
-                'day' => -1,
-                'hour' => -1,
-                'minute' => '0	5	10	15	20	25	30	35	40	45	50	55',
-            ],
-            [
-                'available' => 1,
-                'type' => 'system',
-                'name' => '定时执行ai批量处理',
-                'filename' => 'cron_ai_doaitask.php',
-                'lastrun' => 1714469057,
-                'nextrun' => 1714469100,
-                'weekday' => -1,
-                'day' => -1,
-                'hour' => -1,
-                'minute' => '0	5	10	15	20	25	30	35	40	45	50	55',
-            ],
-            [
-                'available' => 1,
-                'type' => 'system',
-                'name' => '定时获取预览图缩略图任务',
-                'filename' => 'cron_pichome_getpreviewthumb.php',
-                'lastrun' => 1714469179,
-                'nextrun' => 1714469400,
-                'weekday' => -1,
-                'day' => -1,
-                'hour' => -1,
-                'minute' => '0	5	10	15	20	25	30	35	40	45	50	55',
-            ],
-            [
-                'available' => 1,
-                'type' => 'system',
-                'name' => '定时检查预览图缩略图任务',
-                'filename' => 'cron_thumbcheckpreviewchange.php',
-                'lastrun' => 1714469240,
-                'nextrun' => 171446940,
-                'weekday' => -1,
-                'day' => -1,
-                'hour' => -1,
-                'minute' => '0	5	10	15	20	25	30	35	40	45	50	55',
-            ],
-            [
-                'available' => 1,
-                'type' => 'system',
-                'name' => '定时改变预览图缩略图任务',
-                'filename' => 'cron_thumbdopreviewchange.php',
-                'lastrun' => 1714469301,
-                'nextrun' => 1714469400,
-                'weekday' => -1,
-                'day' => -1,
-                'hour' => -1,
-                'minute' => '0	5	10	15	20	25	30	35	40	45	50	55',
-            ]
+        //增加阿里云以图搜图应用
+        if(!DB::result_first("select appid from %t where identifier = %s",array('app_market','imageSearchAli'))){
+            $appid=DB::insert('app_market', array(
+                'mid'=>0,
+                'appname'=>'阿里云以图搜图',
+                'appico'=>'appico/201712/21/aliimagesearch.png',
+                'appdesc'=>'',
+                'appurl'=>'{dzzscript}?mod=imageSearchAli',
+                'appadminurl'=>'{dzzscript}?mod=imageSearchAli',
+                'noticeurl'=>'',
+                'dateline'=>0,
+                'disp'=>0,
+                'vendor'=>'',
+                'haveflash'=>0,
+                'isshow'=>0,
+                'havetask'=>0,
+                'hideInMarket'=>1,
+                'feature'=>'',
+                'fileext'=>'',
+                'group'=>0,
+                'orgid'=>0,
+                'position'=>0,
+                'system'=>0,
+                'identifier'=>'imageSearchAli',
+                'app_path'=> 'dzz',
+                'available' =>1,
+                'version'=>'1.0',
+                'upgrade_version'=>'',
+                'check_upgrade_time'=> 0,
+                'extra'=>'N;',
+                'uids'=> '',
+                'showadmin'=>1),1);
+            if($appid){ //增加hooks
+                //处理相关挂载点
 
-        ];
-        foreach ($cornarr as $v) {
-            if (!DB::result_first("select cronid from %t where filename = %s", array('cron', $v['filename']))) {
-                DB::insert('cron', $v);
-            }
-        }
-        //更新onlyoffice设置位置
-        $docstatus = DB::result_first("select docstatus from %t where bz = %s", array('connect_storage', 'dzz'));
-        //管理界面不显示onlyoffice_view
-        $app = C::t('app_market')->fetch_by_identifier('onlyoffice_view', 'dzz');
-        if($app['showadmin']) C::t('app_market')->update($app['appid'], ['showadmin' => 0]);
-        if ($docstatus == 1) {
-            if (!$app['available']) C::t('app_market')->update($app['appid'], ['available' => 1]);
-        } else {
-            if ($app['available']) C::t('app_market')->update($app['appid'], ['available' => 1]);
-        }
-        $app = C::t('app_market')->fetch_by_identifier('ffmpeg');
-        if($app['showadmin']) C::t('app_market')->update($app['appid'], ['showadmin' => 0]);
-        //增加星火模型图片理解默认模板
-        $xhimageparsetpl = [
-            [
-                'id' => 1,
-                'name' => '通用标签',
-                'prompt' => '请根据图片内容给出5到20个关键词作为图片标签，每个标签词的长度不能超过5个字，且标签词之间不能重复。标签尽量简洁，能用一个字用一个字，能用2个字的用2个字。',
-                'cate' => 1,
-                'isdefault' => 0,
-                'status' => 1,
-                'disp' => 1,
-                'dateline' => 0
-            ],
-            [
-                'id' => 2,
-                'name' => '通用描述',
-                'prompt' => '请你根据所给出的图片，详细描述其内容，并给出一个不超过120个字符的简短介绍。请确保你的描述中包含主要元素、色彩和可能的主题或情感表达，同时注意保持描述的连贯性和准确性。',
-                'cate' => 2,
-                'isdefault' => 0,
-                'status' => 1,
-                'disp' => 1,
-                'dateline' => 0
-            ],
-            [
-                'id' => 3,
-                'name' => '通用改文件名',
-                'prompt' => '根据图片内容给出图片文件名，不超过30个字符',
-                'cate' => 0,
-                'isdefault' => 0,
-                'status'=>1,
-                'disp' => 1,
-                'dateline' => 0
-            ]
-        ];
-        foreach($xhimageparsetpl as $value){
-            if(!DB::result_first("select id from %t where id = %d",array('ai_xhimageprompt',$value['id']))){
-                DB::insert('ai_xhimageprompt',$value);
-            }
-        }
-        //去掉个人版的收藏夹挂载点
-        if ($delhooksid = DB::result_first("select id from %t where addons = %s", array('hooks', 'dzz\collection\classes\deleteafter'))) {
-            DB::delete('hooks', ['id' => $delhooksid]);
-        }
-        //获取aiKey挂载点
-        if (!DB::result_first("select count(id) from %t where addons = %s", array('hooks', 'dzz\aiXhimage\classes\ImageAIkey'))) {
-            DB::insert('hooks', array(
-                'app_market_id' => 12,
-                'name' => 'editfilefilter',
-                'description' => 'ImageAIkey',
-                'type' => 1,
-                'update_time' => 0,
-                'addons' => 'dzz\aiXhimage\classes\ImageAIkey',
-                'status' => 1,
-                'priority' => 0
-            ), false, true);
-        }
-        //获取描述名词标签挂载点
-        if (!DB::result_first("select count(id) from %t where addons = %s", array('hooks', 'dzz\aiXhimage\classes\ImagetagAnddesc'))) {
-            DB::insert('hooks', array(
-                'app_market_id' => 12,
-                'name' => 'imageAiData',
-                'description' => 'ImagetagAnddesc',
-                'type' => 1,
-                'update_time' => 0,
-                'addons' => 'dzz\aiXhimage\classes\ImagetagAnddesc',
-                'status' => 1,
-                'priority' => 0
-            ), false, true);
-        }
-        //彻底删除附件处理挂载点
-        if (!DB::result_first("select count(id) from %t where addons = %s", array('hooks', 'dzz\aiXhimage\classes\attachmentDelAfter'))) {
-            DB::insert('hooks', array(
-                'app_market_id' => 12,
-                'name' => 'finalydelete',
-                'description' => 'finalydelete',
-                'type' => 1,
-                'update_time' => 0,
-                'addons' => 'dzz\aiXhimage\classes\attachmentDelAfter',
-                'status' => 1,
-                'priority' => 0
-            ), false, true);
-        }
-        //彻底删除文件处理挂载点
-        if (!DB::result_first("select count(id) from %t where addons = %s", array('hooks', 'dzz\aiXhimage\classes\pichomedatadeleteafter'))) {
-            DB::insert('hooks', array(
-                'app_market_id' => 12,
-                'name' => 'pichomedatadeleteafter',
-                'description' => 'pichomedatadeleteafter',
-                'type' => 1,
-                'update_time' => 0,
-                'addons' => 'dzz\aiXhimage\classes\pichomedatadeleteafter',
-                'status' => 1,
-                'priority' => 0
-            ), false, true);
-        }
-        //统计token使用数
-        if (!DB::result_first("select count(id) from %t where addons = %s", array('hooks', 'dzz\stats\classes\addTokenuse'))) {
-            DB::insert('hooks', array(
-                'app_market_id' => 12,
-                'name' => 'statsTokenuse',
-                'description' => 'statsTokenuse',
-                'type' => 1,
-                'update_time' => 0,
-                'addons' => 'dzz\stats\classes\addTokenuse',
-                'status' => 1,
-                'priority' => 0
-            ), false, true);
-        }
-        show_msg("基础数据升级完成", "$theurl?step=data&dp=1");
+                if ($hid=DB::result_first("select id from %t where addons = %s", array('hooks', 'dzz\imageSearchAli\classes\imageSearchadd'))) {
+                    DB::update('hooks', array('app_market_id' => $appid), array('id' => $hid));
+                }else{
+                    DB::insert('hooks', array(
+                        'app_market_id' => $appid,
+                        'name' => 'addfileafter',
+                        'description' => '',
+                        'type' => 1,
+                        'update_time' => 0,
+                        'addons' => 'dzz\imageSearchAli\classes\imageSearchadd',
+                        'status' => 1,
+                        'priority' => 0
+                    ), false, true);
+                }
+                if ($hid=DB::result_first("select id from %t where addons = %s", array('hooks', 'dzz\imageSearchAli\classes\imageSearchdel'))) {
+                    DB::update('hooks', array('app_market_id' => $appid), array('id' => $hid));
+                }else{
+                    DB::insert('hooks', array(
+                        'app_market_id' => $appid,
+                        'name' => 'pichomedatadeleteafter',
+                        'description' => '',
+                        'type' => 1,
+                        'update_time' => 0,
+                        'addons' => 'dzz\imageSearchAli\classes\imageSearchdel',
+                        'status' => 1,
+                        'priority' => 0
+                    ), false, true);
+                }
+                if ($hid=DB::result_first("select id from %t where addons = %s", array('hooks', 'dzz\imageSearchAli\classes\imageSearch'))) {
+                    DB::update('hooks', array('app_market_id' => $appid), array('id' => $hid));
+                }else{
+                    DB::insert('hooks', array(
+                        'app_market_id' => $appid,
+                        'name' => 'search_condition_filter',
+                        'description' => '',
+                        'type' => 1,
+                        'update_time' => 0,
+                        'addons' => 'dzz\imageSearchAli\classes\imageSearch',
+                        'status' => 1,
+                        'priority' => 0
+                    ), false, true);
+                }
+                if ($hid=DB::result_first("select id from %t where addons = %s", array('hooks', 'dzz\imageSearchAli\classes\imageSearchupdate'))) {
+                    DB::update('hooks', array('app_market_id' => $appid), array('id' => $hid));
+                }else{
+                    DB::insert('hooks', array(
+                        'app_market_id' => $appid,
+                        'name' => 'updatedataafter',
+                        'description' => '',
+                        'type' => 1,
+                        'update_time' => 0,
+                        'addons' => 'dzz\imageSearchAli\classes\imageSearchupdate',
+                        'status' => 1,
+                        'priority' => 0
+                    ), false, true);
+                }
+                if ($hid=DB::result_first("select id from %t where addons = %s", array('hooks', 'dzz\imageSearchAli\classes\allowSearch'))) {
+                    DB::update('hooks', array('app_market_id' => $appid), array('id' => $hid));
+                }else{
+                    DB::insert('hooks', array(
+                        'app_market_id' => $appid,
+                        'name' => 'ResourceDataFilter',
+                        'description' => '',
+                        'type' => 1,
+                        'update_time' => 0,
+                        'addons' => 'dzz\imageSearchAli\classes\allowSearch',
+                        'status' => 1,
+                        'priority' => 0
+                    ), false, true);
+                }
+                if ($hid=DB::result_first("select cronid from %t where addons = %s", array('hooks', 'dzz\imageSearchAli\classes\imageSearchTask'))) {
+                    DB::update('hooks', array('app_market_id' => $appid), array('cronid' => $hid));
+                }else{
+                    DB::insert('hooks', array(
+                        'app_market_id' => $appid,
+                        'name' => 'imageSearchTask',
+                        'description' => '',
+                        'type' => 1,
+                        'update_time' => 0,
+                        'addons' => 'dzz\imageSearchAli\classes\imageSearchTask',
+                        'status' => 1,
+                        'priority' => 0
+                    ), false, true);
+                }
+                //处理计划任务
+                if ($cronid=DB::result_first("select cronid from %t where filename = %s", array('cron', 'dzz:imageSearchAli:cron_imageSearch_add.php'))) {
 
-    } elseif ($_GET['dp'] == 1) {//pathkey数据升级
-        $i = isset($_GET['i']) ? intval($_GET['i']) : 1;
-        //获取普通目录库id
+                }else{
+                    DB::insert('cron', array(
+                        'available' => 1,
+                        'name'=>'以图搜图入库',
+                        'filename' => 'dzz:imageSearchAli:cron_imageSearch_add.php',
+                        'type' => 'app',
+                        'weekday' => '-1',
+                        'day' => '-1',
+                        'hour' => '-1',
+                        'minute'=>'0	5   10	15	20	25	30	35	40	45	50	55',
+                    ), false, true);
+                }
+                if ($cronid=DB::result_first("select cronid from %t where filename = %s", array('cron', 'dzz:imageSearchAli:cron_imageSearch_md5chk.php'))) {
 
-            if (!isset($_GET['count'])) {
-                $count = DB::result_first("select count(DISTINCT fid) from %t where 1  ", ['pichome_folderresources']);
-                if(!$count) show_msg("数据升级结束", "$theurl?step=delete");
-            } else {
-                $count = intval($_GET['count']);
-            }
-            $i = isset($_GET['i']) ? intval($_GET['i']) : 1;
-            $perpage = 1000;
-            $start = ($i - 1) * $perpage;
-            $j = 0;
-            foreach (DB::fetch_all("select DISTINCT fid from %t where 1  limit $start,$perpage", ['pichome_folderresources']) as $value) {
-                $pathkey = DB::result_first("select pathkey from %t where fid = %s", ['pichome_folder', $value['fid']]);
-                if ($pathkey) {
-                    DB::update('pichome_folderresources', ['pathkey' => $pathkey], ['fid' => $value['fid']]);
-                    $j++;
+
+                }else{
+                    DB::insert('cron', array(
+                        'available' => 1,
+                        'name'=>'以图搜图Md5校验',
+                        'filename' => 'dzz:imageSearchAli:cron_imageSearch_md5chk.php',
+                        'type' => 'app',
+                        'weekday' => '-1',
+                        'day' => '-1',
+                        'hour' => '-1',
+                        'minute'=>'0	5   10	15	20	25	30	35	40	45	50	55',
+                    ), false, true);
+                }
+                if ($cronid=DB::result_first("select cronid from %t where filename = %s", array('cron', 'dzz:imageSearchAli:cron_imageSearch_prepare.php'))) {
+
+                }else{
+                    DB::insert('cron', array(
+                        'available' => 1,
+                        'name'=>'以图搜图入表',
+                        'filename' => 'dzz:imageSearchAli:cron_imageSearch_prepare.php',
+                        'type' => 'app',
+                        'weekday' => '-1',
+                        'day' => '-1',
+                        'hour' => '-1',
+                        'minute'=>'0	5   10	15	20	25	30	35	40	45	50	55',
+                    ), false, true);
                 }
             }
-            if ($j >= $perpage) {
-                $complatei = ($i - 1) * $perpage + $j;
-                $i++;
-                $msg = '目录关系数据升级完成';
-                $next = $theurl . '?step=data&dp=1&i=' . $i . '&count=' . $count;
-                show_msg($msg . "[ $complatei/$count] ", $next);
-            } else {
-                show_msg("数据升级结束,即将开始标签数据升级", "$theurl?step=delete");
+        }
+
+        //处理阿里百炼应用
+        if(!DB::result_first("select appid from %t where identifier = %s",array('app_market','aliBaiLian'))) {
+            $appid = DB::insert('app_market', array(
+                'mid' => 0,
+                'appname' => '阿里百炼',
+                'appico' => 'appico/201712/21/alibainian.png',
+                'appdesc' => '',
+                'appurl' => '{dzzscript}?mod=aliBaiLian',
+                'appadminurl' => '{dzzscript}?mod=aliBaiLian&op=setting',
+                'noticeurl' => '',
+                'dateline' => 0,
+                'disp' => 0,
+                'vendor' => '',
+                'haveflash' => 0,
+                'isshow' => 0,
+                'havetask' => 0,
+                'hideInMarket' => 1,
+                'feature' => '',
+                'fileext' => '',
+                'group' => 0,
+                'orgid' => 0,
+                'position' => 0,
+                'system' => 0,
+                'identifier' => 'aliBaiLian',
+                'app_path' => 'dzz',
+                'available' => 1,
+                'version' => '1.0',
+                'upgrade_version' => '',
+                'check_upgrade_time' => 0,
+                'extra' => 'N;',
+                'uids' => '',
+                'showadmin' => 1), 1);
+            if ($appid) { //增加hooks
+                //处理相关挂载点
+                if ($hid = DB::result_first("select id from %t where addons = %s", array('hooks', 'dzz\aliBaiLian\classes\pichomedatadeleteafter'))) {
+                    DB::update('hooks', array('app_market_id' => $appid), array('id' => $hid));
+                } else {
+                    DB::insert('hooks', array(
+                        'app_market_id' => $appid,
+                        'name' => 'pichomedatadeleteafter',
+                        'description' => 'pichomedatadeleteafter',
+                        'type' => 1,
+                        'update_time' => 0,
+                        'addons' => 'dzz\aliBaiLian\classes\pichomedatadeleteafter',
+                        'status' => 1,
+                        'priority' => 100
+                    ), false, true);
+                }
+                if ($hid = DB::result_first("select id from %t where addons = %s", array('hooks', 'dzz\aliBaiLian\classes\attachmentDelAfter'))) {
+                    DB::update('hooks', array('app_market_id' => $appid), array('id' => $hid));
+                } else {
+                    DB::insert('hooks', array(
+                        'app_market_id' => $appid,
+                        'name' => 'finalydelete',
+                        'description' => 'finalydelete',
+                        'type' => 1,
+                        'update_time' => 0,
+                        'addons' => 'dzz\aliBaiLian\classes\attachmentDelAfter',
+                        'status' => 1,
+                        'priority' => 100
+                    ), false, true);
+                }
+                if ($hid = DB::result_first("select id from %t where addons = %s", array('hooks', 'dzz\aliBaiLian\classes\ImagetagAnddesc'))) {
+                    DB::update('hooks', array('app_market_id' => $appid), array('id' => $hid));
+                } else {
+                    DB::insert('hooks', array(
+                        'app_market_id' => $appid,
+                        'name' => 'imageAiData',
+                        'description' => 'ImagetagAnddesc',
+                        'type' => 1,
+                        'update_time' => 0,
+                        'addons' => 'dzz\aliBaiLian\classes\ImagetagAnddesc',
+                        'status' => 1,
+                        'priority' => 100
+                    ), false, true);
+                }
+                if ($hid = DB::result_first("select id from %t where addons = %s", array('hooks', 'dzz\aliBaiLian\classes\ImageAIkey'))) {
+                    DB::update('hooks', array('app_market_id' => $appid), array('id' => $hid));
+                } else {
+                    DB::insert('hooks', array(
+                        'app_market_id' => $appid,
+                        'name' => 'editfilefilter',
+                        'description' => 'ImageAIkey',
+                        'type' => 1,
+                        'update_time' => 0,
+                        'addons' => 'dzz\aliBaiLian\classes\ImageAIkey',
+                        'status' => 1,
+                        'priority' => 100
+                    ), false, true);
+                }
+
             }
+        }
+        //markdown应用
+        if(!DB::result_first("select appid from %t where identifier = %s",array('app_market','markdown'))){
+            $appid=DB::insert('app_market',
+                array(
+                    'mid'=>0,
+                    'appname'=>'Markdown',
+                    'appico'=>'appico/201712/21/markdown.png',
+                    'appdesc'=>'',
+                    'appurl'=>'{dzzscript}?mod=markdown',
+                    'appadminurl'=>'',
+                    'noticeurl'=>'',
+                    'dateline'=>0,
+                    'disp'=>0,
+                    'vendor'=>'',
+                    'haveflash'=>0,
+                    'isshow'=>0,
+                    'havetask'=>0,
+                    'hideInMarket'=>1,
+                    'feature'=>'',
+                    'fileext'=>'md',
+                    'group'=>0,
+                    'orgid'=>0,
+                    'position'=>0,
+                    'system'=>0,
+                    'identifier'=>'markdown',
+                    'app_path'=> 'dzz',
+                    'available' =>1,
+                    'version'=>'1.0',
+                    'upgrade_version'=>'',
+                    'check_upgrade_time'=> 0,
+                    'extra'=>'a:1:{s:11:\"installfile\";s:11:\"install.php\";}',
+                    'uids'=> '',
+                    'showadmin'=>1
+                ),1);
+            if($appid) { //增加hooks
+                //处理相关挂载点
+                if ($hid = DB::result_first("select id from %t where addons = %s", array('hooks', 'dzz\markdown\classes\mdtohtml'))) {
+                    DB::update('hooks', array('app_market_id' => $appid), array('id' => $hid));
+                } else {
+                    DB::insert('hooks', array(
+                        'app_market_id' => $appid,
+                        'name' => 'mdtohtml',
+                        'description' => 'mdtohtml',
+                        'type' => 1,
+                        'update_time' => 0,
+                        'addons' => 'dzz\markdown\classes\mdtohtml',
+                        'status' => 1,
+                        'priority' => 1
+                    ));
+                }
+            }
+        }
+        //处理发布相关hooks
+
+        if (!DB::result_first("select count(*) from %t where addons = %s", array('hooks', 'dzz\publish\classes\deleteafter'))) {
+            DB::insert('hooks', array(
+                'app_market_id' =>0,
+                'name' => 'pichomedatadeleteafter',
+                'description' => '删除文件时处理发布数据',
+                'type' => 1,
+                'update_time' => 0,
+                'addons' => 'dzz\publish\classes\deleteafter',
+                'status' => 1,
+                'priority' => 0
+            ));
+        }
+        if (!DB::result_first("select count(*) from %t where addons = %s", array('hooks', 'dzz\publish\classes\intelligentdeleteafter'))) {
+            DB::insert('hooks', array(
+                'app_market_id' =>0,
+                'name' => 'intelligentdeleteafter',
+                'description' => '删除智能数据时处理发布数据',
+                'type' => 1,
+                'update_time' => 0,
+                'addons' => 'dzz\publish\classes\intelligentdeleteafter',
+                'status' => 1,
+                'priority' => 0
+            ));
+        }
+        if (!DB::result_first("select count(*) from %t where addons = %s", array('hooks', 'dzz\publish\classes\alonepagedeleteafter'))) {
+            DB::insert('hooks', array(
+                'app_market_id' =>0,
+                'name' => 'alonepagedeleteafter',
+                'description' => '删除单页时处理发布数据',
+                'type' => 1,
+                'update_time' => 0,
+                'addons' => 'dzz\publish\classes\alonepagedeleteafter',
+                'status' => 1,
+                'priority' => 0
+            ));
+        }
+        if (!DB::result_first("select count(*) from %t where addons = %s", array('hooks', 'dzz\publish\classes\vappdeleteafter'))) {
+            DB::insert('hooks', array(
+                'app_market_id' =>0,
+                'name' => 'pichomevappdelete',
+                'description' => '删除库时处理发布数据',
+                'type' => 1,
+                'update_time' => 0,
+                'addons' => 'dzz\publish\classes\vappdeleteafter',
+                'status' => 1,
+                'priority' => 0
+            ));
+        }
+        if (!DB::result_first("select count(*) from %t where addons = %s", array('hooks', 'core\dzz\ucheck'))) {
+            DB::insert('hooks', array(
+                'app_market_id' =>0,
+                'name' => 'uc_add_user',
+                'description' => '',
+                'type' => 1,
+                'update_time' => 0,
+                'addons' => 'core\dzz\ucheck',
+                'status' => 1,
+                'priority' => 0
+            ));
+        }
+
+        //处理theme
+        DB::insert('pichome_theme',array(
+            'id'=>1,
+            'themename'=>'超酷时尚',
+            'colors'=>'white,dark',
+            'templates'=>'',
+            'selcolor'=>'dark',
+            'themestyle'=>'a:12:{s:5:"slide";a:2:{s:10:"horizontal";a:4:{s:5:"title";s:6:"横幅";s:7:"default";s:4:"true";s:5:"value";s:10:"horizontal";s:4:"size";a:3:{i:0;a:3:{s:5:"title";s:9:"1800×450";s:7:"default";s:4:"true";s:5:"value";s:3:"25%";}i:1;a:3:{s:5:"title";s:9:"1800×500";s:7:"default";s:5:"false";s:5:"value";s:3:"28%";}i:2;a:3:{s:5:"title";s:9:"1800×800";s:7:"default";s:5:"false";s:5:"value";s:3:"44%";}}}s:4:"full";a:4:{s:5:"title";s:6:"满屏";s:7:"default";s:5:"false";s:5:"value";s:4:"full";s:4:"size";a:3:{i:0;a:3:{s:5:"title";s:9:"1800×450";s:7:"default";s:4:"true";s:5:"value";s:3:"25%";}i:1;a:3:{s:5:"title";s:9:"1800×500";s:7:"default";s:5:"false";s:5:"value";s:3:"28%";}i:2;a:3:{s:5:"title";s:9:"1800×800";s:7:"default";s:5:"false";s:5:"value";s:3:"44%";}}}}s:10:"search_rec";a:4:{s:6:"style1";a:3:{s:5:"title";s:21:"简洁边框中对齐";s:7:"default";s:4:"true";s:5:"value";s:6:"style1";}s:6:"style2";a:3:{s:5:"title";s:21:"简洁边框左对齐";s:7:"default";s:5:"false";s:5:"value";s:6:"style2";}s:6:"style3";a:3:{s:5:"title";s:18:"无边框中对齐";s:7:"default";s:5:"false";s:5:"value";s:6:"style3";}s:6:"style4";a:3:{s:5:"title";s:18:"无边框左对齐";s:7:"default";s:5:"false";s:5:"value";s:6:"style4";}}s:10:"search_pub";a:4:{s:6:"style1";a:3:{s:5:"title";s:21:"简洁边框中对齐";s:7:"default";s:4:"true";s:5:"value";s:6:"style1";}s:6:"style2";a:3:{s:5:"title";s:21:"简洁边框左对齐";s:7:"default";s:5:"false";s:5:"value";s:6:"style2";}s:6:"style3";a:3:{s:5:"title";s:18:"无边框中对齐";s:7:"default";s:5:"false";s:5:"value";s:6:"style3";}s:6:"style4";a:3:{s:5:"title";s:18:"无边框左对齐";s:7:"default";s:5:"false";s:5:"value";s:6:"style4";}}s:9:"rich_text";a:2:{s:3:"top";a:4:{s:5:"title";s:12:"顶部分类";s:7:"default";s:4:"true";s:5:"value";s:3:"top";s:4:"size";a:2:{i:0;a:3:{s:5:"title";s:3:"宽";s:7:"default";s:4:"true";s:5:"value";s:4:"full";}i:1;a:3:{s:5:"title";s:3:"窄";s:7:"default";s:5:"false";s:5:"value";s:5:"limit";}}}s:4:"left";a:4:{s:5:"title";s:12:"左侧分类";s:7:"default";s:5:"false";s:5:"value";s:4:"left";s:4:"size";a:2:{i:0;a:3:{s:5:"title";s:3:"宽";s:7:"default";s:4:"true";s:5:"value";s:4:"full";}i:1;a:3:{s:5:"title";s:3:"窄";s:7:"default";s:5:"false";s:5:"value";s:5:"limit";}}}}s:4:"link";a:3:{s:10:"horizontal";a:3:{s:5:"title";s:6:"横排";s:7:"default";s:4:"true";s:5:"value";s:10:"horizontal";}s:4:"card";a:3:{s:5:"title";s:6:"卡片";s:7:"default";s:5:"false";s:5:"value";s:4:"card";}s:4:"icon";a:3:{s:5:"title";s:6:"图标";s:7:"default";s:5:"false";s:5:"value";s:4:"icon";}}s:8:"question";a:2:{s:3:"top";a:4:{s:5:"title";s:12:"顶部分类";s:7:"default";s:4:"true";s:5:"value";s:3:"top";s:4:"size";a:2:{i:0;a:3:{s:5:"title";s:3:"宽";s:7:"default";s:4:"true";s:5:"value";s:4:"full";}i:1;a:3:{s:5:"title";s:3:"窄";s:7:"default";s:5:"false";s:5:"value";s:5:"limit";}}}s:4:"left";a:4:{s:5:"title";s:12:"左侧分类";s:7:"default";s:5:"false";s:5:"value";s:4:"left";s:4:"size";a:2:{i:0;a:3:{s:5:"title";s:3:"宽";s:7:"default";s:4:"true";s:5:"value";s:4:"full";}i:1;a:3:{s:5:"title";s:3:"窄";s:7:"default";s:5:"false";s:5:"value";s:5:"limit";}}}}s:8:"file_rec";a:5:{s:9:"imageList";a:3:{s:5:"title";s:6:"网格";s:7:"default";s:4:"true";s:5:"value";s:9:"imageList";}s:7:"rowGrid";a:3:{s:5:"title";s:9:"自适应";s:7:"default";s:5:"false";s:5:"value";s:7:"rowGrid";}s:6:"tabodd";a:3:{s:5:"title";s:12:"列表单列";s:7:"default";s:5:"false";s:5:"value";s:6:"tabodd";}s:7:"tabeven";a:3:{s:5:"title";s:12:"列表双列";s:7:"default";s:5:"false";s:5:"value";s:7:"tabeven";}s:7:"details";a:3:{s:5:"title";s:6:"详情";s:7:"default";s:5:"false";s:5:"value";s:7:"details";}}s:6:"db_ids";a:6:{s:9:"waterFall";a:3:{s:5:"title";s:9:"瀑布流";s:7:"default";s:4:"true";s:5:"value";s:9:"waterFall";}s:9:"imageList";a:3:{s:5:"title";s:6:"网格";s:7:"default";s:5:"false";s:5:"value";s:9:"imageList";}s:7:"rowGrid";a:3:{s:5:"title";s:9:"自适应";s:7:"default";s:5:"false";s:5:"value";s:7:"rowGrid";}s:6:"tabodd";a:3:{s:5:"title";s:12:"列表单列";s:7:"default";s:5:"false";s:5:"value";s:6:"tabodd";}s:7:"tabeven";a:3:{s:5:"title";s:12:"列表双列";s:7:"default";s:5:"false";s:5:"value";s:7:"tabeven";}s:7:"details";a:3:{s:5:"title";s:6:"详情";s:7:"default";s:5:"false";s:5:"value";s:7:"details";}}s:10:"manual_rec";a:7:{s:3:"one";a:4:{s:5:"title";s:18:"单排文字居中";s:7:"default";s:4:"true";s:5:"value";s:3:"one";s:4:"size";a:3:{i:0;a:3:{s:5:"title";s:8:"266×182";s:7:"default";s:4:"true";s:5:"value";s:9:"rectangle";}i:1;a:3:{s:5:"title";s:8:"266×400";s:7:"default";s:4:"true";s:5:"value";s:8:"vertical";}i:2;a:3:{s:5:"title";s:8:"266×266";s:7:"default";s:4:"true";s:5:"value";s:6:"square";}}}s:3:"two";a:4:{s:5:"title";s:18:"单排文字居下";s:7:"default";s:5:"false";s:5:"value";s:3:"two";s:4:"size";a:3:{i:0;a:3:{s:5:"title";s:8:"266×182";s:7:"default";s:4:"true";s:5:"value";s:9:"rectangle";}i:1;a:3:{s:5:"title";s:8:"266×400";s:7:"default";s:4:"true";s:5:"value";s:8:"vertical";}i:2;a:3:{s:5:"title";s:8:"266×266";s:7:"default";s:4:"true";s:5:"value";s:6:"square";}}}s:5:"three";a:4:{s:5:"title";s:18:"单排图外文字";s:7:"default";s:5:"false";s:5:"value";s:5:"three";s:4:"size";a:3:{i:0;a:3:{s:5:"title";s:8:"266×182";s:7:"default";s:4:"true";s:5:"value";s:9:"rectangle";}i:1;a:3:{s:5:"title";s:8:"266×400";s:7:"default";s:4:"true";s:5:"value";s:8:"vertical";}i:2;a:3:{s:5:"title";s:8:"266×266";s:7:"default";s:4:"true";s:5:"value";s:6:"square";}}}s:4:"four";a:4:{s:5:"title";s:18:"双排文字居中";s:7:"default";s:5:"false";s:5:"value";s:4:"four";s:4:"size";a:3:{i:0;a:3:{s:5:"title";s:8:"266×182";s:7:"default";s:4:"true";s:5:"value";s:9:"rectangle";}i:1;a:3:{s:5:"title";s:8:"266×400";s:7:"default";s:4:"true";s:5:"value";s:8:"vertical";}i:2;a:3:{s:5:"title";s:8:"266×266";s:7:"default";s:4:"true";s:5:"value";s:6:"square";}}}s:4:"five";a:4:{s:5:"title";s:18:"双排文字居下";s:7:"default";s:5:"false";s:5:"value";s:4:"five";s:4:"size";a:3:{i:0;a:3:{s:5:"title";s:8:"266×182";s:7:"default";s:4:"true";s:5:"value";s:9:"rectangle";}i:1;a:3:{s:5:"title";s:8:"266×400";s:7:"default";s:4:"true";s:5:"value";s:8:"vertical";}i:2;a:3:{s:5:"title";s:8:"266×266";s:7:"default";s:4:"true";s:5:"value";s:6:"square";}}}s:3:"six";a:4:{s:5:"title";s:18:"双排图外文字";s:7:"default";s:5:"false";s:5:"value";s:3:"six";s:4:"size";a:3:{i:0;a:3:{s:5:"title";s:8:"266×182";s:7:"default";s:4:"true";s:5:"value";s:9:"rectangle";}i:1;a:3:{s:5:"title";s:8:"266×400";s:7:"default";s:4:"true";s:5:"value";s:8:"vertical";}i:2;a:3:{s:5:"title";s:8:"266×266";s:7:"default";s:4:"true";s:5:"value";s:6:"square";}}}s:5:"seven";a:3:{s:5:"title";s:18:"大图小图混排";s:7:"default";s:5:"false";s:5:"value";s:5:"seven";}}s:9:"image_mix";a:8:{s:3:"x-m";a:3:{s:5:"title";s:19:"左文右图-有框";s:7:"default";s:4:"true";s:5:"value";s:3:"x-m";}s:3:"m-x";a:3:{s:5:"title";s:19:"左图右文-有框";s:7:"default";s:5:"false";s:5:"value";s:3:"m-x";}s:3:"x-b";a:3:{s:5:"title";s:19:"上文下图-有框";s:7:"default";s:5:"false";s:5:"value";s:3:"x-b";}s:3:"b-x";a:3:{s:5:"title";s:19:"上图下文-有框";s:7:"default";s:5:"false";s:5:"value";s:3:"b-x";}s:5:"x-m-n";a:3:{s:5:"title";s:19:"左文右图-无框";s:7:"default";s:5:"false";s:5:"value";s:5:"x-m-n";}s:5:"m-x-n";a:3:{s:5:"title";s:19:"左图右文-无框";s:7:"default";s:5:"false";s:5:"value";s:5:"m-x-n";}s:5:"x-b-n";a:3:{s:5:"title";s:19:"上文下图-无框";s:7:"default";s:5:"false";s:5:"value";s:5:"x-b-n";}s:5:"b-x-n";a:3:{s:5:"title";s:19:"上图下文-无框";s:7:"default";s:5:"false";s:5:"value";s:5:"b-x-n";}}s:11:"collect_rec";a:4:{s:9:"imageList";a:3:{s:5:"title";s:6:"网格";s:7:"default";s:5:"false";s:5:"value";s:9:"imageList";}s:7:"details";a:3:{s:5:"title";s:6:"详情";s:7:"default";s:5:"false";s:5:"value";s:7:"details";}s:6:"tabodd";a:3:{s:5:"title";s:12:"列表单列";s:7:"default";s:5:"false";s:5:"value";s:6:"tabodd";}s:7:"tabeven";a:3:{s:5:"title";s:12:"列表双列";s:7:"default";s:5:"false";s:5:"value";s:7:"tabeven";}}s:11:"collect_ids";a:4:{s:9:"imageList";a:3:{s:5:"title";s:6:"网格";s:7:"default";s:5:"false";s:5:"value";s:9:"imageList";}s:7:"details";a:3:{s:5:"title";s:6:"详情";s:7:"default";s:5:"false";s:5:"value";s:7:"details";}s:6:"tabodd";a:3:{s:5:"title";s:12:"列表单列";s:7:"default";s:5:"false";s:5:"value";s:6:"tabodd";}s:7:"tabeven";a:3:{s:5:"title";s:12:"列表双列";s:7:"default";s:5:"false";s:5:"value";s:7:"tabeven";}}}',
+            'themefolder'=>'fashion',
+            'dateline'=>'1706533040'
+        ),0,1);
+
+        //插入模板表
+        $tablepre = $_G['config']['db'][1]['tablepre'];
+        $sql='REPLACE INTO '.$tablepre.'publish_template (`id`, `tname`, `tdesc`, `tflag`, `ttype`, `dateline`, `cuse`, `tdir`, `exts`, `tags`) VALUES'
+            ."(1, 'Base主题-通用展示模板', '适合任意类型文件发布', 'default', 3, 0, 0, 'library', '', ''),"
+            ."(3, 'Base主题-默认单页模板', '适合搭建各类型个性化页面', 'default', 4, 0, 0, 'alonepage', '', ''),"
+            ."(4, 'Base主题-通用文件详情', '适合任意类型文件发布', 'default', 1, 0, 0, 'singlefile', '', ''),"
+            ."(5, '独立主题-可换色多文件模板', '适合任意类型文件发布', 'simple', 2, 0, 0, 'multifile', '', ''),"
+            ."(6, '合集默认模板', '合集模板', 'default', 6, 0, 0, 'collect', '', ''),"
+            ."(7, 'Base主题-通用展示模板', '适合任意类型文件发布', 'default', 5, 0, 0, 'intelligent', '', ''),"
+            ."(8, 'Base主题-满屏多文件模板', '适合任意类型文件发布', 'default', 2, 0, 0, 'multifile', '', ''),"
+            ."(9, 'Base主题-知识库、帮助文档模板', '适合文档类文件发布', 'details', 3, 0, 0, 'library', '', ''),"
+            ."(10, 'Base主题-单文档模板', '只支持txt类文档发布', 'text', 1, 0, 0, 'singlefile', 'txt,css,html,php', ''),"
+            ."(11, 'Base主题-单文档模板', '只支持markdown文档发布', 'md', 1, 0, 0, 'singlefile', 'md', ''),"
+            ."(12, 'Base主题-单图模板', '适合视频文件发布', 'video', 1, 0, 0, 'singlefile', 'mp3,mp4,webm,ogv,ogg,wav,m3u8,hls,mpg,mpeg', ''),"
+            ."(13, 'Base主题-单图模板', '适合图片文件发布', 'image', 1, 0, 0, 'singlefile', 'jpg,png,jpeg,gif,svg,webp,aai,art,arw,bmp,cmyk,cmyka,cr2,crw,dds,dib,djvu,dng,dot,dpx,emf,epdf,epi,eps,eps2,eps3,epsf,epsi,ept,exr,fax,fig,fits,fpx,gplt,gray,graya,hdr,heic,hpgl,hrz,ico,jbig,jng,jp2,jpt,j2c,j2k,jxr,,miff,mono,mng,m2v,mpc,mpr,mrwmmsl,mtv,mvg,nef,pcd,pcds,pcl,pcx,pdb,pef,pes,pfa,pfb,pfm,pgm,picon,pict,pix,png8,png00,png24,png32,png48,png64,pnm,ppm,ps,ps2,ps3,psb,psd,ptif,pwp,rad,raf,rgb,rgb565,rgba,rgf,rla,rle,sfw,sgi,shtml,sid,mrsid,sum,svg,text,tga,tif,tiff,tim,ttf,ubrl,ubrl6,uil,uyvy,vicar,viff,wbmp,wpg,webp,wmf,wpg,x,xbm,xcf,xpm,xwd,x3f,YCbCr,YCbCrA,yuv,sr2,srf,srw,rw2,nrw,mrw,kdc,erf,canvas,caption,clip,clipboard,fractal,gradient,hald,histogram,inline,map,mask,matte,null,pango,plasma,preview,print,scan,scanx,screenshot,stegano,tile,vid,xc,granite,logo,rose,bricks,circles,fff,3fr,ai,iiq,cdr', ''),"
+            ."(14, 'Base主题-窄屏多文件模板', '适合任意类型文件发布，支持自定义横幅与描述。', 'simple2', 2, 0, 0, 'multifile', '', ''),"
+            ."(15, '独立主题-可换色大图展示模板', '以大图方式展示、适合图片、视频发布。', 'simple1', 2, 0, 0, 'multifile', 'jpg,png,jpeg,gif,svg,webp,aai,art,arw,bmp,cr2,crw,djvu,dng,dot,dpx,emf,epdf,epi,eps,eps2,eps3,epsf,epsi,ept,exr,fax,fig,fits,fpx,gplt,gray,graya,hdr,heic,hpgl,hrz,ico,jbig,jng,jp2,jpt,j2c,j2k,jxr,,miff,mono,mng,m2v,mpc,mpr,mrwmmsl,mtv,mvg,nef,pcd,pcds,pcl,pcx,pdb,pef,pes,pfa,pfb,pfm,pgm,picon,pict,pix,png8,png00,png24,png32,png48,png64,pnm,ppm,ps,ps2,ps3,psb,psd,ptif,rgb,rgb565,rgba,sfw,tga,tif,tiff,tim,ttf,viff,wbmp,wpg,wmf,wpg,xcf,YCbCr,YCbCrA,srf,srw,rw2,nrw,mrw,erf,canvas,caption,clip,preview,print,scan,scanx,screenshot,logo,rose,circles,fff,3fr,ai,iiq,cdr,mp4,mp3', ''),"
+            ."(16, 'Base主题-音乐素材库', '适合音乐素材', 'music', 3, 0, 0, 'library', 'mp3,wav', ''),"
+            ."(17, 'Base主题-文档库', '适合文档类', 'document', 3, 0, 0, 'library', '', ''),"
+            ."(18, 'Base主题-音乐多文件', '适合音乐素材', 'music', 2, 0, 1, 'multifile', 'aac,ac3,aiff,alac,amr,ape,au,flac,g722,g729,mp1,mp2,mp3,ogg,opus,ra,rm,tta,voc,wav,wma,wv', '');";
+        DB::query($sql);
+        show_msg("数据升级结束", "$theurl?step=delete");
 
     }
 
-} elseif ($_GET['step'] == 'delete') {
+}
+elseif ($_GET['step'] == 'delete') {
     $oldtables = array();
     $query = DB::query("SHOW TABLES LIKE '$config[tablepre]%'");
     while ($value = DB::fetch($query)) {
@@ -794,16 +940,15 @@ if ($_GET['step'] == 'start') {
     dir_clear(DZZ_ROOT . './data/template');
     //dir_clear(DZZ_ROOT.'./data/cache');
     savecache('setting', '');
-    $routefile = DZZ_ROOT . './data/cache/' . 'route.php';
-    if (!is_file($routefile)) {
-        @file_put_contents($routefile, "<?php \t\n return array();");
+    $routefile = DZZ_ROOT.'./data/cache/'. 'route.php';
+    if(!is_file($routefile)){
+        @file_put_contents($routefile,"<?php \t\n return array();");
     }
-    $configfile = DZZ_ROOT . 'data/cache/default_mod.php';
+    $configfile = DZZ_ROOT.'data/cache/default_mod.php';
     $configarr = array();
-    $configarr['default_mod'] = 'banner';
-    @file_put_contents($configfile, "<?php \t\n return " . var_export($configarr, true) . ";");
-    C::t('setting')->update('default_mod', 'banner');
-    C::t('setting')->update('bbclosed', 0);
+    $configarr['default_mod' ]='banner';
+    @file_put_contents($configfile,"<?php \t\n return ".var_export($configarr,true).";");
+    C::t('setting')->update('default_mod','banner');
     if ($_GET['from']) {
         show_msg('<span id="finalmsg">缓存更新中，请稍候 ...</span><iframe src="../misc.php?mod=syscache" style="display:none;" onload="parent.window.location.href=\'' . $_GET['from'] . '&t=1\'"></iframe>');
     } else {
@@ -954,11 +1099,11 @@ function show_header()
 	<div style="width:90%;margin:0 auto;">
 	<table id="menu">
 	<tr>
-	<td{$nowarr[start]}>升级开始</td>
-	<td{$nowarr[sql]}>数据库结构添加与更新</td>
-	<td{$nowarr[data]}>数据更新</td>
-	<td{$nowarr[delete]}>数据库结构删除</td>
-	<td{$nowarr[cache]}>升级完成</td>
+	<td{$nowarr['start']}>升级开始</td>
+	<td{$nowarr['sql']}>数据库结构添加与更新</td>
+	<td{$nowarr['data']}>数据更新</td>
+	<td{$nowarr['delete']}>数据库结构删除</td>
+	<td{$nowarr['cache']}>升级完成</td>
 	</tr>
 	</table>
 	<br>
@@ -969,7 +1114,7 @@ function show_footer()
 {
     print<<<END
 	</div>
-	<div id="footer">Copyright © 2012-2021 oaooa.com All Rights Reserved.</div>
+	<div id="footer">Copyright © 2012-2026 FilePress All Rights Reserved.</div>
 	</div>
 	<br>
 	</body>
@@ -1024,7 +1169,7 @@ function save_config_file($filename, $config, $default, $deletevar)
 
 EOT;
     $content .= getvars(array('_config' => $config));
-    $content .= "\r\n// " . str_pad('  THE END  ', 50, '-', STR_PAD_BOTH) . "\r\n return \$_config;";
+    $content .= "\r\n// ".str_pad('  THE END  ', 50, '-', STR_PAD_BOTH)."\r\n return \$_config;";
     if (!is_writable($filename) || !($len = file_put_contents($filename, $content))) {
         file_put_contents(DZZ_ROOT . './data/config.php', $content);
         return 0;
@@ -1162,29 +1307,28 @@ function initFoldertag($data)
     return true;
 
 }
-
 function formatpath($path)
 {
-    if (strpos($path, ':') === false) {
+    if(strpos($path,':') === false){
         $bz = 'dzz';
-    } else {
+    }else{
         $patharr = explode(':', $path);
         $bz = $patharr[0];
         $did = $patharr[1];
 
     }
-    if (!is_numeric($did) || $did < 2) {
+    if(!is_numeric($did) || $did < 2){
         $bz = 'dzz';
     }
 
-    $rootpath = str_replace(BS, '/', DZZ_ROOT);
+    $rootpath = str_replace(BS,'/',DZZ_ROOT);
     $path = str_replace(DZZ_ROOT, '', $path);
     $path = str_replace($rootpath, '', $path);
     $path = str_replace(BS, '/', $path);
     $path = str_replace('//', '/', $path);
     $path = str_replace('./', '', $path);
-    if ($bz == 'dzz') $path = 'dzz::' . ltrim($path, '/');
-    else $path = ltrim($path, '/');
+    if($bz == 'dzz')$path = 'dzz::'.ltrim($path,'/');
+    else $path = ltrim($path,'/');
     return $path;
 }
 
@@ -1196,18 +1340,18 @@ function getbasename($filename)
 function getintPaletteNumber($colors, $palette = array())
 {
 
-    if (empty($palette)) $palette = [
-        0xfff8e1, 0xf57c00, 0xffd740, 0xb3e5fc, 0x607d8b, 0xd7ccc8,
-        0xff80ab, 0x4e342e, 0x9e9e9e, 0x66bb6a, 0xaed581, 0x18ffff,
-        0xffe0b2, 0xc2185b, 0x00bfa5, 0x00e676, 0x0277bd, 0x26c6da,
-        0x7c4dff, 0xea80fc, 0x512da8, 0x7986cb, 0x00e5ff, 0x0288d1,
-        0x69f0ae, 0x3949ab, 0x8e24aa, 0x40c4ff, 0xdd2c00, 0x283593,
-        0xaeea00, 0xffa726, 0xd84315, 0x82b1ff, 0xab47bc, 0xd4e157,
-        0xb71c1c, 0x880e4f, 0x00897b, 0x689f38, 0x212121, 0xffff00,
-        0x827717, 0x8bc34a, 0xe0f7fa, 0x304ffe, 0xd500f9, 0xec407a,
-        0x6200ea, 0xffab00, 0xafb42b, 0x6a1b9a, 0x616161, 0x8d6e63,
-        0x80cbc4, 0x8c9eff, 0xffeb3b, 0xffe57f, 0xfff59d, 0xff7043,
-        0x1976d2, 0x5c6bc0, 0x64dd17, 0xffd600
+    if (empty($palette))  $palette = [
+        0xfff8e1,0xf57c00,0xffd740,0xb3e5fc,0x607d8b,0xd7ccc8,
+        0xff80ab,0x4e342e,0x9e9e9e,0x66bb6a,0xaed581,0x18ffff,
+        0xffe0b2,0xc2185b,0x00bfa5,0x00e676,0x0277bd,0x26c6da,
+        0x7c4dff,0xea80fc,0x512da8,0x7986cb,0x00e5ff,0x0288d1,
+        0x69f0ae,0x3949ab,0x8e24aa,0x40c4ff,0xdd2c00,0x283593,
+        0xaeea00,0xffa726,0xd84315,0x82b1ff,0xab47bc,0xd4e157,
+        0xb71c1c,0x880e4f,0x00897b,0x689f38,0x212121,0xffff00,
+        0x827717,0x8bc34a,0xe0f7fa,0x304ffe,0xd500f9,0xec407a,
+        0x6200ea,0xffab00,0xafb42b,0x6a1b9a,0x616161,0x8d6e63,
+        0x80cbc4,0x8c9eff,0xffeb3b,0xffe57f,0xfff59d,0xff7043,
+        0x1976d2,0x5c6bc0,0x64dd17,0xffd600
     ];
     $arr = array();
 
@@ -1236,9 +1380,7 @@ function getintPaletteNumber($colors, $palette = array())
     }
     return $isarray ? $arr : $arr[0];
 }
-
-function fetchtablelist($tablepre = '')
-{
+function fetchtablelist($tablepre = '') {
     global $db;
     $arr = explode('.', $tablepre);
     $dbname = $arr[1] ? $arr[0] : '';
@@ -1252,6 +1394,5 @@ function fetchtablelist($tablepre = '')
     }
     return $tables;
 }
-
 
 ?>

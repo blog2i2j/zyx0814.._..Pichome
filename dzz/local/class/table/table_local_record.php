@@ -40,7 +40,7 @@ class table_local_record extends dzz_table
 
     }
 
-    public function insert($setarr){
+    public function insert($setarr,$return_insert_id = false,$replace = false,$silent = false){
         $id = md5($setarr['path'].$setarr['appid']);
         if(DB::result_first("select id from %t where  id = %s",array($this->_table,$id))){
             parent::update($id,$setarr);

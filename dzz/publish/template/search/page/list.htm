@@ -1,0 +1,410 @@
+<!--{template common/container/pc/header_start}-->
+<link rel="stylesheet" href="static/scss/default/index.css?{VERHASH}">
+<link rel="stylesheet" type="text/css" href="{MOD_PATH}/template/search/assets/css/index.css?{VERHASH}"/>
+<!--{template common/container/pc/header_end}-->
+<div id="dzzoffice">
+    <el-container class="page-main">
+        <el-header style="padding: 0;">
+            <!--{template search/components/header1}-->
+        </el-header>
+
+        <el-main class="" style="padding: 0;">
+            <el-scrollbar ref="refScrollbar">
+            <div class="search-wrapper container w800" style="margin: 50px auto;max-width:100%">
+                <div class="input">
+                    <el-input
+                            class="headerkeyword "
+                            v-model="keyword"
+                            size="large"
+                            @clear="handleSearchClear"
+                            @keyup.enter.native="handleSearch"
+                            clearable
+                            placeholder="{lang search}">
+                        <template #prepend v-if="collects && collects.length">
+                            <el-dropdown trigger="click" @command="handleCommand" placement="bottom-start">
+                                    <span class="el-dropdown-link">
+                                    {{current.name}}
+                                    <el-icon class="el-icon--right">
+                                        <arrow-down />
+                                    </el-icon>
+                                    </span>
+                                <template #dropdown>
+                                    <el-dropdown-menu >
+                                        <el-dropdown-item class="search_rec-dropdown" :class="{'is-active':current.id=='0'}" :command="0">{lang all}</el-dropdown-item>
+                                        <el-dropdown-item class="search_rec-dropdown" :class="{'is-active':item.id==current.id}" v-for="item in collects" :command="item.id">{{item.name}}</el-dropdown-item>
+                                    </el-dropdown-menu>
+                                </template>
+                            </el-dropdown>
+                        </template>
+                        <template #append>
+                            <el-button type="primary" @click="handleSearch" icon="Search"></el-button>
+                        </template>
+                    </el-input>
+                    <div class="hot">
+                        <el-button round v-for="item in hots" @click="handlehot(item)">{{item}}</el-button>
+                    </div>
+                </div>
+
+            </div>
+            <div class="guide container w800" style="display:flex;margin-top:20px; justify-content: space-between">
+                <div class="input">
+                    <el-text type="info">共查询到 <el-text type="success">{{total}}</el-text> 条结果</el-text>
+                </div>
+                <el-dropdown>
+                    <el-button type="text" link size="large">
+                        {{styles[style]}}<el-icon class="el-icon--right"><arrow-down /></el-icon>
+                    </el-button>
+                    <template #dropdown>
+                        <el-dropdown-menu>
+                                <el-dropdown-item  @click="styleChange('details')">{{styles['details']}}</el-dropdown-item>
+                                <el-dropdown-item  @click="styleChange('imageList')">{{styles['imageList']}}</el-dropdown-item>
+                                <el-dropdown-item  @click="styleChange('tabodd')">{{styles['tabodd']}}</el-dropdown-item>
+                                <el-dropdown-item  @click="styleChange('tabeven')">{{styles['tabeven']}}</el-dropdown-item>
+                        </el-dropdown-menu>
+                    </template>
+                </el-dropdown>
+            </div>
+            <div class="list-container container w800" v-loading="loading">
+                <template v-if="style=='details'">
+                    <div class="list-details ">
+                        <ul v-if="tableData&&tableData.length">
+                            <li class="content-li" v-for="item in tableData">
+                                <el-link :href="item.url" :underline="false" target="_blank">
+                                    <el-image class="l-img"  :src="item.img">
+                                        <template #error>
+                                            <div class="image—placeholder-error"
+                                                 style="width:100%;height:100%;text-align:center;align-content: center;background-color:var(--el-color-info-dark-2);">
+                                            </div>
+                                        </template>
+                                    </el-image>
+                                </el-link>
+                                <div class="r-c">
+                                    <el-link class="title" :underline="false" :href="item.url" target="_blank">{{item.pname}}</el-link>
+                                    <el-text tag="p" icon="time" class="time" ><el-icon><Timer /></el-icon> {{item.dateline}}</el-text>
+                                    <el-text tag="p" class="message"  line-clamp="3">{{item.metadescription}}</el-text>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </template>
+                <template v-else-if="style=='imageList'">
+                    <div class="list-imageList ">
+                        <ul v-if="tableData&&tableData.length">
+                            <li class="content-li" v-for="item in tableData">
+                                <a :href="item.url" :underline="false" target="_blank">
+                                <el-image  class="l-img" tag="a"  :href="item.url" :underline="false" target="_blank"  :src="item.img">
+                                    <template #error>
+                                        <div class="image—placeholder-error"
+                                             style="width:100%;height:100%;text-align:center;align-content: center;background-color:var(--el-color-info-dark-2);">
+                                        </div>
+                                    </template>
+                                </el-image>
+                                </a>
+                                <div class="r-c">
+                                   <el-link class="title" :href="item.url" :underline="false" target="_blank">{{item.pname}}</el-link>
+                                    <el-text tag="p" class="message is-line-clamp"  line-clamp="3">{{item.metadescription}}</el-text>
+                                  </div>
+
+                            </li>
+                        </ul>
+                    </div>
+                </template>
+                <template v-else-if="style=='tabodd'">
+                    <div class="list-tabodd">
+                        <ul v-if="tableData&&tableData.length">
+                            <li class="content-li" v-for="item in tableData">
+                                <a :href="item.url" :underline="false" target="_blank">
+                                <el-image class="l-img" :src="item.img">
+                                    <template #error>
+                                        <div class="image—placeholder-error"
+                                             style="width:100%;height:100%;text-align:center;align-content: center;background-color:var(--el-color-info-dark-2);">
+                                        </div>
+                                    </template>
+                                </el-image>
+                                </a>
+                                <div class="r-c">
+                                    <el-link class="title" :href="item.url" :underline="false" target="_blank">{{item.pname}}</el-link>
+                                  </div>
+                            </li>
+                        </ul>
+                    </div>
+                </template>
+                <template v-else-if="style=='tabeven'">
+                    <div class="list-tabeven">
+                        <ul v-if="tableData&&tableData.length">
+                            <li class="content-li" v-for="item in tableData">
+                                <a :href="item.url" :underline="false" target="_blank">
+                                <el-image class="l-img"   :src="item.img">
+                                    <template #error>
+                                        <div class="image—placeholder-error"
+                                             style="width:100%;height:100%;text-align:center;align-content: center;background-color:var(--el-color-info-dark-2);">
+                                        </div>
+                                    </template>
+                                </el-image>
+                                </a>
+                                <div class="r-c">
+                                    <el-link class="title" :href="item.url" :underline="false" target="_blank">{{item.pname}}</el-link>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </template>
+                <div class="page-wrapper">
+                    <el-pagination v-if="total>perpage"
+                                   large
+                                   background
+                                   layout="prev, pager, next, ->, total"
+                                   :page-size="perpage"
+                                   :page-sizes="[20,50,100]"
+                                   :total="total"
+                                   :current-page="page"
+                                   @current-change="handlePageChange"
+                    ></el-pagination>
+                </div>
+            </div>
+            <el-footer>
+                <div class="page-footer container">
+
+                <el-text tag="p" style="display: flex;align-items: center;justify-content: center;margin-top: 0.5em;">
+                    {{sitename}} @ all rights reserved.</el-text>
+                <div  style="display: flex;align-items: center;justify-content: center;margin-top:0.5em">
+                    <el-link v-if="beian" href="https://beian.miit.gov.cn/" title="{lang beian}" target="_blank">{{beian}}</el-link>
+
+                </div>
+            </div>
+            </el-footer>
+            </el-scrollbar>
+        </el-main>
+
+    </el-container>
+</div>
+<script type="text/javascript">
+    const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch , onUnmounted } = Vue;
+    const dzzoffice = createApp({
+        data() {
+            return {
+                DocumentThemeColor:'',
+                collects:[],
+                hots:[],
+                current:{
+                    id:0,
+                    name:"{lang all}"
+                },
+                keyword:'{$keyword}',
+                beian: "{$_G['setting']['sitebeian']}",
+                sitename: "{$_G['setting']['sitename']}",
+                tableData:[],
+                page:1,
+                perpage:20,
+                total:0,
+                loading:false,
+                style:'details',
+                styles:{
+                    details:'{lang image_details}',
+                    imageList:'{lang image_imageList}',
+                    tabodd:'{lang image_tabodd}',
+                    tabeven:'{lang image_tabeven}',
+                }
+            }
+        },
+
+        watch:{
+            DocumentThemeColor:{
+                handler(newval){
+                    document.querySelector('html').className = newval
+                },
+                deep:true,
+                // immediate:true
+            }
+
+
+        },
+        created() {
+            //主题颜色
+            let theme = localStorage.getItem('theme');
+            if(theme){
+                this.DocumentThemeColor=theme;
+            }else{
+                this.DocumentThemeColor = 'light'
+            }
+            let style = localStorage.getItem('style');
+            if(style) {
+                this.style=style;
+            }else{
+                this.style='details';
+            }
+            this.getData();
+
+        },
+        methods: {
+            DocumentThemeChange(){
+                if(this.DocumentThemeColor=='light'){
+                    this.DocumentThemeColor='dark';
+                    localStorage.setItem('theme','dark');
+                }else{
+                    this.DocumentThemeColor='light';
+                    localStorage.setItem('theme','light');
+                }
+            },
+            styleChange(style){
+                this.style = style;
+                localStorage.setItem('style',this.style);
+            },
+            async getData() {
+
+                let { data: res } = await axios.get('{MOD_URL}&op=search&do=getCollectList');
+                if(res.success){
+                    this.collects = res.data;
+                }
+                if(this.current.id){
+                    this.current = this.collects.find(item=>item.id==this.current.id);
+                }
+
+            },
+
+            async getPublishList() {
+                this.loading=true;
+                let {data:res}=await axios.post('{MOD_URL}&op=search&do=getPublishList',{
+                    id:this.current.id,
+                    keyword:this.keyword,
+                    page:this.page,
+                    perpage:this.perpage
+                });
+                if(res.success){
+                    this.tableData=res.data;
+                    this.page=res.page;
+                    this.perpage=res.perpage;
+                    this.total=res.total;
+                }
+                this.loading=false;
+            },
+            handlePageChange(page){
+                const self=this;
+                this.page=page;
+                let hasharr=['page='+page];
+                if(this.current.id>0){
+                    hasharr.push('id='+this.current.id);
+                }
+                if(this.keyword!=''){
+                    hasharr.push('keyword='+this.keyword);
+                }
+                if(hasharr){
+                    location.hash='#'+hasharr.join('&');
+                }
+                this.$nextTick(function(){
+                    self.$refs.refScrollbar.scrollTo({top:0});
+                });
+
+            },
+            handleSearchClear(){
+                this.keyword='';
+                this.page=1;
+                let hasharr=[];
+                if(this.current.id>0){
+                    hasharr.push('id='+this.current.id);
+                }
+                if(this.keyword!=''){
+                    hasharr.push('keyword='+this.keyword);
+                }
+                if(hasharr){
+
+                    location.hash='#'+hasharr.join('&');
+                }
+
+            },
+            handleSearch(){
+                this.page=1;
+                let hasharr=[];
+                if(this.current.id>0){
+                    hasharr.push('id='+this.current.id);
+                }
+                if(this.keyword!=''){
+                    hasharr.push('keyword='+this.keyword);
+                }
+                if(hasharr){
+
+                    location.hash='#'+hasharr.join('&');
+                }
+
+            },
+
+            handleCommand(id){
+                if(id==0){
+                    this.current={
+                        id:'0',
+                        name:'{lang all}'
+                    };
+                }else {
+                    let curr = this.collects.find(item => {
+                        return item.id == id;
+                    });
+                    if (curr) this.current = curr;
+                }
+                this.page=1;
+                let hasharr=[];
+                if(this.current.id>0){
+                    hasharr.push('id='+this.current.id);
+                }
+                if(this.keyword!=''){
+                    hasharr.push('keyword='+this.keyword);
+                }
+                if(hasharr){
+                    this.hash=hasharr.join('&');
+                    location.hash='#'+hasharr.join('&');
+                }
+
+            },
+            //获取哈希参数
+            GetUrlParam(name){
+
+                const hash=location.hash;
+                let url=hash.replace('#','');
+
+                if (!name) {
+                    return '';
+                }
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+                if (!url) {
+                    return '';
+                }
+                var r = url.match(reg);
+                if (r !== null) {
+                    return decodeURIComponent(r[2]);
+                }
+            },
+            hashChangeHandler() {
+                let id = this.GetUrlParam('id');
+                let keyword = this.GetUrlParam('keyword');
+                if(id){
+                    this.current.id=id;
+                }
+                if(keyword) this.keyword=keyword;
+                let page=this.GetUrlParam('page');
+                if(page) this.page=page;
+                else this.page=1;
+
+               this.getPublishList();
+            },
+        },
+        mounted() {
+            dzzoffice.WindowThis = this;
+            window.addEventListener('hashchange', this.hashChangeHandler);
+            // 初始加载时同步一次
+            window.dispatchEvent(new Event('hashchange'));
+
+        }
+    });
+    dzzoffice.use(ElementPlus, {
+        locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+    });
+    for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+        dzzoffice.component(key, component)
+    }
+    dzzoffice.component('comavatar', comavatar);
+    dzzoffice.component('international',international);
+    // 屏蔽警告信息
+    dzzoffice.config.warnHandler = function(){return null};
+    dzzoffice.mount('#dzzoffice');
+</script>
+
+<!--{template common/container/pc/footer}-->

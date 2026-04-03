@@ -78,6 +78,7 @@ class imageColor
             return '';
         }
         $img = IO::getStream($img);
+        if(!is_file($img)) return;
         if (!$img) {
             C::t('pichome_resources_attr')->update($data['rid'], array('isget' => -1));
             return '';

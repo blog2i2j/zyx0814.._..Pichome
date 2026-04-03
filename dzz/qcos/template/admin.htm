@@ -60,29 +60,29 @@
                 <dl>
                     <dt>{lang status}</dt>
                     <dd class="clearfix">
-                        <label class="radio radio-inline"><input type="radio" name="settingnew[videostatus]" value="0" <!--{if $setting[videostatus]<1}-->checked<!--{/if}-->  onclick="$('#auto_syn_up').hide();">{lang close} </label>
-                        <label class="radio radio-inline"><input type="radio" name="settingnew[videostatus]" value="1" <!--{if $setting[videostatus]>0}-->checked<!--{/if}--> onclick="$('#auto_syn_up').show();">{lang open_start}</label>
+                        <label class="radio radio-inline"><input type="radio" name="settingnew[videostatus]" value="0" <!--{if $setting['videostatus']<1}-->checked<!--{/if}-->  onclick="$('#auto_syn_up').hide();">{lang close} </label>
+                        <label class="radio radio-inline"><input type="radio" name="settingnew[videostatus]" value="1" <!--{if $setting['videostatus']>0}-->checked<!--{/if}--> onclick="$('#auto_syn_up').show();">{lang open_start}</label>
                     </dd>
                 </dl>
                  <dl>
                     <dt>{lang exts}:</dt>
                     <dd class="clearfix">
                         <input   style="width:80%" id="exts"  class="form-control"
-								  name="settingnew[exts]" value="$setting[exts]" />
+								  name="settingnew[exts]" value="$setting['exts']" />
                     </dd>
                 </dl>
 				<dl>
                     <dt>{lang exts_thumb}:</dt>
                     <dd class="clearfix">
                         <input   style="width:80%" id="exts_thumb"   class="form-control"
-								  name="settingnew[exts_thumb]" value="$setting[exts_thumb]" />
+								  name="settingnew[exts_thumb]" value="$setting['exts_thumb']" />
                     </dd>
                 </dl>
 				<dl>
                     <dt>{lang exts_info}:</dt>
                     <dd class="clearfix">
                         <input   style="width:80%" id="exts_info"  class="form-control"
-								  name="settingnew[exts_info]" value="$setting[exts_info]" />
+								  name="settingnew[exts_info]" value="$setting['exts_info']" />
                     </dd>
                 </dl>
 				<dl>
@@ -98,7 +98,7 @@
 								   <select class="form-control" name="settingnew[forms][{$key}]" >
 									 <option value="" selected>{lang info_in_form_select}</option>
 									 <!--{loop $formlist $k $v}-->
-										<option value="$v[flag]" <!--{if $setting[forms][$key]==$v[flag]}-->selected<!--{/if}-->>$v[flag] ($v[labelname])</option>
+										<option value="$v['flag']" <!--{if $setting['forms'][$key]==$v['flag']}-->selected<!--{/if}-->>$v['flag'] ($v['labelname'])</option>
 									 <!--{/loop}-->
 								   </select>
 								</div>

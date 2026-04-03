@@ -57,8 +57,13 @@
 				<el-tooltip effect="dark" content="{lang size_original}" placement="bottom">
 					<span class="text" @click="headerImgOperation(1)">1:1</span>
 				</el-tooltip>
-				
-				<span class="text" @click="headerImgOperation(2)">{lang image_rowGrid}</span>
+
+				<el-tooltip effect="dark" content="{lang image_rowGrid}" placement="bottom">
+					<span class="text" @click="headerImgOperation(2)">
+						<el-icon class="icon"><Crop /></el-icon>
+					</span>
+				</el-tooltip>
+
 
 				<el-tooltip effect="dark" content="{lang rotation}" placement="bottom">
 					<span class="text" @click="headerImgOperation(3)">
@@ -118,16 +123,16 @@
 			<international current="$_G['language']"></international>
 
 			<comavatar
-					:level="parseInt($_G[pichomelevel])"
-					iscollect="<!--{if defined('PICHOME_LIENCE') && (!$_G[config][pichomeclosecollect] || $_G[adminid])}--><!--{/if}-->"
-					:adminid="parseInt($_G[adminid])"
+					:level="parseInt($_G['pichomelevel'])"
+					iscollect="<!--{if defined('PICHOME_LIENCE') && (!$_G['config']['pichomeclosecollect'] || $_G['adminid'])}--><!--{/if}-->"
+					:adminid="parseInt($_G['adminid'])"
 					PICHOME_LIENCE="<!--{if defined('PICHOME_LIENCE')}--><!--{/if}-->"
-					:uid="parseInt($_G[uid])"
+					:uid="parseInt($_G['uid'])"
 					upgrade="<!--{if $_G['setting']['upgrade']}--><!--{/if}-->"
-					version="$_G[setting][version]"
+					version="$_G['setting']['version']"
 					formhash="{FORMHASH}">
 					<el-avatar size="40">
-						{eval echo avatar_block($_G[uid]);}
+						{eval echo avatar_block($_G['uid']);}
 					</el-avatar>
 				</comavatar>
 			<!--{/if}-->
@@ -307,7 +312,7 @@
 				      if(typeof window.ActiveXObject != "undefined") { 
 				          wscript = new ActiveXObject("WScript.Shell"); 
 				          if(wscript) { 
-				              wscript.SendKeys("{F11}"); 
+				              wscript.SendKeys("F11");
 				          } 
 				      } 
 			},
@@ -323,7 +328,7 @@
 				      if (typeof window.ActiveXObject != "undefined") { 
 				          wscript = new ActiveXObject("WScript.Shell"); 
 				          if (wscript != null) { 
-				              wscript.SendKeys("{F11}"); 
+				              wscript.SendKeys("F11");
 				          } 
 				    } 
 			},

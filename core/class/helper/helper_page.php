@@ -8,7 +8,7 @@ class helper_page {
 
 
 	public static function multi($num, $perpage, $curpage, $mpurl,$classname='', $maxpages = 0, $page = 5, $autogoto = FALSE, $simple = FALSE, $jsfunc = FALSE) {
-		global $_G;
+		global $_G,$lang;
 		$ajaxtarget = !empty($_GET['ajaxtarget']) ? " ajaxtarget=\"".dhtmlspecialchars($_GET['ajaxtarget'])."\" " : '';
 
 		$a_name = '';

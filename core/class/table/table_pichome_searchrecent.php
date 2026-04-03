@@ -96,7 +96,7 @@ class table_pichome_searchrecent extends dzz_table
         if ($resultcount < $limit && $count > $limit) {
             $ids = array_keys($datas);
             $limit = $limit - $resultcount;
-            $datas = $this->fetch_hotkeyword_by_appid($appid, $limit, $ids, $datas);
+            $datas = $this->fetch_hotkeyword_by_appid('', $limit, $ids, $datas);
         }
         return $datas;
     }

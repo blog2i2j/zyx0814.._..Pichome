@@ -1,0 +1,152 @@
+<el-tabs v-model="RightactiveName" style="width: 100%;" class="demo-tabs" @tab-click="handleClick">
+    <el-tab-pane label="基本设置" name="tool">
+        <el-form 
+        :model="RightformBasic" 
+        label-position="top" 
+        label-suffix=":"
+        style="width: 100%;">
+            <el-form-item label="页面标题">
+                <el-input v-model="RightformBasic.title"></el-input>
+            </el-form-item>
+            <el-form-item label="页面描述">
+                <el-input v-model="RightformBasic.desc"></el-input>
+            </el-form-item>
+            <el-form-item label="链接">
+                <div style="display: flex;width: 100%;">
+                    <el-input v-model="RightformBasic.link" style="flex: 1;" readonly></el-input>
+                    <!-- <el-button style="margin-left: 6px;" icon="CopyDocument"></el-button> -->
+                </div>
+            </el-form-item>
+            <el-form-item label="浏览权限">
+                <orguser-select 
+                    v-if="SettingFormvisit.loading" 
+                    defaulttype="view" 
+                    @change="SettingTreeVisitChange" 
+                    :defaultheckeds="SettingFormvisit.checked" 
+                    :defaultexpanded="SettingFormvisit.expanded" 
+                    :defaultdata="SettingFormvisit.data"></orguser-select>
+            </el-form-item>
+            <el-form-item label="下载权限">
+                <orguser-select 
+                    v-if="SettingFormvisit.loading" 
+                    defaulttype="down" 
+                    @change="SettingTreeVisitChange" 
+                    :defaultheckeds="SettingFormvisit.checked" 
+                    :defaultexpanded="SettingFormvisit.expanded" 
+                    :defaultdata="SettingFormvisit.data"></orguser-select>
+            </el-form-item>
+            <el-form-item label="分享权限">
+                <orguser-select 
+                    v-if="SettingFormvisit.loading" 
+                    defaulttype="share" 
+                    @change="SettingTreeVisitChange" 
+                    :defaultheckeds="SettingFormvisit.checked" 
+                    :defaultexpanded="SettingFormvisit.expanded" 
+                    :defaultdata="SettingFormvisit.data"></orguser-select>
+            </el-form-item>
+        </el-form>
+    </el-tab-pane>
+    <el-tab-pane label="偏好设置" name="like">
+        <el-form 
+            class="like-form"
+            :model="RightformLick" 
+            label-position="top" 
+            label-suffix=":"
+            style="width: 100%;">
+            <el-form-item label="Logo设置">
+                <el-input v-model="RightformLick.logo"></el-input>
+            </el-form-item>
+            <el-form-item label="轮播图设置">
+                    <el-space
+                        wrap
+                        direction="horizontal"
+                        class="carousel-wrap">
+                        <div class="singe" v-for="item in RightformLick.carousel">
+                            <el-image style="width: 100%; height: 100%;" :src="item.image" fit="cover"></el-image>
+                            <el-icon class="del"><Circle-Close-Filled /></el-icon>
+                        </div>
+                        <div class="add">
+                            <el-icon><Plus /></el-icon>
+                        </div>
+                    </el-space>
+                <el-text tag="p" type="info" size="small" truncated>建议尺寸1400×800px</el-text>
+            </el-form-item>
+            <el-form-item label="一句话标题">
+                <el-input v-model="RightformLick.title"></el-input>
+            </el-form-item>
+            <el-form-item label="搜索功能">
+                <el-switch 
+                    v-model="RightformLick.search" 
+                    active-text="开启" 
+                    inactive-text="关闭"
+                    :active-value="1"
+                    :inactive-value="0"></el-switch>
+            </el-form-item>
+            <el-form-item label="以图搜图" v-if="RightformLick.search">
+                <el-switch 
+                    v-model="RightformLick.picture"
+                    active-text="开启" 
+                    inactive-text="关闭"
+                    :active-value="1"
+                    :inactive-value="0"></el-switch>
+            </el-form-item>
+        </el-form>
+    </el-tab-pane>
+</el-tabs>
+<script type="text/javascript">
+	var RightMixin = {
+		data(){
+			return {
+				RightactiveName:'like',
+                RightformBasic:{
+                    title:'',
+                    desc:'',
+                    link:'https://codesign.qq.com/app/s/567525060095993',
+                },
+                RightformLick:{
+                    logo:'',
+                    title:'',
+                    search:1,
+                    picture:1,
+                    carousel:[
+                    {
+                        type:'video',
+                        image:'https://image01.vidu.zone/vidu/media-asset/sailboat-8eee19ce.webp',
+                        video:'https://image01.vidu.zone/vidu/landing-page/sailboat.14774333.mp4'
+                    },
+                    {
+                        type:'video',
+                        image:'https://image01.vidu.zone/vidu/media-asset/girl-2a1d4663.webp',
+                        video:'https://image01.vidu.zone/vidu/landing-page/girl.6e936562.mp4'
+                    },
+                    {
+                        type:'image',
+                        image:'https://image01.vidu.zone/vidu/media-asset/banner2-9da68e3f.webp',
+                    },
+                    {
+                        type:'video',
+                        image:'https://image01.vidu.zone/vidu/media-asset/explosion-63d7069f.webp',
+                        video:'https://image01.vidu.zone/vidu/landing-page/explosion.e0203d2f.mp4'
+                    },
+                    {
+                        type:'image',
+                        image:'https://image01.vidu.zone/vidu/media-asset/banner3-3b5b55f3.webp',
+                    },
+                ],
+                },
+                SettingFormvisit:{
+                    loading:true,
+					groups:[],
+					uids:[],
+					data:[],
+					checked:[],
+					expanded:[],
+					status:0
+				},
+			}
+		},
+		methods:{
+	
+		}
+	};
+</script>

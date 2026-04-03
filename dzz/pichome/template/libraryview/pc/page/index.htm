@@ -122,8 +122,8 @@
 		},
 		created(){
 			this.handleIsPc();
-			<!--{if intval($_G[setting][pathinfo])}-->
-			let param = '{$_GET[hashparams]}';
+			<!--{if intval($_G['setting']['pathinfo'])}-->
+			let param = '{$_GET['hashparams']}';
 			if(param){
 				param = JSON.parse(param)
 				this.DocumentAppid = param.appid;
@@ -140,7 +140,6 @@
 			}
 
 			let aid = this.CommonGetHashParam('aid');
-			console.log(this.searchdata.aid);
 			
 
 			if(aid){
@@ -198,6 +197,29 @@
 			window.onresize = function(){
 				self.DocumentResize += 1;
 			};
+			document.addEventListener('keydown', (e) => {
+				if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+					if(!self.searchImagePropover)return false;
+					// 确保页面已加载完成
+					setTimeout(() => {
+						// 获取剪贴板内容
+						if (window.isSecureContext && navigator.clipboard) {
+							navigator.clipboard.read().then(clipboardItems => {
+								for (const clipboardItem of clipboardItems) {
+									for (const type of clipboardItem.types) {
+										if (type.startsWith('image/')) {
+											clipboardItem.getType(type).then(blob => {
+												// 处理图片文件...
+												self.SearchUploadChange({raw: blob})
+											});
+										}
+									}
+								}
+							});
+						}
+					}, 100);
+				}
+			});
 		},
 		components:{
 			comavatar,

@@ -1,0 +1,290 @@
+<a  href="{$_G['siteurl']}" class="h-left" style="text-decoration: none;height: 60px;">
+	<el-image class="logo" src="data/attachment/sitelogo/sitelogo.png?{VERHASH}" title="$_G['setting']['sitename']" fit="contain">
+		<template #error><div class="el-image__placeholder"></div></template>
+	</el-image>
+	<el-text class="sitename" tag="b" size="large" style="color:var(--el-text-color-primary);white-space: nowrap;">{$data['title']}</el-text>
+</a>
+<div class="h-center" style="display: flex;align-items: center;justify-content: flex-end;">
+	<navigationmenu
+			position="top"
+			@handleselect="handleNavgationSelect"
+			dataurl="{MOD_URL}&op=ajax&operation=bannerlist&tid=$tid"
+	></navigationmenu>
+	<div style="height: 60px;display: flex;min-height: 60px;align-items: center;position: relative;">
+		<el-autocomplete
+			class="headerkeyword"
+			ref="headerkeyword"
+			style="z-index: 100;position: relative;width: 250px;"
+			v-model="fheaderkeyword"
+			:fetch-suggestions="querySearch"
+			@clear="headerkeywordInput"
+			@keydown.enter.native="headerkeywordInput"
+			size="large">
+			<template #suffix>
+				<el-button v-if="fheaderkeyword" link icon="Close" style="font-size: 20px;" @click="headerkeywordInputClear"></el-button>
+
+			</template>
+			<template #append>
+				<el-button 
+					@click="headerkeywordInput" 
+					type="primary" 
+					icon="Search" 
+					style="font-size: 20px;padding-top: 0;padding-bottom: 0;display: flex;align-items: center;justify-content: center;"></el-button>
+			</template>
+		</el-autocomplete>
+		
+	</div>
+	
+</div>
+<div class="h-right" style="height: 60px;"> 
+	<el-tooltip content="{lang change_page_color}" placement="bottom">
+		<el-button 
+			text 
+			:icon="DocumentThemeColor=='light'?'Sunny':'Moon'" 
+			style="font-size: var(--el-font-size-extra-large);" 
+			circle  
+			size="large"
+			@click="DocumentThemeChange">
+		</el-button>
+	</el-tooltip>
+	<el-tooltip :content="Screenshow?'{lang hide_filter}':'{lang show_filter}'" placement="bottom">
+		<el-button 
+			text 
+			icon="Filter" 
+			style="font-size: var(--el-font-size-extra-large);" 
+			circle  
+			size="large"
+			@click="Screenshow = !Screenshow"
+			:bg="!Screenshow">
+		</el-button>
+	</el-tooltip>
+	<el-popover
+		placement="bottom"
+		trigger="click"
+		popper-class="isdropdown header-dropdown-menu">
+		<comsort
+			:iscolumn="false"
+			:defaultval="HeaderRightBtnShow"
+			@change.self="HeaderShowChange">
+		</comsort>
+		<template #reference>
+			<div style="margin-left: 12px;">
+				<el-tooltip content="{lang preferences}" placement="bottom">
+					<el-button text icon="Sort" style="font-size: var(--el-font-size-extra-large);" circle  size="large"></el-button>
+				</el-tooltip>
+			</div>
+		</template>
+	</el-popover>
+	<international current="$_G['language']"></international>
+	<comavatar
+		:level="parseInt($_G['pichomelevel'])"
+		iscollect="<!--{if defined('PICHOME_LIENCE') && (!$_G['config']['pichomeclosecollect'] || $_G['adminid'])}--><!--{/if}-->"
+		:adminid="parseInt($_G['adminid'])"
+		PICHOME_LIENCE="<!--{if defined('PICHOME_LIENCE')}--><!--{/if}-->"
+		:uid="parseInt($_G['uid'])"
+		upgrade="<!--{if $_G['setting']['upgrade']}--><!--{/if}-->"
+		version="$_G['setting']['version']"
+		formhash="{FORMHASH}">
+		<el-avatar size="40">
+			{eval echo avatar_block($_G['uid']);}
+		</el-avatar>
+	</comavatar>
+</div>
+<script>
+	const HeaderMixins = {
+		data(){
+			return {
+				headerdrawer_m:false,
+				headerkeyword:'',
+				fheaderkeyword:'',
+				Screenshow:true,
+				imagereload:false,
+				HeaderRightBtnShow:{
+					display:[],//显示内容
+					other:'btime',//显示内容其它
+					order:'btime',//排序方式
+					sort:'desc',//升序、降序
+					layout:'waterFall'//图片布局方式
+				},
+				HeaderActive:'',
+				searchInt:{
+					status:false,
+					img:''
+				},
+				searchData:{
+					visible:false,
+					aid:0,
+					percentage:0,
+					img:'',
+					width:0,
+					height:0,
+					boxW:0,
+					boxH:0,
+					autoCropX:0,
+					autoCropY:0,
+					loading:false,
+					submit:false,
+				},
+				CropTime: null,
+				CropBase:'',
+				searchImagePropover:false
+			}
+		},
+		methods:{
+
+			resizeImage(img, maxWidth = 430, maxHeight = 651) {
+				// 获取图片的原始宽度和高度
+				const originalWidth = img.width;
+				const originalHeight = img.height;
+
+				// 计算缩放比例
+				let scaleRatio = 1;
+
+				if (originalWidth > maxWidth || originalHeight > maxHeight) {
+					// 如果宽度或高度超过限制，则按比例缩小
+					const widthRatio = maxWidth / originalWidth;
+					const heightRatio = maxHeight / originalHeight;
+
+					// 选择较小的比例，确保图片不会超过最大宽度和高度
+					scaleRatio = Math.min(widthRatio, heightRatio);
+				}
+
+				// 计算缩放后的宽度和高度
+				const newWidth = originalWidth * scaleRatio;
+				const newHeight = originalHeight * scaleRatio;
+
+				// 返回缩放后的尺寸
+				return {
+					width: newWidth,
+					height: newHeight,
+				};
+			},
+			menuChange(id){
+				if(parseInt(this.bannerData.active) == parseInt(id)){
+					return false;
+				}
+				let str = 'index.php?mod=search#id='+id;
+				if(this.fheaderkeyword){
+					str += '&keyword='+this.fheaderkeyword;
+				}
+				window.location.href = str;
+				window.location.reload();
+			},
+			querySearch(queryString, cb) {
+				// const results = queryString
+				// 	? restaurants.value.filter(createFilter(queryString))
+				// 	: restaurants.value
+				// call callback function to return suggestions
+				cb([])
+			},
+			handleSelect(data){
+				let self = this;
+				if(parseInt(data.btype) == 3){
+					if(data.realurl){
+						window.open(data.realurl)
+					}else{
+						self.$message.error('{lang no_link_address}');
+					}
+					return false;
+				}
+				if(data.url){
+					window.location.href = data.url;
+				}else{
+					window.location.href = data.realurl;
+				}
+				setTimeout(() => {
+					window.location.reload();
+				}, 300);
+			},
+			DocumentThemeChange(){
+				if(this.DocumentThemeColor=='light'){
+					this.DocumentThemeColor='dark';
+					localStorage.setItem('theme','dark');
+				}else{
+					this.DocumentThemeColor='light';
+					localStorage.setItem('theme','light');
+				}
+				
+			},
+			handlepreference(data){
+				if(!data instanceof Object) return false;
+				for (const key in data) {
+					this.HeaderShowChange({
+						type:key,
+						value:data[key]
+					},true);
+				}
+			},
+			HeaderShowChange(data){
+				const self = this;
+				this.HeaderRightBtnShow[data.type] = data.value;
+				switch(data.type){
+					case 'display':
+						let display = JSON.parse(JSON.stringify(data.value))
+						let index = display.indexOf('other');
+						if(index<0){
+							self.ImageProps.ShowMessage.other = '';
+							// sessionStorage.removeItem('other');
+						}else{
+							display.splice(index,1);
+							self.ImageProps.ShowMessage.other = this.HeaderRightBtnShow.other; 
+							// sessionStorage.setItem('other',this.HeaderRightBtnShow.other);
+						}
+						// if(data.value && data.value.length){
+						// 	sessionStorage.setItem('display',data.value.join(','));
+						// }else{
+						// 	sessionStorage.setItem('display','empty');
+						// }
+						self.ImageProps.ShowMessage.display = display;
+					break;
+					case 'other':
+						// sessionStorage.setItem('other',data.value);
+						self.ImageProps.ShowMessage.other = data.value;
+					break;
+					case 'sort':
+					case 'order':
+						// sessionStorage.setItem(data.type,data.value);
+						this.HeaderRightBtnSubmit();
+					break;
+					case 'column':
+						self.$nextTick(function(){
+							self.$refs.RefImageLayout.updateImageData();
+						});
+					break;
+					case 'layout':
+						this.ImageProps.layout = data.value;
+						// sessionStorage.setItem('layout',data.value);
+					break;
+				}
+			},
+			headerkeywordInputClear(){
+				this.fheaderkeyword = '';
+				this.headerkeyword = '';
+				this.handlecropClear();
+			},
+			handlecropClear(){
+				this.searchData = {
+					visible:false,
+					aid:0,
+					percentage:0,
+					img:'',
+					width:0,
+					height:0,
+					boxW:0,
+					boxH:0,
+					loading:false,
+					submit:false,
+				};
+				this.CommonGetImageData();
+			},
+			headerkeywordInput(){
+				if(this.fheaderkeyword == this.headerkeyword){
+					return false;
+				}
+				this.headerkeyword = JSON.parse(JSON.stringify(this.fheaderkeyword));
+				this.CommonGetImageData();
+				
+			}
+		},
+	}
+</script>

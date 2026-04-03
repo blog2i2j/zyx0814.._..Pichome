@@ -7,7 +7,7 @@
 	<item id="Data">
 		<item id="app">
 			<item id="mid"><![CDATA[0]]></item>
-			<item id="appname"><![CDATA[Lang]]></item>
+			<item id="appname"><![CDATA[?????]]></item>
 			<item id="appico"><![CDATA[data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAABmJLR0QA/wD/AP+gvaeTAAAGjUlE
 QVR4nO2aX2xb1R3HP+de+94kzR//CSxpWoU6EKJO61qGWkjSAtMehkBQiiohQEJCgknA9jDtJQ3s
 xWvsPe0BNoG0dbzAwwpCwMNeJqq1pOKfoH+gTUFtiWjTVI1rJ2n859q+Zw+OMyf2dWLn3mSd/ZEs
@@ -66,7 +66,7 @@ Ok38v/NfD5Dy43XUsdY4sqiqczPyH8nDbrHVpIHzAAAAAElFTkSuQmCC
 				<item id="uninstallfile"><![CDATA[uninstall.php]]></item>
 			</item>
 			<item id="uids"><![CDATA[]]></item>
-			<item id="showadmin"><![CDATA[0]]></item>
+			<item id="showadmin"><![CDATA[1]]></item>
 		</item>
 		<item id="version"><![CDATA[30.1.4.3]]></item>
         <item id="hooks">

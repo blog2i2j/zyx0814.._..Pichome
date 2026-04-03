@@ -71,21 +71,21 @@ a {
     <div class="about-container">
       <div class="wrapper">
         <div class="modal-body about-body">
-          <p class="logo"> <img src="$about[logo]" /> </p>
+          <p class="logo"> <img src="$about['logo']" /> </p>
           <p class="name"> 
             <!--{if $about['name_zh']}--> 
-            <span class="name-zh">$about[name_zh]</span> 
+            <span class="name-zh">$about['name_zh']</span> 
             <!--{/if}--> 
             <!--{if $about['name_en']}--> 
-            <span class="name-en"><b>Dzz</b>$about[name_en]</span> 
+            <span class="name-en"><b>Dzz</b>$about['name_en']</span> 
             <!--{/if}--> 
           </p>
           <div class="detail"> 
             <!--{if $about['version']}-->
-            <p class="version"> <span class="guide">{lang about_current_version}:</span> <span class="text">{eval echo lang('V_'.$license['license_version'])} $about[version]</span> </p>
+            <p class="version"> <span class="guide">{lang about_current_version}:</span> <span class="text">{eval echo lang('V_'.$license['license_version'])} $about['version']</span> </p>
             <!--{/if}-->
-            <p class="license"> <span class="guide">{lang license_user_sum}:</span> <span class="text">{$ucount} / {eval echo  $license[license_limit]?$license[license_limit]:lang('unlimited')}</span> </p>
-            <p class="license"> <span class="guide">{lang license_to}:</span> <span class="text">{$license[license_company]}</a></span> </p>
+            <p class="license"> <span class="guide">{lang license_user_sum}:</span> <span class="text">{$ucount} / {eval echo  $license['license_limit']?$license['license_limit']:lang('unlimited')}</span> </p>
+            <p class="license"> <span class="guide">{lang license_to}:</span> <span class="text">{$license['license_company']}</a></span> </p>
             <p class="support"> <span class="guide">{lang service_and_support}:</span> <span class="text"> <a href="http://help.oaooa.com" target="_blank">www.oaooa.com</a></span> </p>
           </div>
         </div>

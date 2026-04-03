@@ -33,7 +33,7 @@ if($filter=='new'){//列出所有新通知
 }elseif($filter=='checknew'){//检查有没有新通知
     $num=DB::result_first("select COUNT(*) from %t where new>0 and uid=%d",array('notification',$_G['uid']));
     exit(json_encode(array('sum'=>$num,'timeout'=>60*1000)));
-}else{
+}elseif($filter=='my'){
     $list=array();
     $page = empty($_GET['page'])?1:intval($_GET['page']);
     $fromid = isset($_GET['appid']) ? intval($_GET['appid']):'';
@@ -41,11 +41,7 @@ if($filter=='new'){//列出所有新通知
     $searchsql = " and 1 ";
     $perpage=20;
     $start=($page-1)*$perpage;
-    $gets = array(
-        'mod'=>'system',
-        'op' =>'notification',
-        'filter'=>'all'
-    );
+
     //获取通知包含类型
     $searchappid = array();
     foreach(DB::fetch_all("select distinct(from_id) from %t where uid = %d",array('notification',$_G['uid'])) as $v){

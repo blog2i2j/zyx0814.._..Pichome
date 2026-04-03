@@ -16,10 +16,10 @@
 			</div>
 		 </el-header>
         <el-main class="dzz-container" style="padding:0;overflow: hidden;position: relative;">
-            <el-scrollbar id="main_scrollbar" ref="MainscrollbarRef" @scroll="HandleElScrollbar">
+            <el-scrollbar class="main_scrollbar" ref="MainscrollbarRef" @scroll="HandleElScrollbar">
                 <el-affix 
                     class="dzz-affix" 
-                    target="#main_scrollbar>.el-scrollbar__wrap" 
+                    target=".main_scrollbar>.el-scrollbar__wrap" 
                     :offset="rollingdire=='down'?-90:40">
                     <div style="padding: 8px 4px;padding-bottom: 0; display: flex;">
                         <el-input v-model="keyword" prefix-icon="Search" @change="searchSubmit" type="search" placeholder="搜索" clearable ></el-input>

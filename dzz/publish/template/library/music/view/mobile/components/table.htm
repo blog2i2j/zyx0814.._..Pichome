@@ -1,0 +1,245 @@
+<div style="background: var(--el-bg-color);margin-bottom:10px;">
+    <el-table 
+    :data="tableData" 
+    class="tableData" 
+    row-key="rid"
+    v-loading="tableLoading"
+    ref="multipleTableRef"
+    @selection-change="handleSelectionChange"
+    style="width: 100%">
+        <el-table-column type="selection" width="28"></el-table-column>
+        <el-table-column label="{lang filename}">
+            <template #default="scope">
+              <div class="songname">
+                <div class="bg" @click="MusicPlayer(scope.row)">
+                  <el-icon>
+                    <template v-if="scope.row.play">
+                      <svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 12V36" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M32 12V36" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </template>
+                    <template v-else>
+                      <svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 24V11.8756L25.5 17.9378L36 24L25.5 30.0622L15 36.1244V24Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                    </template>
+                  </el-icon>
+                </div>
+                <div style="overflow: hidden;">
+                  <el-text class="title" truncated>
+                    {{scope.row.name}}
+                    <template v-if="DataPageset.display">
+                      .{{scope.row.ext}}
+                    </template>
+                  </el-text>
+                  <el-text style="margin-left: 12px;" type="info" size="small">
+                    {{scope.row.fduration}}
+                  </el-text>
+                </div>
+                
+              </div>
+            </template>
+        </el-table-column>
+    </el-table>
+    <div class="pageContainer" style="padding:20px 0;display:flex;justify-content: center">
+      <el-pagination
+          background
+          :disabled="tableLoading"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+          :current-page="currentPage"
+          :page-sizes="pageset.pagesizes"
+          :page-size="pageset.perpage"
+          layout="prev, pager, next"
+          :total="pageset.total">
+      </el-pagination>
+    </div>
+  </div>
+  
+  <script type="text/javascript">
+  let ImageMixin = {
+    data(){
+      return {
+        tableData:[],
+        tableLoading:false,
+        imgparam:{},
+        RableSelectrid:[],
+        ZipDownLoad:false,
+        fpercentage:{
+					status: 0,
+					progress: 0,
+					total: 0,
+					totalsize:0,
+					downloaded:0,
+					totalpage: 0,
+				},
+        targetContainer:'',
+        MusicPlays:{},
+        playrid:'',
+        pageset:{
+					page:1,
+					perpage:20,
+					total:0,
+					pagesizes:[20,50,80,100]
+				},
+        beforeScrollTop:0,
+				rollingdire:'up',
+      }
+    },
+    methods:{
+      handleSelectionChange(data){
+        this.RableSelectrid = data;
+      },
+      
+			ImageOperationVal(type,data){
+				return {
+					type:type,
+					resourcedata:data
+				};
+			},
+      async TableGetData(){
+          const self = this;
+          self.tableData = [];
+          self.tableLoading = true;
+          self.RableSelectrid = [];
+          const {data: res} = await axios.post('index.php?mod=publish&op=ajax&do=getappdatalist',self.imgparam);
+          let fdata = res.data.data;
+          if(fdata && fdata.length){
+            fdata.forEach(element => {
+              if(element.type == 'audio'){
+                element['play'] = false;
+                if(self.MusicPlays[element.rid]){
+                  if(self.playrid == element.rid){
+                    element['play'] = true;
+                  }
+                }else{
+
+                }
+                
+                element['fduration'] = self.ImageAudioPlaySecondToDate(element['duration'],element['duration']);
+                
+                self.tableData.push(element);
+              }
+            });
+          }
+          self.pageset.total = parseInt(res.data.param.total);
+          self.tableLoading = false;
+			},
+      MusicPlayer(data){
+          let self = this;
+          this.MusicStopPlay(data.rid);
+          if(data.play){
+            self.$refs['musicplay'+data.rid][0].togglePlayPause();
+          }else{
+            this.playrid = data.rid;
+            if(this.MusicPlays[data.rid]){
+              self.$refs['musicplay'+data.rid][0].togglePlayPause();
+            }else{
+              this.MusicPlays[data.rid] = data;
+              self.$nextTick(() => {
+                self.$refs['musicplay'+data.rid][0].initPlayer();
+              });
+            }
+          }
+      },
+      musicplay(rid){
+          this.playrid = rid;
+          if(this.MusicPlays[rid]){
+            this.MusicPlays[rid].play = true;
+          }
+          let curr = this.tableData.find(item => {
+            return item.rid == rid;
+          });
+          if(!curr)return false;
+          curr.play = true;
+      },
+      musicstop(rid){
+        if(this.MusicPlays[rid]){
+            this.MusicPlays[rid].play = false;
+          }
+        let curr = this.tableData.find(item => {
+          return item.rid == rid;
+        });
+        if(!curr)return false;
+        curr.play = false;
+      },
+      MusicOperation(data){
+        let self = this;
+        if(data.type == 'delete'){
+          this.playrid = '';
+        }else if(data.type == 'share'){
+          self.shareDialog.visible=true;
+					self.shareDialog.filepaths=[data.resourcedata.rid];
+					self.shareDialog.stype=0;
+					self.shareDialog.title=data.resourcedata.name;
+        }
+          
+      },
+      handleShare(){
+        let self = this;
+        let rids = [];
+        let name = this.RableSelectrid[0].name;
+        for (const key in this.RableSelectrid) {
+            const element = this.RableSelectrid[key];
+            rids.push(element.rid);
+        }
+        self.shareDialog.visible=true;
+        self.shareDialog.filepaths=rids;
+        self.shareDialog.stype=0;
+        self.shareDialog.title=name + this.RableSelectrid.length>1?'等':'';
+      },
+      async MusicOperation(data){
+				let self = this;
+        if(data.type == 'delete'){
+          this.playrid = '';
+				}else if(data.type == 'down'){
+					window.open(SITEURL+MOD_URL+'&op=download&dpath='+data.value.dpath);
+				}else if(data.type == 'share'){
+					self.shareDialog.visible=true;
+					self.shareDialog.filepaths=[data.value.rid];
+					self.shareDialog.stype=0;
+					self.shareDialog.title=data.value.name;
+				}
+			},
+      MusicStopPlay(rid){
+        let self = this;
+        for (const key in this.MusicPlays) {
+          if(self.$refs['musicplay'+key]){
+            self.$refs['musicplay'+key][0].togglePlayPause(2);
+          }
+        }
+      },
+      handleSizeChange(perpage){
+				this.pageset.perpage = perpage;
+				this.CommonGetImageData();
+			},
+			handleCurrentChange(page){
+				this.pageset.page = page;
+				this.CommonGetImageData();
+			},
+      HandleElScrollbar(){
+				let self = this;
+
+				let afterScrollTop = self.$refs.MainscrollbarRef.wrapRef.scrollTop;
+				let updown = afterScrollTop - self.beforeScrollTop;
+				if(afterScrollTop == 0){
+					self.rollingdire = 'up';
+					return false; 
+				}
+				if( updown === 0 ) {
+					return false;
+				}            
+				self.beforeScrollTop = afterScrollTop;
+				self.rollingdire = updown > 0 ? "down" : "up";  //判断往上还是往下
+			},
+      ImageAudioPlaySecondToDate(result,count){
+          let h = Math.floor(result / 3600) < 10 ? '0'+Math.floor(result / 3600) : Math.floor(result / 3600);
+          let m = Math.floor((result / 60 % 60)) < 10 ? '0' + Math.floor((result / 60 % 60)) : Math.floor((result / 60 % 60));
+          let s = Math.floor((result % 60)) < 10 ? '0' + Math.floor((result % 60)) : Math.floor((result % 60));
+          if(count >= 3600){
+              return result = h + ":" + m + ":" + s;
+          }else if(count >= 60){
+              return result = m + ":" + s;
+          }else{
+              return result = '0:'+s;
+          }
+      }
+    }
+  }
+  </script>

@@ -6,7 +6,7 @@
  * @link        https://www.oaooa.com
  * @author      zyx(zyx@oaooa.com)
  */
-if(!defined('IN_OAOOA') || !defined('IN_ADMIN')) {
+if(!defined('IN_OAOOA') ) {
 	exit('Access Denied');
 }
 function runquery($sql) {

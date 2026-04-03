@@ -168,7 +168,7 @@
 							key:'p'+self.ImagesClassify.node.clid+'-'+self.ImagesClassify.node.pathkey.replaceAll('_','')
 						};
 					}
-					sessionStorage.setItem('{$_G[uid]}_collectkey', JSON.stringify(collect));
+					sessionStorage.setItem('{$_G['uid']}_collectkey', JSON.stringify(collect));
 					showNotify({ type: 'success', message: '{lang file_collection_successful}' });
 				}else{
 					showNotify({ type: 'warning', message: json.error });
@@ -192,7 +192,7 @@
 				this.ImagesClassify.search.realname = JSON.parse(JSON.stringify(this.ImagesClassify.search.name));
 			},
 			ImagesClassifyPopupOpen(){
-				// var collectkey = JSON.parse(sessionStorage.getItem('{$_G[uid]}_collectkey'));
+				// var collectkey = JSON.parse(sessionStorage.getItem('{$_G['uid']}_collectkey'));
 				// if(collectkey){
 				// 	var keys = collectkey.key.split('-');
 				// 	if(keys.length>1){

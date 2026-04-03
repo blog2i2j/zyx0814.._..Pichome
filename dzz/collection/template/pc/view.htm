@@ -1,0 +1,125 @@
+<!--{template common/container/pc/header_start}-->
+<link rel="stylesheet" href="static/scss/default/index.css?{VERHASH}">
+<link rel="stylesheet" href="user/my/template/pc/assets/index.css?{VERHASH}">
+<link rel="stylesheet" type="text/css" href="{MOD_PATH}/css/pc/index.css?{VERHASH}"/>
+<script type="text/javascript" src="{MOD_PATH}/js/pc/plug/sortable.min.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/vue_components/locale/index.js?{VERHASH}"></script>
+<style>
+
+</style>
+<!--{template common/container/pc/header_end}-->
+<div id="dzzoffice">
+	<el-container class="page-main">
+		<!--{template common/container/pc/header_default}-->
+		<el-main >
+		<div class="container">
+			<!--{template common/container/pc/ucenter_header}-->
+			<div class="notification">
+				<div style="padding-bottom: 20px;border-bottom: var(--el-border);display: flex;justify-content: space-between;">
+                    <div>
+                        <el-button type="primary" @click="FileGatherAdd" icon="Plus">{lang add_collect}</el-button>
+                    </div>
+                    <div>
+                        <el-input v-model="HeaderKeyword" clearable v-on:keyup.enter="HeaderKeywordInputKeyup" @clear="HeaderKeywordInputKeyup" >
+                            <template #suffix>
+                                <el-icon class="el-input__icon" v-if="!HeaderKeyword" @click="HeaderKeywordInputKeyup"><search /></el-icon>
+                              </template>
+                        </el-input>
+                    </div>
+                </div>
+                <div style="padding-top: 20px;">
+                    <!--{template pc/components/view/list}-->
+                </div>
+			</div>
+			</div>
+		</el-main>
+	</el-container>
+</div>
+
+<script type="text/javascript">
+	const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch } = Vue;
+	const dzzoffice = createApp({
+		data() {
+			var self = this;
+			return {
+				DocumentThemeColor:'',
+				UcenterHeaderMenuIndex:'collection',
+                HeaderKeyword:''
+			}
+		},
+        mixins:[UcenterHeader,FileGathermixin],
+		watch:{
+			DocumentThemeColor:{
+				handler(newval){
+					document.querySelector('html').className = newval
+				},
+				deep:true,
+				// immediate:true
+			}
+			
+			
+		},
+		created() {
+			 //主题颜色
+			let theme = localStorage.getItem('theme');
+			if(theme){
+				this.DocumentThemeColor=theme;
+			}else{
+				this.DocumentThemeColor = 'light'
+			}
+			
+		},
+		methods: {
+            HeaderKeywordInputKeyup(){
+				this.FileGatherLoading = true;
+                this.HeaderKeywordInputSubmit();
+			},
+            async HeaderKeywordInputSubmit(){
+				var self = this;
+				this.FileGatherDataList = [];
+				var res = await axios.post(MOD_URL+'&do=searchcollect',{keyword:this.HeaderKeyword})
+				var json = res.data;
+				if(json.data){
+					var FileGatherDataList = [];
+					for(var i in json.data){
+						FileGatherDataList.push(json.data[i]);
+					}
+					self.FileGatherDataList = FileGatherDataList;
+				}
+				self.FileGatherLoading = false;
+			},
+			DocumentThemeChange(){
+				if(this.DocumentThemeColor=='light'){
+					this.DocumentThemeColor='dark';
+					localStorage.setItem('theme','dark');
+				}else{
+					this.DocumentThemeColor='light';
+					localStorage.setItem('theme','light');
+				}
+				let self=this;
+				self.$message({
+					message: 'this is a message.',
+					type: 'success',
+				  });
+			},
+			
+			
+			
+		},
+		mounted() {}
+	});
+	dzzoffice.use(ElementPlus, {
+		locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+	});
+	for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+		dzzoffice.component(key, component)
+	}
+	dzzoffice.component('comavatar', comavatar);
+	dzzoffice.component('language', language);
+	dzzoffice.component('international',international);
+	// 屏蔽警告信息
+	dzzoffice.config.warnHandler = function(){return null};
+	dzzoffice.mount('#dzzoffice');
+</script>
+
+<!--{template common/container/pc/footer}-->

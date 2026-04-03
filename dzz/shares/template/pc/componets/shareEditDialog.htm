@@ -27,7 +27,7 @@
                     placeholder="{lang share_endtime}"></el-date-picker>
             <el-text class="form-item-helper">{lang share_endtime_tip}</el-text>
         </el-form-item>
-        <el-form-item label="{lang share_perm}" prop="perm">
+        <el-form-item label="{lang share_perm}" prop="perm" v-if="editDialogForm.allowdownload">
             <el-checkbox  v-model="editDialogForm.perm" name="perm">
                 {lang download}
             </el-checkbox>
@@ -56,7 +56,9 @@
                     times:0,
                     password:'',
                     fendtime:'',
-                    perm:true
+                    perm:false,
+                    sperm:0,
+                    allowdownload:0
                 },
                 rules: {
                     title: [
@@ -94,7 +96,9 @@
                             times: self.editDialogForm.times,
                             password: self.editDialogForm.password,
                             fendtime: self.editDialogForm.fendtime,
-                            perm: self.editDialogForm.perm?true:false,
+                            perm: (self.editDialogForm.perm && self.editDialogForm.allowdownload)?true:false,
+
+
                         }
                         axios.post(MOD_URL + '&op=ajax&do=shareEditSubmit', param).then(function (response) {
                             if (response.data.success) {

@@ -1,15 +1,15 @@
-<a  href="{$_G[siteurl]}" class="h-left" style="text-decoration: none;height: 60px;">
-	<el-image class="logo" src="data/attachment/sitelogo/sitelogo.png?{VERHASH}" title="$_G[setting][sitename]" fit="contain">
+<a  href="{$_G['siteurl']}" class="h-left" style="text-decoration: none;height: 60px;">
+	<el-image class="logo" src="data/attachment/sitelogo/sitelogo.png?{VERHASH}" title="$_G['setting']['sitename']" fit="contain">
 		<template #error><div class="el-image__placeholder"></div></template>
 	</el-image>
-	<el-text class="sitename" tag="b" size="large" style="color:var(--el-text-color-primary);white-space: nowrap;">{$_G[setting][sitename]}</el-text>
+	<el-text class="sitename" tag="b" size="large" style="color:var(--el-text-color-primary);white-space: nowrap;">{$_G['setting']['sitename']}</el-text>
 </a>
 <div class="h-center" style="flex-direction: column;align-items: flex-start;position: relative;">
 	<div style="height: 60px;display: flex;min-height: 60px;align-items: center;width: 100%;justify-content: flex-start;position: relative;">
 		<el-autocomplete
 			class="headerkeyword"
 			ref="headerkeyword"
-			style="width: 450px;z-index: 10000;"
+			style="width: 450px;z-index: 100;"
 			v-model="fheaderkeyword"
 			:fetch-suggestions="querySearch"
 			@clear="headerkeywordInput"
@@ -17,7 +17,7 @@
 			size="large">
 			<template #suffix>
 				<el-button v-if="fheaderkeyword" link icon="Close" style="font-size: 20px;" @click="headerkeywordInputClear"></el-button>
-				<!--{if intval($_G['setting']['imageSearch_setting']['status'])}-->
+				<!--{if intval($_G['setting']['imageSearchFlag'])}-->
 				<el-popover
 					ref="cameraPopover"
 					popper-class="camera-popover"
@@ -28,7 +28,8 @@
 					popper-style="{let:0}"
 					:teleported="false"
 					:tabindex="1000"
-					@show="SearchUploadPopoverShow">
+					@show="SearchUploadPopoverShow"
+					@hide="SearchUploadPopoverHide">
 					<div class="camera-dropdown">
 						<el-upload
 							class="camera-upload"
@@ -38,7 +39,8 @@
 							:auto-upload="false"
 							accept="image/png, image/jpeg,image/jpg, image/webp">
 							<div 
-								style="display: flex;align-items: center;justify-content: center;flex-direction: column;">
+								style="display: flex;align-items: center;justify-content: center;flex-direction: column;"
+								>
 								<el-icon class="el-icon--upload"><upload-filled /></el-icon>
 								<div class="el-upload__text">
 									<el-text tag="p" style="
@@ -127,16 +129,16 @@
 	</el-popover>
 	<international current="$_G['language']"></international>
 	<comavatar
-		:level="parseInt($_G[pichomelevel])"
-		iscollect="<!--{if defined('PICHOME_LIENCE') && (!$_G[config][pichomeclosecollect] || $_G[adminid])}--><!--{/if}-->"
-		:adminid="parseInt($_G[adminid])"
+		:level="parseInt($_G['pichomelevel'])"
+		iscollect="<!--{if defined('PICHOME_LIENCE') && (!$_G['config']['pichomeclosecollect'] || $_G['adminid'])}--><!--{/if}-->"
+		:adminid="parseInt($_G['adminid'])"
 		PICHOME_LIENCE="<!--{if defined('PICHOME_LIENCE')}--><!--{/if}-->"
-		:uid="parseInt($_G[uid])"
+		:uid="parseInt($_G['uid'])"
 		upgrade="<!--{if $_G['setting']['upgrade']}--><!--{/if}-->"
-		version="$_G[setting][version]"
+		version="$_G['setting']['version']"
 		formhash="{FORMHASH}">
 		<el-avatar size="40">
-			{eval echo avatar_block($_G[uid]);}
+			{eval echo avatar_block($_G['uid']);}
 		</el-avatar>
 	</comavatar>
 </div>
@@ -170,49 +172,96 @@
 					height:0,
 					boxW:0,
 					boxH:0,
+					autoCropX:0,
+					autoCropY:0,
 					loading:false,
 					submit:false,
 				},
 				CropTime: null,
-				CropBase:''
+				CropBase:'',
+				searchImagePropover:false
 			}
 		},
 		methods:{
 			SearchUploadPopoverShow(){
 				let self = this;
+				self.searchImagePropover = true;
 				self.$refs.headerkeyword.blur();//失去焦点
 			},
-
+			SearchUploadPopoverHide(){
+				let self = this;
+				self.searchImagePropover = false;
+			},
 
 			SearchUploadChange(response,uploadFile){
 				let self = this;
+				if(self.searchData.submit)return;
 				self.searchInt.status = true;
 				self.searchData.loading = true;
 				let img = new Image();
 				// 设置图片的源（URL）
-				img.src = URL.createObjectURL(response.raw);
+				let imgurl=URL.createObjectURL(response.raw);
+				img.src =  imgurl;
 				// 当图片加载完成时，获取其宽度和高度
 				img.onload = function() {
+
 					let ImageSize= self.resizeImage(img);
 					self.searchData.width = parseInt(ImageSize.width);
 					self.searchData.height = parseInt(ImageSize.height);
 					self.searchData.boxW = parseInt(ImageSize.width);
 					self.searchData.boxH = parseInt(ImageSize.height);
+					self.searchData.autoCropX = 0;
+					self.searchData.autoCropY = 0;
+					sessionStorage.setItem('CropData',{
+						x1: 0 ,
+						y1: 0,
+						x2: ImageSize.width,
+						y2: ImageSize.height,
+						w: ImageSize.width,
+						h: ImageSize.height
+					});
+
 					self.$nextTick(() => {
 						self.searchData.img = img.src;
 						self.screenvisible(false);
 						self.$refs.cameraPopover.hide();
 					})
+
+					// 创建 canvas 并将图片绘制到 canvas 上
+					const canvas = document.createElement('canvas');
+					const ctx = canvas.getContext('2d');
+
+					// // 设置 canvas 的宽高为图片的宽高
+					canvas.width = img.width;
+					canvas.height = img.height;
+
+					// // 将图片绘制到 canvas 上
+					ctx.drawImage(img, 0, 0);
+					// 将 canvas 内容转换为 JPG 格式的 Base64
+					const jpgBase64 = canvas.toDataURL('image/jpeg', 0.8); // 0.8 是图片质量
+
+
+					axios.post('index.php?mod=io&op=getAidByBase64', {
+						base64:jpgBase64
+
+					}).then(function (res) {
+						sessionStorage.setItem('cropimg',res.data.img);
+					}).catch(function (error) {
+						 console.log(error);
+					});
 					
 					
 				};
 				
 			},
-
+			
 			
 			handlecropimgload() {
+				let self = this;
 				this.searchData.loading = false;
 				this.handlecropSubmit();
+
+
 			},
 
 			handlecropSubmit(){
@@ -222,15 +271,14 @@
 					let CropData = self.$refs.vuecropper.getCropAxis();
 					let ImgW = Math.ceil(self.$refs.vuecropper.cropW);
 					let ImgH = Math.ceil(self.$refs.vuecropper.cropH);
+
 					sessionStorage.setItem('cropsize',JSON.stringify({
 						x1:CropData.x1,
 						x2:CropData.x2,
 						y1:CropData.y1,
 						y2:CropData.y2,
 						w:ImgW,
-						h:ImgH,
-						bw:self.searchData.boxW,
-						bh:self.searchData.boxH
+						h:ImgH
 					}));
 					let img = new Image();
 					// 设置图片的源（URL）
@@ -264,7 +312,7 @@
 							if(res.data.success){
 								self.searchData.aid = res.data.aid;
 								if(self.searchInt.status){
-									sessionStorage.setItem('cropimg',res.data.img);
+
 									self.searchInt.status = false;
 								}
 								self.CommonGetImageData();
@@ -289,7 +337,7 @@
 				
 				
 			},
-			resizeImage(img, maxWidth = 487, maxHeight = 651) {
+			resizeImage(img, maxWidth = 430, maxHeight = 651) {
 				// 获取图片的原始宽度和高度
 				const originalWidth = img.width;
 				const originalHeight = img.height;

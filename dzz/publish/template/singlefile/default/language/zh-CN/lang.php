@@ -1,0 +1,25 @@
+<?php
+
+$lang = array(
+    'setting_basic' => '基本设置',
+    'setting_preference' => '偏好设置',
+    'page_title' => '页面标题',
+    'cover' => '封面',
+    'collect' => '合集',
+    'metadescription' => '描述',
+    'metakeywords' => '关键词',
+    'address' => '链接地址',
+    'perm_view' => '浏览权限',
+    'perm_share' => '分享权限',
+    'perm_download' => '下载权限',
+    'img_banner' => '横幅图',
+    'description' => '描述',
+    'title' => '标题',
+    'topNavigation'=>'顶部导航',
+    'bottomEnable'=>'页面底部',
+    'bottomNavigation'=>'底部导航',
+    'bottomTitle'=>'底部信息',
+    'beian'=>'ICP备案号',
+    'beianmps'=>'公安备案号',
+    'upload_failed'=>'上传失败',
+    );

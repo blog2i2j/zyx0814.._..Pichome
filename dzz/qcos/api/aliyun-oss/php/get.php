@@ -21,9 +21,7 @@ function gmt_iso8601($time)
     return $expiration . "Z";
 }
 
-//$id= '';          // 请填写您的AccessKeyId。
-// $key= '';     // 请填写您的AccessKeySecret。
-// $host的格式为 bucketname.endpoint，请替换为您的真实信息。
+
 $host = $connectdata['host'];
 // $callbackUrl为上传回调服务器的URL，请将下面的IP和Port配置为您自己的真实URL信息。
 $callbackUrl = 'http://88.88.88.88:8888/aliyun-oss-appserver-php/php/callback.php';

@@ -3,7 +3,7 @@ if (!defined('IN_OAOOA')) {
     exit('Access Denied');
 }
 global $_G;
-
+$appname=lang('library_manage');
 Hook::listen('adminlogin');
 if (isset($_G['setting'])) $setting = $_G['setting'];
 else  $setting = C::t('setting')->fetch_all();
@@ -416,7 +416,7 @@ if ($operation == 'fetch') {
 
             //短链接部分开始
             $url = 'index.php?mod=pichome&op=fileview&id=' . $appid . '#appid=' . $appid;
-            if ($setting['pathinfo']) $path = C::t('pichome_route')->feth_path_by_url($url);
+            if ($setting['pathinfo']) $path = C::t('pichome_route')->fetch_path_by_url($url);
             else $path = '';
             if ($path) {
                 $data['url'] = $path;
@@ -736,61 +736,61 @@ if ($operation == 'fetch') {
     }
 
 } elseif ($operation == 'getdata') {
-    $data = array();
     require_once(DZZ_ROOT . './dzz/class/class_encode.php');
+    $data = array();
+    $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+    $perpage = isset($_GET['perpage']) ? intval($_GET['perpage']) : 20;
+    $keyword = isset($_GET['keyword']) ? getstr($_GET['keyword']) : '';
     $isdelete = (isset($_GET['isdelete']) && $_GET['isdelete']) ? 1 : 0;
-    if ($_G['adminid'] == 1) {
-        $vappdatas = DB::fetch_all("select * from %t  where isdelete = %d order by `disp` asc", array('pichome_vapp', $isdelete));
-    } else {
-        $vappdatas = DB::fetch_all("select v.* from %t vm left join %t v on v.appid = vm.appid where vm.uid = %d and v.isdelete = %d order by v.disp",
-            array('pichome_vappmember', 'pichome_vapp', $uid, $isdelete));
+    $sql = " isdelete=%d ";
+    $params = array('pichome_vapp',$isdelete);
+    if ($keyword) {
+        $sql .= " and appname like %s ";
+        $params[] = '%'.$keyword.'%';
     }
+    $total=0;
+    $start = ($page - 1) * $perpage;
+    if ($total = DB::result_first("select count(*) from %t where $sql", $params)) {
 
+        foreach(DB::fetch_all("select * from %t where $sql order by dateline  desc limit $start,$perpage", $params) as $val) {
 
-    foreach ($vappdatas as $val) {
-        if ($val['type'] == 3) {
-            $val['connect'] = 0;
-        } else {
-            $val['connect'] = IO::checkfileexists($val['path'], 1) ? 1 : 0;
-        }
-        $arr = explode(':', $val['path']);
-        if ($arr[1] && is_numeric($arr[1])) {
-            $pathpre = DB::result_first("select cloudname from %t where id = %d", array('connect_storage', $arr[1]));
-            $arr1 = explode('/', $arr[2]);
-            unset($arr1[0]);
-            $object = implode('/', $arr1);
-            $val['path'] = $pathpre . '/' . $object;
-        } else {
-            $p = new Encode_Core();
-            $charset = $p->get_encoding($val['path']);
-            if ($val['charset'] != CHARSET) {
-                $val['path'] = diconv($val['path'], $charset, CHARSET);
+            if ($val['type'] == 3) {
+                $val['connect'] = 0;
+            } else {
+                $val['connect'] = IO::checkfileexists($val['path'], 1) ? 1 : 0;
             }
+            $arr = explode(':', $val['path']);
+            if ($arr[1] && is_numeric($arr[1])) {
+                $pathpre = DB::result_first("select cloudname from %t where id = %d", array('connect_storage', $arr[1]));
+                $arr1 = explode('/', $arr[2]);
+                unset($arr1[0]);
+                $object = implode('/', $arr1);
+                $val['path'] = $pathpre . '/' . $object;
+            } else {
+                $p = new Encode_Core();
+                $charset = $p->get_encoding($val['path']);
+                if ($val['charset'] != CHARSET) {
+                    $val['path'] = diconv($val['path'], $charset, CHARSET);
+                }
+            }
+            $val['path'] = str_replace('dzz::', '', $val['path']);
+            $url = 'index.php?mod=pichome&op=fileview&id=' . $val['appid'] . '#appid=' . $val['appid'];
+            if ($setting['pathinfo']) $path = C::t('pichome_route')->fetch_path_by_url($url);
+            else $path = '';
+            if ($path) {
+                $val['url'] = $path;
+            } else {
+                $val['url'] = $url;
+            }
+            $data[] = $val;
         }
-        $val['path'] = str_replace('dzz::', '', $val['path']);
-        $url = 'index.php?mod=pichome&op=fileview&id=' . $val['appid'] . '#appid=' . $val['appid'];
-        if ($setting['pathinfo']) $path = C::t('pichome_route')->feth_path_by_url($url);
-        else $path = '';
-        if ($path) {
-            $val['url'] = $path;
-        } else {
-            $val['url'] = $url;
-        }
-
-        $data[] = $val;
     }
     Hook::listen("lang_parse", $data, ['getVappLangData', 1]);
-    exit(json_encode(array('data' => $data)));
+    exit(json_encode(array('success'=>true,'data' => $data, 'total' => intval($total))));
 
-} elseif ($operation == 'getvappico') {//获取库图片\
-    $isdelete = (isset($_GET['isdelete']) && $_GET['isdelete']) ? 1 : 0;
-    if ($_G['adminid'] == 1) {
-        $vappdatas = DB::fetch_all("select * from %t  where isdelete = %d order by disp", array('pichome_vapp', $isdelete));
-    } else {
-        $vappdatas = DB::fetch_all("select v.* from %t vm left join %t v on v.appid = vm.appid where vm.uid = %d and v.isdelete = %d order by v.disp",
-            array('pichome_vappmember', 'pichome_vapp', $uid, $isdelete));
-    }
-
+} elseif ($operation == 'getvappico') {//获取库图片
+    $vappids=$_GET['appids'];
+    $vappdatas=C::t('pichome_vapp')->fetch_all($vappids);
     $arr = [];
     foreach ($vappdatas as $val) {
         //获取最新图片
@@ -800,21 +800,21 @@ where r.isdelete = 0 and r.appid = %s order by r.dateline desc ", ['pichome_reso
         $icondata = C::t('pichome_resources')->getfileimageurl($resourcesdata, $val['path'], $val['type'], 1);
         $arr[] = array('icon' => (!$icondata['icondata'] && $icondata['iconimg']) ? $icondata['iconimg'] : $icondata['icondata'], 'appid' => $val['appid']);
     }
-    exit(json_encode(array('data' => $arr)));
+    exit(json_encode(array('data' => $arr,'success'=>true)));
 } elseif ($operation == 'getinfonum') {//已获取文件信息个数
     $returndata = [];
     foreach (DB::fetch_all("select count(r.rid) as thumbnum,v.appid from %t r left join %t v on r.appid = v.appid where v.isdelete = 0  and v.`type` = 1  and r.hasthumb = 1 group by v.appid", array('pichome_resources', 'pichome_vapp')) as $v) {
         $returndata[$v['appid']] = $v['thumbnum'];
     }
-    exit(json_encode(array('data' => $returndata)));
+    exit(json_encode(array('success'=>true,'data' => $returndata)));
 } elseif ($operation == 'getexportstatus') {
     $appids = isset($_GET['appids']) ? trim($_GET['appids']) : '';
     $appidarr = ($appids) ? explode(',', $appids) : [''];
     $returndata = [];
-    foreach (DB::fetch_all("select appid,percent,state,filenum from %t where isdelete = 0 and appid in(%n) ", array('pichome_vapp', $appidarr)) as $v) {
+    foreach (DB::fetch_all("select appid,percent,state,filenum, donum from %t where isdelete = 0 and appid in(%n) ", array('pichome_vapp', $appidarr)) as $v) {
         $returndata[$v['appid']] = $v;
     }
-    exit(json_encode(array('data' => $returndata)));
+    exit(json_encode(array('success'=>true,'data' => $returndata)));
 } elseif ($operation == 'addlibrary') {
     if ($_G['adminid'] != 1) exit(json_encode(array('success' => false, 'msg' => lang('no_perm'))));
     //接收路径
@@ -1065,7 +1065,7 @@ where r.isdelete = 0 and r.appid = %s order by r.dateline desc ", ['pichome_reso
         $appattr['url'] = C::t('pichome_route')->update_path_by_url($url);
 
 
-        exit(json_encode(array('data' => $appattr)));
+        exit(json_encode(array('success'=>true,'data' => $appattr)));
     } else {
         exit(json_encode(array('error' => 'create failer')));
     }
@@ -1277,12 +1277,22 @@ where r.isdelete = 0 and r.appid = %s order by r.dateline desc ", ['pichome_reso
 
 } elseif ($operation == 'geturlqrcode') {//获取链接二维码
     $appid = isset($_GET['appid']) ? trim($_GET['appid']) : '';
-    $url = 'index.php?mod=pichome&op=fileview&id=' . $appid . '#appid=' . $appid;
-    $sid = 'vapp_' . $appid;
-    $qrcode = C::t('pichome_route')->getQRcodeBySid($url, $sid);
+    $url = $_G['siteurl'].'index.php?mod=pichome&op=fileview&id=' . $appid . '#appid=' . $appid;
+
+    $qrcode = C::t('pichome_route')->getQRcodeByUrl($url);
     exit(json_encode(['success' => true, 'qrcode' => $qrcode]));
 } else {
     $theme = GetThemeColor();
+    $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+    $perpage = isset($_GET['perpage']) ? intval($_GET['perpage']) : 20;
+    $total0=$total1=0;
+    foreach(DB::fetch_all("select isdelete,COUNT(*) as sum from %t where 1 group by isdelete",array('pichome_vapp')) as $value){
+        if($value['isdelete']){
+            $total1=$value['sum'];
+        }else{
+            $total0=$value['sum'];
+        }
+    }
     include template('storehouse/pc/page/library');
     // include template('admin/pc/page/library');
 }

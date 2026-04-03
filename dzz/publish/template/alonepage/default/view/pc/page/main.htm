@@ -1,0 +1,146 @@
+<!--{template common/container/pc/header_start}-->
+<link rel="stylesheet" href="static/scss/default/index.css?{VERHASH}">
+<script type="text/javascript" src="static/vue_components/theme/default/index.js?{VERHASH}"></script>
+<link rel="stylesheet" href="dzz/banner/template/fashion/pc/assets/css/index.css?{VERHASH}">
+<script type="text/javascript" src="static/vue_components/ImageLayout/index.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/vue_components/ImageLayoutlimit/index.js?{VERHASH}"></script>
+<link rel="stylesheet" type="text/css" href="static/scss/layout.css?{VERHASH}"/>
+<script type="text/javascript" src="static/vue_components/HeaderSort/index.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/vue_components/collectdialog/index.js?{VERHASH}"></script>
+<link href="static/prismjs/index.css?{VERHASH}" rel="stylesheet">
+<script src="static/prismjs/index.js?{VERHASH}"></script>
+<script src="static/prismjs/prism-autoloader.js?{VERHASH}"></script>
+<script type="text/javascript" src="{MOD_PATH}/template/library/default/view/pc/assets/js/navigationmenu.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/js/sortable.min.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/jszip/jszip.min.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/jszip/FileSaver.min.js?{VERHASH}"></script>
+<script src="static/vue-cropper/index.js?{VERHASH}"></script>
+<!--{template common/container/pc/header_end}-->
+<div id="dzzoffice">
+    <el-container class="page-main">
+        <!--{template alonepage/default/view/pc/componets/header}-->
+        <el-container>
+            <el-main style="padding: 0;" class="dzz-container">
+                <el-scrollbar ref="MainscrollbarRef" @scroll="HandleElScrollbar">
+                    <div style="padding: 20px;">
+                        <theme-default
+                                pagetype="page"
+                                :contentdata="ContentData"
+                                :keyword="headerkeyword"
+                                :issearchimage="{$_G['setting']['imageSearchFlag']}"
+                                :urlparams="{pid: '$id' }"
+                                :headeralldata="headeralldata"></theme-default>
+                    </div>
+                    <el-footer v-if="pageset.bottomEnable" style="margin-top:20px;padding:0">
+                        <!--{template alonepage/default/view/pc/componets/footer}-->
+                    </el-footer>
+                </el-scrollbar>
+            </el-main>
+        </el-container>
+    </el-container>
+</div>
+<script type="text/javascript">
+    const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch,defineAsyncComponent, onBeforeUpdate , onUnmounted } = Vue;
+    const dzzoffice = createApp({
+        data() {
+            return {
+                DocumentThemeColor:'',
+                keyword:'',
+                scrollref:'',
+                ContentData:[],
+                pageset:$json_pageset,
+                headeralldata:{
+                    data:[],
+                    message:{
+                        sitebeiantxt:'',
+                        sitebeian:'',
+                    }
+                },
+            }
+        },
+        mixins:[HeaderMixins],
+        watch:{
+			DocumentThemeColor:{
+				handler(newval){
+					document.querySelector('html').className = newval;
+				},
+				deep:true,
+				// immediate:true
+			}
+		},
+        created() {
+            this.GetData();
+
+
+        },
+        methods: {
+            async GetData(){
+                let self = this;
+                let {data: res} = await axios.post('{MOD_URL}&operation=basic',{
+                    id:'$id'
+                });
+                this.GetContentData(res.pval);
+            },
+            HandleElScrollbar(data){
+				var self = this;
+				// self.$refs.RefImageLayout.HandleElScrollbar();
+                if(self.$refs.domchild && self.$refs.domchild.length){
+                    for (let index = 0; index < self.$refs.domchild.length; index++) {
+                        const element = self.$refs.domchild[index];
+                        if(element.HandleElScrollbar){
+                            element.HandleElScrollbar();
+                        }
+                    }
+                }
+			},
+            async GetContentData(pval){
+                let self = this;
+				const {data: res} = await axios.get('index.php?mod=alonepage&op=view&do=getdata&id='+pval);
+				this.ContentData = res.data;
+			},
+            DocumentThemeChange(){
+				if(this.DocumentThemeColor=='light'){
+					this.DocumentThemeColor='dark';
+					localStorage.setItem('theme','dark');
+				}else{
+					this.DocumentThemeColor='light';
+					localStorage.setItem('theme','light');
+				}
+				
+			},
+        },
+        mounted() {
+            let self = this;
+            
+            this.scrollref = self.$refs.MainscrollbarRef;
+            dzzoffice.WindowThis = this;
+            //主题颜色
+			let theme = localStorage.getItem('theme');
+			if(theme){
+				this.DocumentThemeColor=theme;
+			}else{
+				this.DocumentThemeColor = 'light'
+			}
+        },
+        components: {
+            navigationmenu,
+            comavatar
+		},
+    });
+    dzzoffice.use(ElementPlus, {
+        locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+    });
+    for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+        dzzoffice.component(key, component)
+    }
+    dzzoffice.use(ImageLayout);
+    dzzoffice.use(ImageLayoutlimit);
+    dzzoffice.use(ThemeDefault);
+    dzzoffice.use(DzzCollectdialog);
+    dzzoffice.component('international',international);
+    // 屏蔽警告信息
+    dzzoffice.config.warnHandler = function(){return null};
+    dzzoffice.mount('#dzzoffice');
+</script>
+
+<!--{template common/container/pc/footer}-->

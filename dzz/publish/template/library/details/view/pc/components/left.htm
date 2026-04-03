@@ -1,0 +1,281 @@
+<div class="left-search" style="padding-bottom: 8px;">
+	<el-input
+		v-model="LeftTree.filterText" 
+		placeholder="{lang search}"
+		prefix-icon="Search"
+		clearable
+		@input="LeftTreeSearchFolder">
+	</el-input>
+</div>
+<div class="left-main" style="height: calc(100% - 40px);">
+	<el-scrollbar>
+		<div style="padding-right: 10px;">
+			<el-tree
+				v-if="LeftTree.show"
+				ref="LeftTreeRef"
+				lazy
+				node-key="fid"
+				@node-click="LeftTreeClick"
+				:load="LeftTreeGetFolder"
+				:current-node-key="LeftTree.Currentkey"
+				:default-expanded-keys="LeftTree.defaultOpenkeys"
+				highlight-current
+				icon="ArrowRight"
+				:props="{label:'pfname',children: 'children',isLeaf:'leaf',disabled:'disabled'}">
+				<template #default="{ node, data }">
+				    <div class="custom-tree-node el-tree-node__label">
+						<el-icon class="icon">
+							<template v-if="data.rid">
+								<Document />
+							</template>
+							<template v-else-if="node.expanded">
+								<Folder-Opened />
+							</template>
+							<template v-else>
+								<Folder />
+							</template>
+						</el-icon>
+				    	<div class="name" v-cloak v-html="node.label"></div>
+				    </div>
+			  </template>
+				
+			</el-tree>
+		</div>
+	</el-scrollbar>
+</div>
+<div 
+	@mousedown.prevent="LeftdragControllerDiv"
+	:style="{position: 'absolute',height: '100%',width: '4px',top: '0',left: LeftWidth-2+'px',cursor: 'col-resize','z-index': 100}" 
+	ref="leftResize" 
+	id="leftResize"></div>
+
+<script>
+	const leftMixins = {
+		data(){
+			return {
+				LeftWidth:260,
+				LeftTree:{
+					Visible:true,
+					loading:false,
+					show:false,
+					filterText:'',
+					defaultOpenkeys:[],
+					Currentkey:null,
+					defaultOpenkeysInit:[],
+				},
+			}
+		},
+		mixins:[],
+		watch:{
+			'LeftTree.Currentkey':{
+				handler(dasta){
+
+				},
+				deep:true,
+			},
+		},
+		created(){
+			var self = this;
+		},
+		methods:{
+			LeftTreeClick(data, node){
+				let self = this;
+				if(data.ptype == 'folder'){
+					self.$refs.LeftTreeRef.setCurrentKey(self.LeftTree.Currentkey);
+				}else{
+					self.previews.data = [];
+					self.LeftTree.defaultOpenkeys = [];
+					self.LeftTree.defaultOpenkeysInit = [];
+					if(node.level == 1){
+						self.LeftTree.Currentkey = data.rid;
+					}else{
+						self.LeftTree.Currentkey = data.rid+node.parent.data.fid;
+						self.LeftTreeGetFid(node.parent);
+						self.LeftTree.defaultOpenkeysInit = JSON.parse(JSON.stringify(self.LeftTree.defaultOpenkeys));
+					}
+					self.GetImgData();
+					let hash = '';
+					if(self.LeftTree.defaultOpenkeys.length){
+						hash = 'id='+self.LeftTree.defaultOpenkeys.join("/")+'/'+self.LeftTree.Currentkey;
+					}else{
+						hash = 'id='+self.LeftTree.Currentkey;
+					}
+					location.hash = hash;
+				}
+			},
+			LeftTreeGetFid(node){
+				this.LeftTree.defaultOpenkeys.push(node.data.fid);
+				if(node.parent.level > 0){
+					this.LeftTreeGetFid(node.parent);
+				}
+			},
+			LeftTreeSearchFolder:debounce(async function(val){//输入
+				let self = this;
+				let param = {
+					appid:self.DocumentAppid,
+                    pid:'$id',
+					keyword:self.LeftTree.filterText
+				};
+				self.LeftTree.show = false;
+				if(!val){
+					self.LeftTree.defaultOpenkeys = JSON.parse(JSON.stringify(self.LeftTree.defaultOpenkeysInit));
+					self.$nextTick(function(){
+						self.LeftTree.show = true;
+					})
+					
+					return false;
+				}
+				
+				self.LeftTree.defaultOpenkeys = [];
+				let {data: res} = await axios.post('{MOD_URL}&op=ajax&do=searchfolderbyname',param);
+				self.LeftTree.defaultOpenkeys = res.data;
+				self.$nextTick(function(){
+					self.LeftTree.show = true;
+				})
+			},800),
+			async LeftTreeGetFolder(node,resolve){
+				let self = this;
+				let level = node.level;
+				let param = {
+					appid:self.DocumentAppid,
+                    pid:'$id',
+					keyword:self.LeftTree.filterText
+				};
+				if(level>0){
+					param['pfids'] = node.data.fid;
+				}
+				let res = await axios.post('{MOD_URL}&op=ajax&do=getfolderdata',param);
+
+				let new_data = res.data.folderdatanum;
+				let file_data = res.data.resourcesdata;
+				let arr = [];
+				if(level == 0 && file_data && file_data.length){
+					for (const x in file_data) {
+						let item = file_data[x];
+						let ext = '';
+						if(self.pageset.ext){
+							ext = '.'+item.ext;
+						}
+						item['pfname'] = item.name+ext;
+						item['fid'] = item.rid;
+						item['ptype'] = 'file';
+						item['leaf'] = true;
+						item['disabled'] = false;
+						if(!self.LeftTree.Currentkey && x == 0){
+							self.LeftTree.Currentkey = item.rid;
+							self.LeftTree.defaultOpenkeys = [];
+						}
+						if(self.LeftTree.filterText){
+							if(item.name.includes(self.LeftTree.filterText)){
+								item['pfname'] = self.CommonHighlight(item.name,self.LeftTree.filterText);
+								arr.push(item);
+							}
+						}else{
+							arr.push(item);
+						}
+						
+					}
+				}
+				for(let i in new_data){
+					let item = new_data[i];
+					item['pfname'] = item.fname;
+					item['ptype'] = 'folder';
+					item['disabled'] = true;
+					
+					if(self.LeftTree.filterText){
+						if(item.fname.includes(self.LeftTree.filterText) || self.LeftTree.defaultOpenkeys.indexOf(item.fid) > -1){
+							item['pfname'] = self.CommonHighlight(item['fname'],self.LeftTree.filterText);
+							arr.push(item);
+						}
+					}else{
+						arr.push(item);
+					}
+				}
+				if(level>0 && file_data && file_data.length){
+					for (const x in file_data) {
+						let item = file_data[x];
+						let ext = '';
+						if(self.pageset.ext){
+							ext = '.'+item.ext;
+						}
+						item['pfname'] = item.name+ext;
+						item['ptype'] = 'file';
+						item['fid'] = item.rid+node.data.fid;
+						item['leaf'] = true;
+						item['disabled'] = false;
+						if(self.LeftTree.filterText){
+							if(item.name.includes(self.LeftTree.filterText)){
+								item['pfname'] = self.CommonHighlight(item.name,self.LeftTree.filterText);
+								arr.push(item);
+							}
+						}else{
+							arr.push(item);
+						}
+					}
+				}
+				resolve(arr);
+				self.$nextTick(function(){
+					const foundUser = file_data.find(user => {
+						if(node.level == 0){
+							return user.rid === self.LeftTree.Currentkey
+						}else{
+							return user.rid+node.data.fid === self.LeftTree.Currentkey
+						}
+					});
+					const exists = !!foundUser;
+					if(exists){
+						self.GetImgData();
+						
+					}
+				})
+			},
+			LeftdragControllerDiv () {
+				var self = this;
+				var boxw = document.body.clientWidth;
+				boxw = parseInt(boxw/3);
+				// 鼠标按下事件
+				document.onmousemove = function(e) {
+					var DocumentLeftWidth = e.clientX+1;
+					if(DocumentLeftWidth>boxw){
+						DocumentLeftWidth = boxw;
+					}else if(DocumentLeftWidth<260){
+						DocumentLeftWidth = 260;
+					}
+					self.LeftWidth = DocumentLeftWidth;
+					return false;
+				};
+				document.onmouseup = function() {
+					document.onmousemove = null;
+					document.onmouseup = null;
+					return false;
+				};
+				return false;
+			},
+            CommonHighlight(text,words){
+				// 默认的标签，如果没有指定，使用span
+				var i, len = words.length,
+				re;
+				//匹配每一个特殊字符 ，进行转义
+				var specialStr = ["*", ".", "?", "+", "$", "^", "[", "]", "{", "}", "|", "\\", "(", ")", "/", "%"]; 
+				for (let index = 0; index < specialStr.length; index++) {
+					const item = specialStr[index];
+					if(words.indexOf(item) != -1) {
+						words = words.replace(new RegExp("\\" + item, 'g'), "\\" + item);
+					}
+				}
+				// $.each(specialStr, function(i, item) {
+					
+				// });
+				//匹配整个关键词
+				re = new RegExp(words, 'g');
+				if(re.test(text)) {
+					text = text.replace(re, '<span class="highlight">$&</span>');
+				}
+				return text;
+			},
+
+        },
+		mounted(){
+		}
+	}
+</script>

@@ -136,12 +136,14 @@ class table_thumb_preview extends dzz_table
         }
        // print_r($data);
         $returndata = [];
-        foreach(DB::fetch_all("select * from %t where rid = %s and iscover !=%d  order by disp asc",[$this->_table,$rid,1]) as $v){
+        foreach(DB::fetch_all("select p.*,a.filename,a.filetype from %t p LEFT JOIN %t a ON p.aid = a.aid  where p.rid = %s and p.iscover !=%d  order by p.disp asc",[$this->_table,'attachment',$rid,1]) as $v){
              $tmpdata = [
                 'id'=>$v['id'],
+                 'name'=>preg_replace("/\.".$v['filetype']."$/i",'',$v['filename']),
+                 'ext'=>$v['filetype'],
                 'spath'=>($v['sstatus']) ? IO::getFileUri($v['spath']):IO::getFileUri($v['opath']),
                 'dpath'=>Pencode(array('path'=>$rid,'fpath'=>'attach::'.$v['aid'],'perm'=>$data['perm'],'ishare'=>0,'isadmin'=>0),0),
-                 'realfianllypath'=>getglobal('siteurl').'/index.php?mod=io&op=getStream&path='.dzzencode('attach::'.$v['aid'],0)
+                 'realfianllypath'=>IO::getFileUri('attach::'.$v['aid']),//getglobal('siteurl').'/index.php?mod=io&op=getStream&path='.dzzencode('attach::'.$v['aid'],0)
             ];
 
             if(!$onlysmall) $tmpdata['lpath']=($v['lstatus']) ? IO::getFileUri($v['lpath']):IO::getFileUri($v['opath']);

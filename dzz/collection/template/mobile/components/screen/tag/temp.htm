@@ -1,0 +1,53 @@
+<template v-if="ParamScreen.value.tag.loading">
+	<van-loading class="custom-load" size="24px" type="spinner" color="var(--header-text)" text-color="var(--header-text)" vertical>{lang loading}</van-loading>
+</template>
+<template v-else>
+	<template v-if="ParamScreen.value.tag.data['all'].loading">
+		<van-loading class="custom-load" size="24px" type="spinner" color="var(--header-text)" vertical>{lang loading}</van-loading>
+	</template>
+	<template v-else>
+		<div class="screen-item-box" style="padding-top: 40px;">
+			<div class="van-search-box">
+				<van-search class="popup-search-input" style="padding: 0 12px;" v-model.trim="ParamScreen.value.tag.data['all'].keyword" shape="round" placeholder="{lang Enter_keywords}" @input="ScreenTagKeyword('all')" maxlength="50" :clearable="false">
+					<template #right-icon>
+						<van-icon v-show="ParamScreen.value.tag.data['all'].keyword" @click="ScreenTagClearKeyword('all')" name="cross" />
+					</template>
+				</van-search>
+			</div>
+			<div class="screen-item screen-tag-Scroll">
+				<template v-if="ParamScreen.value.tag.data['all'].searchloading">
+					<van-loading class="custom-load" size="24px" type="spinner" color="var(--header-text)" vertical>{lang loading}</van-loading>
+				</template>
+				<template v-else>
+					<template v-if="!$.isEmptyObject(ParamScreen.value.tag.data)">
+						<!-- <van-checkbox-group v-model="ParamScreen.value.tag.value" @change="ScreenTagChange"> -->
+							<van-cell-group>
+								<van-cell v-for="(fitem,index) in ParamScreen.value.tag.data['all'].data" clickable :key="index" :title="fitem.tagname" @click="ScreenTagClick(fitem.tid)" :value="fitem.num" class="van-cell-tag" :class="ParamScreen.value.tag.value.indexOf(fitem.tid)>-1?'active':''"></van-cell>
+								<!-- <van-cell v-for="(fitem,index) in ParamScreen.value.tag.data['all'].data" clickable :key="index" :title="fitem.tagname" @click="ScreenTagClick(fitem.tid)">
+									<template #right-icon>
+										<div class="num">{{fitem.num}}</div>
+										<van-checkbox shape="square" disabled :name="fitem.tid" />
+									</template>
+								</van-cell> -->
+							</van-cell-group>
+						<!-- </van-checkbox-group> -->
+						<template v-if="!ParamScreen.value.tag.data['all'].finish && ParamScreen.value.tag.data['all'].scrollloading">
+							<div style="text-align: center;margin-top: 0.625rem;">
+								<van-loading size="24px" type="spinner" color="var(--header-text)">{lang loading}</van-loading>
+							</div>
+						</template>
+					</template>
+					<template v-else>
+						<div class="notScreen">
+							<div>
+								<img src="dzz/pichome/image/notScreen.png" >
+								<div>{lang No_filtering_criteria}</div>
+							</div>
+						</div>
+					</template>
+				</template>
+				
+			</div>
+		</div>	
+	</template>
+</template>

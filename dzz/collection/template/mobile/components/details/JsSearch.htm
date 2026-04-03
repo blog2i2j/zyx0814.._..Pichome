@@ -1,0 +1,163 @@
+<van-popup class="seasrch-popup footer-popup" v-model="ParamSearch.PopupVisible" round position="bottom" :style="{ height: '90%' }" @open="SearchPopupOpen" @close="SearchPopupClose">
+	<div class="vam-popup-title" @click="ParamSearch.PopupVisible=false">{lang search}</div>
+	<div class="van-search-box">
+		<van-search class="popup-search-input" v-model.trim="ParamSearch.keyword" shape="round" placeholder="{lang Enter_keywords}" @input="SearchInputKeyword" maxlength="50" :clearable="false">
+			<template #right-icon>
+				<van-icon v-show="ParamSearch.keyword" @click="SearchClearKeyword" name="cross" />
+			</template>
+		</van-search>
+	</div>
+	<div class="search-val-box">
+		<template v-if="ParamSearch.likedata.length">
+			<van-list>
+				<van-cell v-for="(item,index) in ParamSearch.likedata" :key="index" @click="SearchClickLike(item.text)">
+					<template #title>
+						<div v-html="item.highlight"></div>
+					</template>
+				</van-cell>
+			</van-list>
+		</template>
+	</div>
+	<div class="btn-bottom">
+		<van-row gutter="20">
+		  <van-col span="12" style="text-align: center;">
+			  <van-button round plain type="primary" size="large" @click="SearchClearKeyword" v-cloak>{lang reset}</van-button>
+		  </van-col>
+		  <van-col span="12" style="text-align: center;">
+			  <van-button round type="info" size="large" @click="SearchConfirmval" v-cloak>{lang confirms}</van-button>
+		  </van-col>
+		</van-row>
+	
+	</div>
+</van-popup>
+<script type="text/javascript">
+	var SearchMixin = {
+		data(){
+			return {
+				ParamSearch:{
+					PopupVisible:false,
+					keywordDefault:'',
+					keyword: '',
+					likedata:[],
+					issearch:false
+				}
+			}
+		},
+		methods:{
+			SearchPopupOpen(){
+				var self = this;
+				self.SearchLikeword();
+				self.ParamSearch.keywordDefault = self.ParamSearch.keyword;
+			},
+			SearchPopupClose(){
+				var self = this;
+				if(self.ParamSearch.keywordDefault == self.ParamSearch.keyword){
+					return false;
+				}
+				this.SearchSubmit();
+			},
+			SearchClearKeyword(){
+				this.ParamSearch.keyword = '';
+				this.SearchLikeword();
+			},
+			SearchInputKeyword(val){
+				this.SearchLikeword();
+			},
+			SearchConfirmval(){
+				this.ParamSearch.PopupVisible = false;
+			},
+			
+			
+			SearchLikeword(){
+				var self = this;
+				var value = this.ParamSearch.keyword;
+				var host = window.sessionStorage.getItem('HostKeyword');
+				this.ParamSearch.likedata = [];
+				if(value){
+					if(host){
+						host = host.split(',');
+						for(var i in host){
+							if(host[i].indexOf(value)>-1){
+								var text = host[i];
+								var highlight = self.SearchHighlight(text,self.ParamSearch.keyword);
+								self.ParamSearch.likedata.push({
+									text:text,
+									highlight:highlight
+								});
+							}
+						}
+					}
+				}else{
+					if(host){
+						host = host.split(',');
+						for(var i in host){
+							var text = host[i];
+							self.ParamSearch.likedata.push({
+								text:text,
+								highlight:text
+							});
+						}
+					}
+				}
+			},
+			SearchHighlight(text,words){
+				// 默认的标签，如果没有指定，使用span
+				var i, len = words.length,
+				re;
+				//匹配每一个特殊字符 ，进行转义
+				var specialStr = ["*", ".", "?", "+", "$", "^", "[", "]", "{", "}", "|", "\\", "(", ")", "/", "%"]; 
+				$.each(specialStr, function(i, item) {
+					if(words.indexOf(item) != -1) {
+						words = words.replace(new RegExp("\\" + item, 'g'), "\\" + item);
+					}
+				});
+				//匹配整个关键词
+				re = new RegExp(words, 'g');
+				if(re.test(text)) {
+					text = text.replace(re, '<span class="highlight">$&</span>');
+				}
+				return text;
+			},
+			SearchClickLike(val){
+				var self = this;
+				if(self.ParamSearch.keyword != val){
+					self.ParamSearch.keyword = val;
+					self.ParamSearch.PopupVisible = false;
+				}
+				
+			},
+			SearchSubmit(){
+				var self = this;
+				var value = this.ParamSearch.keyword;
+				self.CommonhandleHash();
+				var host = window.sessionStorage.getItem('HostKeyword');
+				if(value){
+					if(host){
+						host = host.split(',');
+						var index = host.indexOf(value);
+						
+						if(index>-1){
+							host.splice(index,1);
+						}else{
+							if(host.length>9){
+								host.pop();
+							}
+						}
+						host.unshift(value);
+						var newhost = host.join(',');
+						if(host){
+							window.sessionStorage.setItem("HostKeyword",newhost);
+						}else{
+							window.sessionStorage.removeItem("HostKeyword");
+						}
+					}else{
+						window.sessionStorage.setItem("HostKeyword",value);
+					}
+				}
+				
+				
+				
+			},
+		}
+	};
+</script>

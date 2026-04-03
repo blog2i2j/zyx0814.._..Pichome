@@ -1,0 +1,30 @@
+<div class="screen-item">
+	<div style="margin-bottom: 5px;">{lang width1}</div>
+	<van-row>
+		<van-col span="11">
+			<van-cell-group class="screen-cell-input">
+				<van-field v-model.trim="ParamScreen.value.size.wstart" placeholder="{lang min}" @input="ScreenSizeChange" />
+			</van-cell-group>
+		</van-col>
+		<van-col span="2" style="line-height: 44px;text-align: center;">-</van-col>
+		<van-col span="11">
+			<van-cell-group class="screen-cell-input">
+				<van-field v-model.trim="ParamScreen.value.size.wend" placeholder="{lang max}" @input="ScreenSizeChange" />
+			</van-cell-group>
+		</van-col>
+	</van-row>
+	<div style="margin-bottom: 5px;">{lang height1}</div>
+	<van-row>
+		<van-col span="11">
+			<van-cell-group class="screen-cell-input">
+				<van-field v-model.trim="ParamScreen.value.size.hstart" placeholder="{lang min}" @input="ScreenSizeChange" />
+			</van-cell-group>
+		</van-col>
+		<van-col span="2" style="line-height: 44px;text-align: center;">-</van-col>
+		<van-col span="11">
+			<van-cell-group class="screen-cell-input">
+				<van-field v-model.trim="ParamScreen.value.size.hend" placeholder="{lang max}" @input="ScreenSizeChange" />
+			</van-cell-group>
+		</van-col>
+	</van-row>
+</div>

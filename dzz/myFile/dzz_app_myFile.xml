@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<root>
+	<item id="Title"><![CDATA[Dzz! app]]></item>
+	<item id="Version"><![CDATA[团队版2.0]]></item>
+	<item id="Time"><![CDATA[2024-02-13 10:30]]></item>
+	<item id="From"><![CDATA[pichome2.0 (http://127.0.0.8/)]]></item>
+	<item id="Data">
+		<item id="app">
+			<item id="mid"><![CDATA[0]]></item>
+			<item id="appname"><![CDATA[myFile]]></item>
+			<item id="appico"><![CDATA[data:image/png;base64,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
+]]></item>
+			<item id="appdesc"><![CDATA[]]></item>
+			<item id="appurl"><![CDATA[{dzzscript}?mod=myFile]]></item>
+			<item id="appadminurl"><![CDATA[]]></item>
+			<item id="noticeurl"><![CDATA[]]></item>
+			<item id="disp"><![CDATA[0]]></item>
+			<item id="vendor"><![CDATA[]]></item>
+			<item id="haveflash"><![CDATA[0]]></item>
+			<item id="isshow"><![CDATA[0]]></item>
+			<item id="havetask"><![CDATA[0]]></item>
+			<item id="hideInMarket"><![CDATA[1]]></item>
+			<item id="feature"><![CDATA[]]></item>
+			<item id="fileext"><![CDATA[]]></item>
+			<item id="group"><![CDATA[1]]></item>
+			<item id="position"><![CDATA[0]]></item>
+			<item id="system"><![CDATA[0]]></item>
+			<item id="notdelete"><![CDATA[0]]></item>
+			<item id="open"><![CDATA[0]]></item>
+			<item id="nodup"><![CDATA[0]]></item>
+			<item id="identifier"><![CDATA[myFile]]></item>
+			<item id="app_path"><![CDATA[dzz]]></item>
+			<item id="version"><![CDATA[1.0]]></item>
+			<item id="extra">
+				<item id="installfile"><![CDATA[install.php]]></item>
+				<item id="uninstallfile"><![CDATA[uninstall.php]]></item>
+			</item>
+			<item id="uids"><![CDATA[]]></item>
+			<item id="showadmin"><![CDATA[0]]></item>
+		</item>
+		<item id="version"><![CDATA[团队版2.0]]></item>
+		<item id="hooks">
+			<item id="getMyNavigation" priority="0" description=""><![CDATA[dzz\myFile\classes\mynavigation]]></item>
+		</item>
+	</item>
+</root>

@@ -1,0 +1,301 @@
+<!--{template common/container/pc/header_start}-->
+<script type="text/javascript" src="dzz/pichome/template/librarylist/assets/js/common.js?{VERHASH}"></script>
+<link rel="stylesheet" href="static/scss/default/index.css?{VERHASH}">
+<link rel="stylesheet" href="static/scss/common.css?{VERHASH}">
+<script type="text/javascript" src="static/vue_components/ImageLayout/index.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/vue_components/collectdialog/index.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/vue_components/HeaderSort/index.js?{VERHASH}"></script>
+<link rel="stylesheet" type="text/css" href="static/scss/layout.css?{VERHASH}"/>
+<link rel="stylesheet" type="text/css" href="{MOD_PATH}/template/multifile/simple2/view/pc/assets/css/index.css?{VERHASH}"/>
+<script type="text/javascript" src="static/jszip/jszip.min.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/jszip/FileSaver.min.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/vue_components/sharedialog/index.js?{VERHASH}"></script>
+<script type="text/javascript" src="{MOD_PATH}/template/library/default/view/mobile/assets/js/menu.js?{VERHASH}"></script>
+<!--{template common/container/pc/header_end}-->
+<div id="dzzoffice">
+	<el-container>
+			<el-header class="page-header"  height="60px" style="--el-header-padding: 0 8px;">
+				<!--{template multifile/simple2/view/mobile/components/index/header}-->
+			</el-header>
+			<el-main class="dzz-container" style="padding: 0px;overflow: hidden;position: relative;">
+				<el-scrollbar 
+					id="main_scrollbar" 
+					class="main_scrollbar" 
+					ref="MainscrollbarRef" 
+					@scroll="HandleElScrollbar">
+					 <div class="container-centent container">
+						<div class="banner-wrapper" v-if="DataPageset._file_carousel && DataPageset._file_carousel[0] && DataPageset._file_carousel[0]['src']" >
+						 <el-image class="img"  :src="DataPageset._file_carousel[0]['src']" fit="cover">
+							 <template #error>
+								 <div class="image-slot">
+									 <el-icon><Picture-Filled /></el-icon>
+								 </div>
+							 </template>
+						 </el-image>
+						</div>
+						<div class="desc-wrapper block" v-if="DataPageset._html_desc" >
+							 <div class="content editor-content-view" v-html="DataPageset._html_desc"></div>
+						 </div>
+						 <div class="actions">
+							 <div class="left">
+								 <el-text type="info" >{lang gong} <span class="num">{{tableData.length}}</span> {lang gfile}</el-text>
+
+							 </div>
+							 <div class="right">
+								 <el-button v-if="pdata.download" type="text" link  @click="JsZipDown"><el-icon><Download /></el-icon>&nbsp;{lang download_all}</el-button>
+								 <el-button v-if="pdata.share" type="text" link   @click="handleAllShare"><el-icon><Share /></el-icon>&nbsp;{lang share}</el-button>
+							 </div>
+
+						 </div>
+						 <div class="table-box" :class="(DataPageset.layout=='tabeven' || DataPageset.layout=='tabodd' || DataPageset.layout=='details')?'block':''">
+							<!--{template multifile/simple2/view/mobile/components/index/image}-->
+						 </div>
+
+						<el-footer v-if="DataPageset.bottomEnable" style="margin-top:20px;">
+							<div class="page-footer" style="border-top:1px solid var(--el-border-color);">
+								<el-text v-if="DataPageset._textarea_bottomtitle" v-html="DataPageset._textarea_bottomtitle" tag="p" style="display: flex;align-items: center;justify-content: center;margin-top: 0.5em;"></el-text>
+								<div  style="display: flex;align-items: center;justify-content: center;margin-top:0.5em">
+								<el-link v-if="DataPageset.beian" href="https://beian.miit.gov.cn/" title="{lang beian}" target="_blank">{{DataPageset.beian}}</el-link>
+								<el-link v-if="DataPageset.beianmps" title="{lang beianmps}" style="margin-left:1em;" href="https://beian.mps.gov.cn/" target="_blank">{{DataPageset.beianmps}}</el-link>
+								</div>
+							</div>
+						</el-footer>
+					 </div>
+				</el-scrollbar>
+				<div v-if="DocumentOverlay.main" class="el-overlay dzz-overlay" style="z-index: 1001;background: transparent;"></div>
+
+			</el-main>
+			<el-footer class="page-header" id="footer_header" style="padding: 0px 10px;border: 0;border-top:1px solid var(--el-border-color);height: 60px;" v-if="DataPageset.topNavigation">
+				<!--{template multifile/simple2/view/mobile/components/index/footer}-->
+			</el-footer>
+
+	</el-container>
+
+
+	<!--{template multifile/simple2/view/mobile/components/index/common}-->
+	<!--分享对话框加载-->
+	<!--{eval  include template('shareAddDialog_m','./dzz/shares/template/')}-->
+</div>
+<script>
+	const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch, computed, onBeforeUpdate , onUnmounted } = Vue;
+	var dzzoffice = createApp({
+		data(){
+			return {
+				pdata:$json_data,
+				DocumentResize:0,
+				DocumentAppid:'',
+				DocumentCtrl:false,
+				DocumentDropActive:false,
+				DocumentDropActive1:false,
+				OpenDetailType:'new',
+				DocumentThemeColor:'',//dark
+				scrollref:null,
+				DocumentVapp:{appname:'',type:0},
+				ispc:parseInt('$ispc'),
+				classifyType:0,
+
+				DocumentOverlay:{
+					left:false,
+					screen:false,
+					main:false,
+				},
+				DataPageset:$json_pageset,
+				tableData:[],
+				HeaderRightBtnShow:{
+					display:[],//显示内容
+					other:'btime',//显示内容其它
+					order:'btime',//排序方式
+					sort:'desc',//升序、降序
+					column:['left','right'],//侧边栏
+					layout:'waterFall'//图片布局方式
+				},
+			}
+		},
+		watch:{
+			DocumentThemeColor:{
+				handler(newval){
+					document.querySelector('html').className = newval
+				},
+				deep:true,
+				// immediate:true
+			},
+
+		},
+		created(){
+			let theme = localStorage.getItem('theme');
+			if(theme){
+				this.DocumentThemeColor=theme;
+			}else{
+				this.DocumentThemeColor = 'light'
+			}
+			this.getBannerData();
+			this.GetData();
+			this.handleIsPc();
+		},
+		mixins:[CommonMixin,FooterMixin,HeaderMixins,MixinImage,ShareAddDialogMixin],
+		methods:{
+			GetData(){
+				let self = this;
+
+				if(this.pdata.filter && this.pdata.filter.length>0){
+					for (let index = 0; index < this.pdata.filter.length; index++) {
+						const element = this.pdata.filter[index];
+						if(parseInt(element.checked)){
+							this.ScreenData.push(element);
+						}
+					}
+				}
+				let keyword = this.CommonGetHashParam('keyword');
+
+				if(keyword){
+					this.HeaderKeyword = decodeURI(keyword);
+				}
+				self.CommonInit();
+				this.GetFileData(this.pdata.pval);
+			},
+			async GetFileData(rids){
+				let self = this;
+				let {data: res} = await axios.post('{MOD_URL}&op=ajax&do=getfiles',{
+					pid:'$id',
+					rids:rids
+				});
+				this.tableData = res.data;
+			},
+			handleAllShare(){
+				let rids=[];
+				this.tableData.forEach((data,key) => {
+					rids.push(data.rid);
+				});
+				this.shareDialog.title = this.pdata.pname;
+				this.shareDialog.filepaths =rids;
+				this.shareDialog.visible=true;
+				this.shareDialog.stype=0;
+			},
+			fetchImage(url) {
+				return fetch(url).then(response => {
+					if (!response.ok) {
+						throw new Error('HTTP error! status: 200');
+					}
+					return response.blob();
+				});
+			},
+			JsZipDown(){
+				let self = this;
+				const names = [];
+				let ZipName = this.tableData[0].name+'等'+this.tableData.length+'个文件';
+				const imageUrls = [];
+				this.tableData.forEach((data,key) => {
+					imageUrls.push(data.downloadurl);
+					names.push({
+						ext:data.ext,
+						name:data.name
+					});
+				});
+
+				// // 创建一个新的JSZip实例
+				const zip = new JSZip();
+				// // 异步处理每个图片地址
+				Promise.all(imageUrls.map(url => self.fetchImage(url))).then(images => {
+					// 将每个图片的Blob对象添加到JSZip实例中
+					images.forEach((image, index) => {
+						const fileName = names[index].name+'.'+names[index].ext; // 假设文件名从image1.jpg开始
+						zip.file(fileName, image);
+					});
+
+					// 生成ZIP文件并触发下载
+					return zip.generateAsync({ type: 'blob' });
+				}).then(content => {
+					saveAs(content, ZipName+'.zip');
+					nextTick(() => {
+
+					});
+				}).catch(error => {
+					console.error('Error downloading images:', error);
+				});
+
+			},
+			DocumentThemeChange(){
+				if(this.DocumentThemeColor=='light'){
+					this.DocumentThemeColor='dark';
+					localStorage.setItem('theme','dark');
+				}else{
+					this.DocumentThemeColor='light';
+					localStorage.setItem('theme','light');
+				}
+				
+			},
+			handleIsPc(){
+                let innerWidth = window.innerWidth;
+                if(innerWidth > 768){
+                    this.ispc = true;
+                }else{
+                    this.ispc = false;
+                }
+            },
+			handlehassub(status){
+				this.hassub = parseInt(status);
+			},
+			handleDocumentOverlay(status,type){
+				for (const key in this.DocumentOverlay) {
+					this.DocumentOverlay[key] = status;
+				}
+				if(this.DocumentOverlay[type]){
+					this.DocumentOverlay[type] = false;
+				}
+			},
+		},
+		mounted(){
+			var self = this;
+			dzzoffice.WindowThis = this;
+			
+			this.scrollref = self.$refs.MainscrollbarRef;
+			window.onresize = function(){
+				self.DocumentResize += 1;
+			};
+			document.addEventListener('keydown', (e) => {
+				if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+					if(!self.searchImagePropover)return false;
+					// 确保页面已加载完成
+					setTimeout(() => {
+						// 获取剪贴板内容
+						if (window.isSecureContext && navigator.clipboard) {
+							navigator.clipboard.read().then(clipboardItems => {
+								for (const clipboardItem of clipboardItems) {
+									for (const type of clipboardItem.types) {
+										if (type.startsWith('image/')) {
+											clipboardItem.getType(type).then(blob => {
+												// 处理图片文件...
+												self.SearchUploadChange({raw: blob})
+											});
+										}
+									}
+								}
+							});
+						}
+					}, 100);
+				}
+			});
+		},
+		components:{
+			comavatar,
+			comsort,
+			DzzShareDialog,
+			menuitem
+		}
+	});
+	dzzoffice.use(ElementPlus, {
+		<!--{if $_G['language']=='zh-CN'}-->
+		locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+		<!--{/if}-->
+	});
+	for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+		dzzoffice.component(key, component)
+	}
+	dzzoffice.component('international',international);
+	dzzoffice.use(ImageLayout);
+	dzzoffice.use(DzzCollectdialog);
+	// 屏蔽警告信息
+	dzzoffice.config.warnHandler = function(){return null};
+	dzzoffice.mount('#dzzoffice');
+</script>
+<!--{template common/container/pc/footer}-->

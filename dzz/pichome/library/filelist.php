@@ -20,6 +20,7 @@ if ($operation == 'filelist') {
     $isrecycle = isset($_GET['isrecycle']) ? intval($_GET['isrecycle']):0;
     $wheresql = ' 1 ';
     $appid = isset($_GET['appid']) ? [trim($_GET['appid'])] : [-1];
+    $vappids=[];
     //库权限判断部分
     foreach (DB::fetch_all("select appid,path,view,type from %t where isdelete = 0 and appid in(%n)", array('pichome_vapp',$appid)) as $v) {
         if ($v['type'] != 3 && !IO::checkfileexists($v['path'],1)) {
@@ -57,12 +58,22 @@ if ($operation == 'filelist') {
     $imageRids = [];
     if(isset($_GET['aid'])){
         $aid = intval($_GET['aid']);
+        $searchparams= array(
+            'appids'=>$vappids,
+            'aid'=>$aid,
+            'keyword'=>$_GET['keyword'],
+            'limit'=>$perpage,
+            'offset'=>$start
+        );
 
-        Hook::listen('search_condition_filter',$imageRids,['aid'=>$aid,'limit'=>$perpage,'offset'=>$start]);
+        Hook::listen('search_condition_filter',$imageRids,$searchparams);
         if(!empty($imageRids['rids'])){
             $wheresql .= ' and r.rid in(%n)';
             $para[] = $imageRids['rids'];
+
+            $limitsql='';
         }
+
     }
 
     if (!isset($_GET['order'])) {
@@ -72,7 +83,7 @@ if ($operation == 'filelist') {
         if ($sortdata) {
             $sortdatarr = unserialize($sortdata);
             $order = $sortdatarr['filed'] ? $sortfilearr[$sortdatarr['filed']] : 1;
-            $asc = ($sortdatarr['scolorort']) ? $sortdatarr['sort'] : 'desc';
+            $asc = ($sortdatarr['sort']) ? $sortdatarr['sort'] : 'desc';
         } else {
             $order = 1;
             $asc = 'desc';
@@ -633,25 +644,31 @@ if ($operation == 'filelist') {
         $rids[] = $value['rid'];
     }
 
-
-
     $data = array();
     if (!empty($rids)) {
         $rdata = C::t('pichome_resources')->getdatasbyrids($rids);
         if(!empty($imageRids)){
+
             $rdatas = [];
             foreach($rdata as $key=>$value){
+                if(isset($imageRids['distances'][$value['rid']]) && is_array($imageRids['distances'][$value['rid']])) {
+                    $value['distances']=$imageRids['distances'][$value['rid']];
+                }
                 $rdatas[$value['rid']] = $value;
             }
 
             foreach($imageRids['rids'] as $value){
                 if(isset($rdatas[$value])){
-                    if(isset($imageRids['distances'][$value]) && is_array($imageRids['distances'][$value])) {
-                        $rdatas[$value]['distances']=$imageRids['distances'][$value];
-                    }
                     $data[] = $rdatas[$value];
                 }
             }
+            //分页
+            if(count($data)>$start * ($page - 1)) {
+                $data = array_slice($data, $start * ($page - 1), $perpage);
+            }
+
+
+
         }else{
             foreach($rdata as $key=>$value){
                 // $value['dpath'] = Pencode(array('path'=>$value['rid'],'perm'=>0,'ishare'=>0,'isadmin'=>1),3600);
@@ -662,12 +679,14 @@ if ($operation == 'filelist') {
     }
 
     $next = false;
+
     if (count($rids) >= $perpage) {
         $total = $start + $perpage * 2 - 1;
         $next = true;
     } else {
         $total = $start + count($rids);
     }
+
     $return = array(
         'appid' => $appid,
         'total' => $total,
@@ -682,6 +701,7 @@ if ($operation == 'filelist') {
             'keyword' => $keyword
         )
     );
+
     updatesession();
     exit(json_encode(array('data' => $return)));
 }

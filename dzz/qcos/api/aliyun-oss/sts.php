@@ -25,7 +25,10 @@ if (empty($access_id)) $access_id = $connectdata['access_id'];
 $access_key = dzzdecode($connectdata['access_key'], $connectdata['bz']);
 $RoleArn=$connectdata['extra'];
 //构建一个阿里云客户端，用于发起请求。
-
+//构建阿里云客户端时需要设置AccessKey ID和AccessKey Secret。
+/*AlibabaCloud::accessKeyClient('LTAI4G1KCrCGay1x1rYcjLcf', 'donkANaO9gYZOEpQo3gnMYN4Cfm4jI')
+    ->regionId('cn-qingdao')
+    ->asDefaultClient();*/
 AlibabaCloud::accessKeyClient($access_id, $access_key)
     ->regionId($region)
     ->asDefaultClient();

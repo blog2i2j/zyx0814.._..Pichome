@@ -17,32 +17,90 @@
 		}
 	};
 </script>
-<style>
-	.admin-tabs .el-tabs__nav-scroll{
-		display: flex;
-    	justify-content: center;
-	}
-	.admin-tabs .el-tabs__nav-scroll .el-tabs__item{
-		text-align: center;
-	}
-	
-</style>
+
 <!--{template common/container/pc/header_end}-->
 <div id="dzzoffice">
 	<el-container class="page-main">
-		<!--{template common/container/pc/ad_pic_header}-->
+		<!--{template common/container/pc/header_return}-->
 		<el-main style="overflow: hidden;position: relative;padding: 0;">
 			<el-scrollbar>
-				<div class="page-container" style="padding-top: 20px;">
-					<el-tabs class="admin-tabs dzz-tabs-default"  v-model="activeName" @tab-change="handleTabsClick">
-						<el-tabs class="admin-tabs " v-model="activeName" @tab-change="handleTabsClick">
-						<el-tab-pane label="{lang list}" name="list">
-							<!--{template storehouse/pc/components/library/main}-->
-						</el-tab-pane>
-						<el-tab-pane label="{lang recycle}" name="recycle">
-							<!--{template storehouse/pc/components/library/recycle}-->
-						</el-tab-pane>
-					</el-tabs>
+				<div class="page-container container" style="padding-top: 20px;">
+					<div class="admin-tabs-header">
+						<el-menu
+							:default-active="activeName"
+							mode="horizontal"
+							class="admin-tabs"
+							@select="handleTabsClick">
+							<el-menu-item index="list" style="width: 100px;font-size: 16px;">
+								{lang list}
+								<el-text size="small" style="margin-left: 6px;">{{total0}}</el-text>
+							</el-menu-item>
+							<el-menu-item index="recycle" style="width: 100px;margin-left: 8px;font-size: 16px;">
+								{lang recycle}
+								<el-text size="small" style="margin-left: 6px;">{{total1}}</el-text>
+							</el-menu-item>
+						</el-menu>
+						<div class="admin-tabs-action">
+							<el-input
+									size="large"
+									placeholder="{lang search}"
+									style="width: 200px;margin-right: 10px;"
+									class="el-input__inner"
+									clearable
+									v-model="keyword"
+									@keyup.enter="handleSearch"
+									@clear="handleSearch"
+									@change="handleSearch"
+							>
+							</el-input>
+							<div class="admin-tabs-icon">
+								<el-icon :class="{'active':style=='icon'}" @click="changeStyle('icon')">
+									<svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 6H8C6.89543 6 6 6.89543 6 8V18C6 19.1046 6.89543 20 8 20H18C19.1046 20 20 19.1046 20 18V8C20 6.89543 19.1046 6 18 6Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M18 28H8C6.89543 28 6 28.8954 6 30V40C6 41.1046 6.89543 42 8 42H18C19.1046 42 20 41.1046 20 40V30C20 28.8954 19.1046 28 18 28Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M40 6H30C28.8954 6 28 6.89543 28 8V18C28 19.1046 28.8954 20 30 20H40C41.1046 20 42 19.1046 42 18V8C42 6.89543 41.1046 6 40 6Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M40 28H30C28.8954 28 28 28.8954 28 30V40C28 41.1046 28.8954 42 30 42H40C41.1046 42 42 41.1046 42 40V30C42 28.8954 41.1046 28 40 28Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></svg>
+								</el-icon>
+								<el-icon :class="{'active':style=='list'}" @click="changeStyle('list')">
+									<svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7.94971 11.9497H39.9497" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.94971 23.9497H39.9497" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.94971 35.9497H39.9497" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+								</el-icon>
+							</div>
+							
+							<el-dropdown 
+								v-if="activeName == 'list'"
+								@command="TableAdd">
+								<el-button icon="CirclePlus" size="large" type="primary">{lang create}</el-button>
+								<template #dropdown>
+									<el-dropdown-menu>
+										<el-dropdown-item command="3">
+											<img style="height:30px;vertical-align: middle;margin-right:10px;" src="dzz/pichome/image/library/pichome.png" /> PicHome {lang library}
+										</el-dropdown-item>
+										<el-dropdown-item command="1">
+											<img style="height:30px;vertical-align: middle;margin-right:10px;" src="dzz/pichome/image/library/file.png" /> {lang normal_directory}
+										</el-dropdown-item>
+										<el-dropdown-item command="0">
+											<img style="height:30px;vertical-align: middle;margin-right:10px;" src="dzz/pichome/image/library/eagle.png" /> Eagle&nbsp;{lang library}
+										</el-dropdown-item>
+										<el-dropdown-item command="2">
+											<img style="height:30px;vertical-align: middle;margin-right:10px;" src="dzz/pichome/image/library/billfish.png" /> Billfish&nbsp;{lang library}
+										</el-dropdown-item>
+									</el-dropdown-menu>
+								</template>
+							</el-dropdown>
+						</div>
+					</div>
+					<div >
+						<!--{template storehouse/pc/components/library/main}-->
+					</div>
+					<div class="pageContainer" v-if="pageset.total>pageset.perpage" style="padding:20px 0 10px 0;display:flex;justify-content: center">
+						<el-pagination
+								large
+								background
+								@size-change="handleSizeChange"
+								@current-change="handleCurrentChange"
+								:current-page="currentPage"
+								:page-sizes="pageset.pagesizes"
+								:page-size="pageset.perpage"
+								layout="total, sizes, prev, pager, next"
+								:total="pageset.total">
+						</el-pagination>
+					</div>
                 </div>
 			</el-scrollbar>
 		</el-main>
@@ -61,11 +119,32 @@
 			return {
 				DocumentThemeColor:'',
 				activeName:'list',
+				total0:parseInt('$total0'),
+				total1:parseInt('$total1'),
+				keyword:'',
+				pageset:{
+					page:parseInt('$page'),
+					perpage:parseInt('$perpage'),
+					total:0,
+					pagesizes:[10,20,50,100]
+				}
 			}
 		},
 		
 		created(){
-			this.HeaderMenu.active = 'library'
+			let librarystyle = localStorage.getItem('librarystyle');
+			if(librarystyle){
+				this.style = librarystyle;
+			}else{
+				this.style = 'list';
+			}
+			let libraryActiveName = localStorage.getItem('libraryActiveName');
+			if(libraryActiveName){
+				this.activeName = libraryActiveName;
+			}else{
+				this.activeName = 'list';
+			}
+
 			//主题颜色
 			let theme = localStorage.getItem('theme');
 			if(theme){
@@ -75,7 +154,7 @@
 			}
 			this.TableGetData();
 		},
-		mixins:[HeaderMixin,CreatedMixin,MainMixin,GradeMixin,RightMixin,RecycleMixin],
+		mixins:[CreatedMixin,MainMixin,GradeMixin,RightMixin],
 		watch:{
 			DocumentThemeColor:{
 				handler(newval){
@@ -87,12 +166,26 @@
 		},
 		
 		methods:{
+			handleSizeChange(perpage){
+				this.pageset.perpage = perpage;
+				this.TableGetData();
+			},
+			handleCurrentChange(page){
+				this.pageset.page = page;
+				this.TableGetData();
+			},
+			handleSearch(){
+				this.pageset.page = 1;
+				this.TableGetData();
+			},
 			handleTabsClick(val){
-				if(val == 'recycle'){
-					this.RecycleGetData();					
-				}else{
-					this.TableGetData();
-				}
+				if(this.activeName == val) return false;
+				this.activeName = val;
+
+				localStorage.setItem('libraryActiveName',val);
+				this.Table.Data=[];
+				this.TableGetData();
+
 			},
 			TableAdd(type){
 				this.Catalogue.type = type;
@@ -108,7 +201,63 @@
 					localStorage.setItem('theme','light');
 				}
 				
-			}
+			},
+			changeStyle(val){
+				if(this.style == val)return false;
+				this.style = val;
+				localStorage.setItem('librarystyle',val);
+			},
+			async RecycleOperation(type,id){
+				let self = this;
+				if(type == 'recovery'){
+					const {data: res} = await axios.post(MOD_URL+'&op=library&operation=recover',{
+						appid:id
+					});
+					if(res.success){
+						let index = this.Table.data.findIndex(item => item.appid == id);
+						if(index != -1){
+							self.Table.data.splice(index,1);
+							self.total1--;
+							self.total0++;
+						}
+
+						self.$message({
+							type:'success',
+							message:'{lang recovery_success}'
+						});
+					}else{
+						self.$message.error(res.msg || 'recovery_unsuccess');
+					}
+				}else{
+					self.$messageBox.confirm(
+							'{lang delete_tip}',
+							'{lang board_message}',
+							{
+								confirmButtonText: '{lang confirms}',
+								cancelButtonText: '{lang cancel}',
+								type: 'warning',
+								icon:'QuestionFilled'
+							}
+					).then(async () => {
+						const {data: res} = await axios.post(MOD_URL+'&op=library&operation=finallydel',{appid:id});
+						if(res.success){
+							let index = this.Table.data.findIndex(item => item.appid == id);
+							if(index != -1){
+								this.Table.data.splice(index,1);
+								this.total1--;
+							}
+							self.$message({
+								type:'success',
+								message:'{lang delete_success}'
+							});
+						}else{
+							self.$message.error(res.msg || '{lang delete_unsuccess}');
+						}
+					}).catch(() => {
+
+					})
+				}
+			},
 		},
 		components: {
 			'orguser-select':orguserselect,

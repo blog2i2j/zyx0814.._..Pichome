@@ -1,0 +1,45 @@
+<!--{template common/robot/header_simple_start_none}-->
+<style>
+
+    img {
+        max-width: 100%;
+        max-height:100%;
+    }
+    .mb20{
+        margin-bottom: 20px;
+    }
+
+</style>
+<!--{template common/robot/header_simple_end_none}-->
+<!--{template common/robot/commer_header_none}-->
+
+<div class="container" style="min-height:650px;">
+
+</div>
+<div class="footer text-center">
+    <!--{if !empty($bottommenu)}-->
+    <div class="menu-container">
+        <ul class="main-menu">
+            $bottommenu
+        </ul>
+    </div>
+    <!--{/if}-->
+
+    <p class="bottomtitle text-center">
+        Powered By <a href="https://www.oaooa.com" target="_blank" >Pichome</a>&nbsp;V{eval echo CORE_VERSION}
+    </p>
+
+    <div class="beians text-center">
+        <!--{if $_G['setting']['sitebeian']}-->
+        <span class="beian"><a href="http://www.miibeian.gov.cn/" target="_blank">$_G['setting']['sitebeian']</a></span>
+        <!--{/if}-->
+
+    </div>
+</div>
+
+<!--{eval output();}-->
+<!--{if $_G['setting']['statcode']}-->
+<div class="text-center" style="display: none">$_G['setting']['statcode']</div>
+<!--{/if}-->
+</body>
+</html>

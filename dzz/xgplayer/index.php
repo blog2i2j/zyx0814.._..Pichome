@@ -25,7 +25,7 @@ if($_GET['operation']=='progress'){
     global $_G;
     //$rid = dzzdecode($_GET['path'],'',0);
     if(strpos($rid, 'attach::') === 0){
-        $resourcesdata = C::t('attachment')->fetch(intval(str_replace('attach::', '', $path)));
+        $resourcesdata = C::t('attachment')->fetch(intval(str_replace('attach::', '', $rid)));
         $resourcesdata['iswebsitefile'] = 1;
     }else{
         $resourcesdata = C::t('pichome_resources')->fetch_data_by_rid($rid);
@@ -124,9 +124,9 @@ if($_GET['operation']=='progress'){
 
     }else{
         if(!$resourcesdata['iswebsitefile'] && $resourcesdata['bz'] == 'dzz::'){
-            $src  = getglobal('siteurl') . 'index.php?mod=io&op=getStream&path=' . dzzencode($rid.'_3', '', 14400, 0);
+            $src  = getglobal('siteurl') . 'index.php?mod=io&op=getStream&path=' . dzzencode($rid, '', 0, 0);
         }else{
-            $src=IO::getFileuri($resourcesdata['path']);
+            $src=IO::getFileUri($resourcesdata['path']);
         }
 
     }

@@ -10,6 +10,7 @@ define('IN_ADMIN', TRUE);
 define('NOROBOT', TRUE);
 define('ADMINSCRIPT', basename(__FILE__));
 define('BASESCRIPT', basename(__FILE__));
+define('DZZSCRIPT','index.php');
 define('CURSCRIPT', 'admin');
 define('APPTYPEID', 0);
 require __DIR__.'/core/adminstart.php';

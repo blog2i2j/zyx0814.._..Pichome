@@ -1,0 +1,196 @@
+<!--{template common/container/pc/header_start}-->
+<link rel="stylesheet" href="static/scss/default/index.css?{VERHASH}">
+<link rel="stylesheet" href="dzz/markdown/vditor/dist/index.css?{VERHASH}">
+<script src="dzz/markdown/vditor/dist/method.js?{VERHASH}" ></script>
+<link rel="stylesheet" type="text/css" href="{MOD_PATH}/template/singlefile/text/view/mobile/assets/css/index.css?{VERHASH}"/>
+<script type="text/javascript" src="static/vue_components/sharedialog/index.js?{VERHASH}"></script>
+<script type="text/javascript" src="{MOD_PATH}/template/library/default/view/mobile/assets/js/menu.js?{VERHASH}"></script>
+<!--{template common/container/pc/header_end}-->
+<div id="dzzoffice">
+	<link rel="stylesheet" :href="'dzz/markdown/vditor/dist/css/content-theme/'+DocumentThemeColor+'.css?{VERHASH}'">
+	<el-container>
+		<!--{template singlefile/md/view/mobile/components/header}-->
+		<el-main style="padding: 0;" class="dzz-container">
+			<div class="container-centent container" :class="pageset.pageWidth">
+				<div class="cover-wrapper" v-if="pageset._file_carousel && pageset._file_carousel[0] && pageset._file_carousel[0]['src']">
+					<el-image class="img-cover"  :src="pageset._file_carousel[0]['src']" fit="cover">
+						<template #error>
+							<div class="image-slot">
+								<el-icon><Picture-Filled /></el-icon>
+							</div>
+						  </template>
+					</el-image>
+				</div>
+				<div class="actions">
+					<div class="left">
+						<el-text type="info" ><el-icon><Calendar /></el-icon> {{pdata.fdateline}}</el-text>
+						<el-text type="info" style="margin-left:0.5em"><el-icon><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M24 36C35.0457 36 44 24 44 24C44 24 35.0457 12 24 12C12.9543 12 4 24 4 24C4 24 12.9543 36 24 36Z" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/><path d="M24 29C26.7614 29 29 26.7614 29 24C29 21.2386 26.7614 19 24 19C21.2386 19 19 21.2386 19 24C19 26.7614 21.2386 29 24 29Z" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/></svg></el-icon> {{pdata.hots}}</el-text>
+					</div>
+					<div class="right">
+						<el-button v-if="pdata.download" type="text" link  @click="handleDown"><el-icon><Download /></el-icon> {lang download}</el-button>
+						<el-button v-if="pdata.share" type="text" link   @click="handleShare"><el-icon><Share /></el-icon> {lang share}</el-button>
+					</div>
+
+				</div>
+
+				<div class="content-wrapper" v-if="content" v-loading="fileloading" >
+					<div class="title">{{pdata.resourcesdata.name}}</div>
+					<div id="vditor"  ref="refVditor" class="content"></div>
+				</div>
+				<el-footer v-if="pageset.bottomEnable" style="margin-top:20px;">
+					<div class="page-footer" style="border:1px solid var(--el-border-color);">
+						<el-text v-if="pageset._textarea_bottomtitle" v-html="pageset._textarea_bottomtitle" tag="p" style="display: flex;align-items: center;justify-content: center;margin-top: 0.5em;"></el-text>
+						<div  style="display: flex;align-items: center;justify-content: center;margin-top:0.5em">
+						 <el-link v-if="pageset.beian" href="https://beian.miit.gov.cn/" title="{lang beian}" target="_blank">{{pageset.beian}}</el-link>
+						 <el-link v-if="pageset.beianmps" title="{lang beianmps}" style="margin-left:1em;" href="https://beian.mps.gov.cn/" target="_blank">{{pageset.beianmps}}</el-link>
+						</div>
+					</div>
+				</el-footer>
+
+			</div>
+			
+			
+		</el-main>
+		<el-footer class="page-header" id="footer_header" style="padding: 0px 10px;border: 0;border-top:1px solid var(--el-border-color);height: 60px;" v-if="pageset.topNavigation">
+			<!--{template singlefile/md/view/mobile/components/footer}-->
+		</el-footer>
+	</el-container>
+	<!--分享对话框加载-->
+	<!--{eval  include template('shareAddDialog_m','./dzz/shares/template/')}-->
+</div>
+
+<script type="text/javascript">
+	const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch, computed, onBeforeUpdate , onUnmounted } = Vue;
+	const dzzoffice = createApp({
+		el: '#dzzoffice',
+		data() {
+			return {
+				DocumentThemeColor:'',//dark,
+
+				ispc:parseInt('$ispc'),
+				pdata:$json_data,
+				pageset:$json_pageset,
+				content:'',
+				fileloading:true,
+			}
+		},
+		watch: {
+
+			DocumentThemeColor:{
+				handler(newval){
+					document.querySelector('html').className = newval
+				},
+				deep:true,
+				// immediate:true
+			}
+
+		},
+		created() {
+			let theme = localStorage.getItem('theme');
+			if(theme){
+				this.DocumentThemeColor=theme;
+			}else{
+				this.DocumentThemeColor = 'light'
+			}
+			this.getBannerData();
+			this.GetData();
+		},
+		mixins:[FooterMixin,ShareAddDialogMixin,HeaderMixins],
+		methods: {
+			handleDown(){
+				window.open('{MOD_URL}&op=download&dpath='+this.pdata.resourcesdata.dpath);
+			},
+			handleShare(){
+				this.shareDialog.title = this.pdata.resourcesdata.name;
+				this.shareDialog.filepaths =[this.pdata.resourcesdata.rid];
+				this.shareDialog.visible=true;
+				this.shareDialog.stype=0;
+
+			},
+			GetData(){
+				let self = this;
+
+				this.GetFileContent();
+			},
+			async GetFileContent(){
+				let self = this;
+				let {data: res} = await axios.post('{MOD_URL}&op=ajax&do=getFileContent',{pid:this.pdata.id,path:this.pdata.resourcesdata.dpath})
+				if(res.success){
+					this.content = res.data;
+				}
+
+				self.$nextTick(function () {
+					// Vditor.preview(self.$refs.refVditor,self.content,{
+					// 				cdn:'dzz/markdown/vditor',
+					// 				outline:true,
+					// 				theme:self.DocumentThemeColor,
+					// 			  });
+					const previewElement = document.getElementById('vditor');
+					Vditor.preview(previewElement, self.content, {
+						cdn: 'dzz/markdown/vditor',
+						markdown: {
+							toc: true,
+						},
+						speech: {
+							enable: true,
+						},
+						theme: self.DocumentThemeColor,
+						anchor: 1,
+
+						lazyLoadImage: 'dzz/markdown/vditor/dist/images/img-loading.svg',
+
+					});
+					self.fileloading=false;
+					previewElement.addEventListener('click', function (event) {
+						if (event.target.tagName === 'IMG') {
+							Vditor.previewImage(event.target, "{$_G['language']}",self.DocumentThemeColor=='dark' ? 'dark' : 'classic')
+						}
+					});
+				});
+			},
+
+			DocumentThemeChange(){
+				if(this.DocumentThemeColor=='light'){
+					this.DocumentThemeColor='dark';
+					localStorage.setItem('theme','dark');
+				}else{
+					this.DocumentThemeColor='light';
+					localStorage.setItem('theme','light');
+				}
+			},
+		},
+		async mounted() {
+			let self = this;
+
+			self.$nextTick(function () {
+				console.log(document.getElementById('vditor'));
+				Vditor.preview(document.getElementById('vditor'),self.content,{
+					cdn:'dzz/markdown/vditor',
+					outline:true,
+					theme:self.DocumentThemeColor,
+				});
+			})
+
+		},
+		components: {
+			comavatar,
+			international,
+			DzzShareDialog,
+			menuitem
+		},
+
+	});
+	dzzoffice.use(ElementPlus, {
+		locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+	});
+	for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+		dzzoffice.component(key, component)
+	}
+
+	// 屏蔽警告信息
+	dzzoffice.config.warnHandler = function(){return null};
+	dzzoffice.mount('#dzzoffice');
+
+
+</script>
+<!--{template common/container/pc/footer}-->

@@ -433,6 +433,7 @@ function uc_add_user($username, $password, $email, $nickname = '', $uid = 0, $qu
 
 function avatar_by_image($imageurl, $uid)
 {
+    global $_G;
     @set_time_limit(0);
 
     $home = get_home($uid);

@@ -32,7 +32,7 @@ class fmpeg
 
     }
 
-    public function getInfo($data)
+    public static function getInfo($data)
     {
         global $_G;
         if($data['aid']){
@@ -130,8 +130,8 @@ class fmpeg
             $file = $cachefile;
         }
         $thumbpath = $this->getthumbpath('pichomethumb');
-        if($data['aid'])$thumbname = md5($data['aid'].$data['thumbsign']).'_original.webp';
-        else $thumbname = md5($data['path'].$data['thumbsign']).'_original.webp';
+        if($data['aid'])$thumbname = md5($data['aid'].$data['thumbsign']).'_original.jpg';
+        else $thumbname = md5($data['path'].$data['thumbsign']).'_original.jpg';
         $target =  $thumbpath.$thumbname;
         if ('audio' == getTypeByExt($attachment['ext'])) {
             //$target = ($data['thumbsign']) ? $data['rid']. '.webp' : $data['rid'] . '.webp';
@@ -147,7 +147,7 @@ class fmpeg
             }
             $audio = $this->fm->open($tmp ? $tmp : $file);
 
-            $waveform = $audio->waveform(720, 360, array('#888888'));
+            $waveform = $audio->waveform(640, 120, array('#888888'));
             $waveform->save($jpg);
             if ($tmp) @unlink($tmp);
         } else {
@@ -202,11 +202,10 @@ class fmpeg
                 $filepath = \IO::moveThumbFile($cloudpath, $jpg);
                 if (!isset($filepath['error'])) {
                     @unlink($jpg);
-                    return $target;
+                    return $cloudpath;
                 }
             } else {
-
-                return $target;
+                return 'dzz::'.$target;
             }
         }
         return false;

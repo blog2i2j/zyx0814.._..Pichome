@@ -1,0 +1,59 @@
+<script type="text/javascript">
+	var ScreenClassiyfMixin = {
+		methods:{
+			screenclassifychange(data){
+				if(this.ParamScreen.value.classify.value == data.cid){
+					return false;
+				}
+				this.ParamScreen.value.classify.value = data.cid;
+				this.ParamScreen.value.classify.realvalue = data.cid;
+				this.ParamScreen.value.classify.checkedvalue = [data.cid];
+				this.ParamScreen.value.classify.DefaultExpandedKeysInit = [];
+				if(data.cid == 'all' || data.cid == 'not'){
+					return false;
+				}else{
+					if(data.children.length){
+						this.screenclassifyGetChilds(data.children);
+					}
+				}
+				var pathkey = data.pathkey.replaceAll('_','');
+				var pathkeys = pathkey.split('-');
+				pathkeys.pop()
+				for(var x in pathkeys){
+					this.ParamScreen.value.classify.DefaultExpandedKeysInit.push(parseInt(pathkeys[x]))
+				}
+			},
+			screenclassifyGetChilds(data){
+				for(var i in data){
+					var item = data[i];
+					if(this.ParamScreen.value.classify.checkedvalue.indexOf(item.cid) == -1){
+						this.ParamScreen.value.classify.checkedvalue.push(item.cid);
+					}
+					if(item.children.length){
+						this.screenclassifyGetChilds(item.children);
+					}
+				}
+			},
+			ScreenClassifysAppenddata(data){
+				if(data.type == 'parent'){
+					this.ParamScreen.value.classify.data = data.val;
+				}else{
+					data.data.children = data.val;
+					data.data.loaded = true;
+					data.data.loading = false;
+				}
+			},
+			ScreenGetdataClassify(){
+				var self = this;
+				self.ParamScreen.value.classify.isshowloading = false;
+				self.$nextTick(function(){
+					self.ParamScreen.value.classify.isshowloading = true;
+				});
+			},
+		}
+	};
+	var JsScreenClassiyfMethods = {
+		
+		
+	}
+</script>

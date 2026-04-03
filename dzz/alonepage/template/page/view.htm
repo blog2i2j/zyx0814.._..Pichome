@@ -10,30 +10,26 @@
 <link href="static/prismjs/index.css?{VERHASH}" rel="stylesheet">
 <script src="static/prismjs/index.js?{VERHASH}"></script>
 <script src="static/prismjs/prism-autoloader.js?{VERHASH}"></script>
-
+<script type="text/javascript" src="static/js/sortable.min.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/jszip/jszip.min.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/jszip/FileSaver.min.js?{VERHASH}"></script>
+<script src="static/vue-cropper/index.js?{VERHASH}"></script>
 
 
 <!--{template common/container/pc/header_end}-->
 <div id="dzzoffice">
 	<el-container>
-		<el-header v-if="ispc" class="page-header"  height="60px">
-				<!--{template components/view/header}-->
+		<el-header class="page-header"  height="60px">
+			<!--{template components/view/header}-->
         </el-header>
 		<el-main class="dzz-container" style="padding: 0px;overflow: hidden;position: relative;">
 			<theme-default 
 				pagetype="page"
 				:contentdata="ContentData"
 				:keyword="headerkeyword"
+				:issearchimage="{$_G['setting']['imageSearchFlag']}"
 				:headeralldata="headeralldata"></theme-default>
 		</el-main>
-
-		<el-header v-if="!ispc" v-show="rollingdire=='up'" class="page-header"  height="50px" style="border:0;border-top: var(--el-border);">
-			<div class="m-page-header m">
-				<div class="page-header" style="height: 100%;width: 100%;border: 0;padding: 0;">
-					<!--{template components/view/header_m}-->
-				</div>
-			</div>
-        </el-header>
 	</el-container>
 </div>
 <script>
@@ -51,9 +47,9 @@
 					formhash:'{FORMHASH}',
 					textdata:{
 						formhash:'',
-						title:'$_G[setting][loginset][title]',
-                    	subtitle:'$_G[setting][loginset][subtitle]',
-						img:'{eval echo $_G['setting']['sitelogo']?'index.php?mod=io&op=thumbnail&size=small&path='.dzzencode('attach::'.$_G['setting']['sitelogo']):'data/attachment/sitelogo/sitelogo.png';}'
+						title:"{$_G['setting']['loginset']['title']}",
+                    	subtitle:"{$_G['setting']['loginset']['subtitle']}",
+						img:"{eval echo $_G['setting']['sitelogo']?'index.php?mod=io&op=thumbnail&size=small&path='.dzzencode('attach::'.$_G['setting']['sitelogo']):'data/attachment/sitelogo/sitelogo.png';}"
 					}
 				},
 				ispc:true,
@@ -61,16 +57,16 @@
 				headeralldata:{
 					data:[],
 					message:{
-						sitebeiantxt:'{$_G[setting][sitebeiantxt]}',
-						sitebeian:'{$_G[setting][sitebeian]}',
+						sitebeiantxt:"{$_G['setting']['sitebeiantxt']}",
+						sitebeian:"{$_G['setting']['sitebeian']}",
 					}
 				},
 			}
 		},
 		created(){
 			this.handleIsPc();
-			<!--{if intval($_G[setting][pathinfo])}-->
-			let param = '{$_GET[hashparams]}';
+			<!--{if isset($_GET['hashparams'])}-->
+			let param = '{$_GET['hashparams']}';
 			if(param){
 				param = JSON.parse(param)
 				this.appid = param.id;

@@ -1,0 +1,70 @@
+<el-header class="page-header"  height="60px">
+    <div class="h-left">
+        <el-image class="logo" src="data/attachment/sitelogo/sitelogo.png?{VERHASH}" fit="contain"></el-image>
+        <el-text tag="b" size="large" style="color:var(--el-text-color-primary)">$_G['setting'][sitename]</el-text>
+    </div>
+    <div class="h-center">
+        <el-input 
+        v-model="headerkeyword" 
+        style="width: 300px;" 
+        @keyup.enter.native="HeaderKeywordInputSubmit"
+        clearable 
+        @clear="HeaderKeywordInputSubmit">
+            <template #prefix>
+                <el-icon class="el-input__icon" @click="HeaderKeywordInputSubmit"><search /></el-icon>
+            </template>
+          </el-input>
+    </div>
+    <div class="h-right"> 
+        <el-tooltip content="{lang theme_color}" placement="bottom">
+            <el-button 
+                text 
+                :icon="DocumentThemeColor=='light'?'Sunny':'Moon'" 
+                style="font-size: var(--el-font-size-extra-large);" 
+                circle  
+                size="large"
+                @click="DocumentThemeChange">
+            </el-button>
+        </el-tooltip>
+        <comavatar
+            :level="parseInt($_G['pichomelevel'])"
+            iscollect="<!--{if defined('PICHOME_LIENCE') && (!$_G['config']['pichomeclosecollect'] || $_G['adminid'])}--><!--{/if}-->"
+            :adminid="parseInt($_G['adminid'])"
+            PICHOME_LIENCE="<!--{if defined('PICHOME_LIENCE')}--><!--{/if}-->"
+            :uid="parseInt($_G['uid'])"
+            upgrade="<!--{if $_G['setting']['upgrade']}--><!--{/if}-->"
+            version="$_G['setting']['version']"
+            formhash="{FORMHASH}"
+            :isrefresh="true">
+            <el-avatar size="40">
+                {eval echo avatar_block($_G['uid']);}
+            </el-avatar>
+        </comavatar>
+    </div>
+</el-header>
+
+<script>
+    const HeaderMixin = {
+		data(){
+			return {
+               headerkeyword:''
+			}
+		},
+		methods:{
+			async HeaderKeywordInputSubmit(){
+				var self = this;
+				this.FileGatherDataList = [];
+				var res = await axios.post(MOD_URL+'&do=searchcollect',{keyword:this.headerkeyword})
+				var json = res.data;
+				if(json.data){
+					var FileGatherDataList = [];
+					for(var i in json.data){
+						FileGatherDataList.push(json.data[i]);
+					}
+					self.FileGatherDataList = FileGatherDataList;
+				}
+				self.FileGatherLoading = false;
+			},
+		}
+	}
+</script>

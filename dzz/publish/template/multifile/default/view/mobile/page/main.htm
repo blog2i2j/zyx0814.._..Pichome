@@ -1,0 +1,264 @@
+<!--{template common/container/pc/header_start}-->
+<script type="text/javascript" src="dzz/pichome/template/librarylist/assets/js/common.js?{VERHASH}"></script>
+<link rel="stylesheet" href="static/scss/default/index.css?{VERHASH}">
+<script type="text/javascript" src="static/vue_components/ImageLayout/index.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/vue_components/collectdialog/index.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/vue_components/HeaderSort/index.js?{VERHASH}"></script>
+<link rel="stylesheet" type="text/css" href="static/scss/layout.css?{VERHASH}"/>
+<link rel="stylesheet" type="text/css" href="{MOD_PATH}/template/library/default/view/mobile/assets/css/index.css?{VERHASH}"/>
+<script type="text/javascript" src="static/jszip/jszip.min.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/jszip/FileSaver.min.js?{VERHASH}"></script>
+<script type="text/javascript" src="{MOD_PATH}/template/library/default/view/mobile/assets/js/menu.js?{VERHASH}"></script>
+<style>
+	.dzz-affix{
+    	background: var(--el-bg-color);
+	}
+	.dzz-affix .el-affix--fixed{
+		background: var(--el-bg-color);
+		padding: 0 10px;
+		left: 0;
+	}
+	.imagelayout{
+		padding-bottom: 0;
+	}
+</style>
+<!--{template common/container/pc/header_end}-->
+<div id="dzzoffice">
+	<el-container>
+			<el-header class="page-header"  height="60px" style="--el-header-padding: 0 8px;border: 0px;">
+				<!--{template multifile/default/view/mobile/components/index/header}-->
+			</el-header>
+			<el-main class="dzz-container" style="padding: 0px;overflow: hidden;position: relative;">
+				<el-scrollbar 
+					id="main_scrollbar" 
+					class="main_scrollbar" 
+					ref="MainscrollbarRef" 
+					@scroll="HandleElScrollbar">
+					<el-affix 
+						class="dzz-affix" 
+						target=".main_scrollbar>.el-scrollbar__wrap" 
+						:offset="rollingdire=='down'?-100:0" 
+						style="padding: 0 10px;">
+						<div 
+						class="header-affix notscreen">
+							<div style="display: flex;width: 100%;">
+								<el-input 
+									v-model="HeaderKeyword" 
+									prefix-icon="Search" 
+									@change="CommonGetImageData" 
+									type="search" 
+									placeholder="{lang search}" 
+									clearable ></el-input>
+								<el-popover
+									placement="bottom"
+									trigger="click"
+									popper-class="isdropdown header-dropdown-menu"
+									@show="handleDocumentOverlay(true)"
+									@hide="handleDocumentOverlay(false)">
+									<comsort
+										:iscolumn="false"
+										:defaultval="HeaderRightBtnShow"
+										@change="HeaderShowChange">
+									</comsort>
+									<template #reference>
+										<div style="margin-left: 12px;">
+											<el-button icon="Sort"></el-button>
+										</div>
+									</template>
+								</el-popover>
+							</div>
+						</div>
+					</el-affix>
+					<div  style="padding: 10px;">
+						<!--{template multifile/default/view/mobile/components/index/image}-->
+						<el-footer  v-if="DataPageset.bottomEnable" style="padding: 0;height: auto;">
+							<div class="page-footer" style="border-top:1px solid var(--el-border-color);">
+								<el-text v-if="DataPageset._textarea_bottomtitle" v-html="DataPageset._textarea_bottomtitle" tag="p" style="display: flex;align-items: center;justify-content: center;margin-top: 0.5em;"></el-text>
+								<div  style="display: flex;align-items: center;justify-content: center;margin-top:0.5em">
+								 <el-link v-if="DataPageset.beian" href="https://beian.miit.gov.cn/" title="{lang beian}" target="_blank">{{DataPageset.beian}}</el-link>
+								 <el-link v-if="DataPageset.beianmps" title="{lang beianmps}" style="margin-left:1em;" href="https://beian.mps.gov.cn/" target="_blank">{{DataPageset.beianmps}}</el-link>
+								</div>
+							</div>
+						</el-footer>
+					</div>
+					
+					<div class="right-toolbar">
+						<el-backtop target=".main_scrollbar>.el-scrollbar__wrap" style="position: unset;margin-top: 10px;"></el-backtop>
+					</div>
+					
+				</el-scrollbar>
+				<div v-if="DocumentOverlay.main" class="el-overlay dzz-overlay" style="z-index: 1001;background: transparent;"></div>
+
+			</el-main>
+			<el-footer class="page-header" id="footer_header"  height="60px" style="padding: 0px 10px;border: 0;border-top:1px solid var(--el-border-color);" v-if="DataPageset.topNavigation">
+				<!--{template multifile/default/view/mobile/components/index/footer}-->
+			</el-footer>
+
+	</el-container>
+
+
+	<!--{template multifile/default/view/mobile/components/index/common}-->
+	<!--分享对话框加载-->
+	<!--{eval  include template('shareAddDialog_m','./dzz/shares/template/')}-->
+</div>
+<script>
+	const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch, computed, onBeforeUpdate , onUnmounted } = Vue;
+	var dzzoffice = createApp({
+		data(){
+			return {
+				pdata:$json_data,
+				DocumentResize:0,
+				DocumentAppid:'{$data['pval']}',
+				DocumentCtrl:false,
+				DocumentDropActive:false,
+				DocumentDropActive1:false,
+				OpenDetailType:'new',
+				DocumentThemeColor:'',//dark
+				scrollref:null,
+				DocumentVapp:{appname:'',type:0},
+				ispc:parseInt('$ispc'),
+				classifyType:0,
+				DocumentOverlay:{
+					left:false,
+					screen:false,
+					main:false,
+				},
+				DataPageset:$json_pageset,
+				HeaderRightBtnShow:{
+					display:[],//显示内容
+					other:'btime',//显示内容其它
+					order:'btime',//排序方式
+					sort:'desc',//升序、降序
+					column:['left','right'],//侧边栏
+					layout:'waterFall'//图片布局方式
+				},
+			}
+		},
+		watch:{
+			DocumentThemeColor:{
+				handler(newval){
+					document.querySelector('html').className = newval
+				},
+				deep:true,
+				// immediate:true
+			},
+
+		},
+		created(){
+			let theme = localStorage.getItem('theme');
+			if(theme){
+				this.DocumentThemeColor=theme;
+			}else{
+				this.DocumentThemeColor = 'light'
+			}
+			this.handleIsPc();
+			this.getBannerData();
+			this.GetData();
+
+		},
+		mixins:[CommonMixin,FooterMixin,HeaderMixin,MixinImage,ShareAddDialogMixin],
+		methods:{
+			async GetData(){
+				let self = this;
+
+				if(this.pdata.filter && this.pdata.filter.length>0){
+					for (let index = 0; index < this.pdata.filter.length; index++) {
+						const element = this.pdata.filter[index];
+						if(parseInt(element.checked)){
+							this.ScreenData.push(element);
+						}
+					}
+				}
+
+				let keyword = this.CommonGetHashParam('keyword');
+			
+				if(keyword){
+					this.HeaderKeyword = decodeURI(keyword);
+				}
+
+				self.CommonInit();
+			},
+			DocumentThemeChange(){
+				if(this.DocumentThemeColor=='light'){
+					this.DocumentThemeColor='dark';
+					localStorage.setItem('theme','dark');
+				}else{
+					this.DocumentThemeColor='light';
+					localStorage.setItem('theme','light');
+				}
+				
+			},
+			handleIsPc(){
+                let innerWidth = window.innerWidth;
+                if(innerWidth > 768){
+                    this.ispc = true;
+                }else{
+                    this.ispc = false;
+                }
+            },
+			handlehassub(status){
+				this.hassub = parseInt(status);
+			},
+			handleDocumentOverlay(status,type){
+				for (const key in this.DocumentOverlay) {
+					this.DocumentOverlay[key] = status;
+				}
+				if(this.DocumentOverlay[type]){
+					this.DocumentOverlay[type] = false;
+				}
+			},
+		},
+		mounted(){
+			var self = this;
+			dzzoffice.WindowThis = this;
+			
+			this.scrollref = self.$refs.MainscrollbarRef;
+			window.onresize = function(){
+				self.DocumentResize += 1;
+			};
+			document.addEventListener('keydown', (e) => {
+				if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+					if(!self.searchImagePropover)return false;
+					// 确保页面已加载完成
+					setTimeout(() => {
+						// 获取剪贴板内容
+						if (window.isSecureContext && navigator.clipboard) {
+							navigator.clipboard.read().then(clipboardItems => {
+								for (const clipboardItem of clipboardItems) {
+									for (const type of clipboardItem.types) {
+										if (type.startsWith('image/')) {
+											clipboardItem.getType(type).then(blob => {
+												// 处理图片文件...
+												self.SearchUploadChange({raw: blob})
+											});
+										}
+									}
+								}
+							});
+						}
+					}, 100);
+				}
+			});
+		},
+		components:{
+			comavatar,
+			comsort,
+			menuitem
+		}
+	});
+	dzzoffice.use(ElementPlus, {
+		<!--{if $_G['language']=='zh-CN'}-->
+		locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+		<!--{/if}-->
+	});
+	for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+		dzzoffice.component(key, component)
+	}
+	dzzoffice.component('international',international);
+	dzzoffice.use(ImageLayout);
+	dzzoffice.use(DzzCollectdialog);
+	// 屏蔽警告信息
+	dzzoffice.config.warnHandler = function(){return null};
+	dzzoffice.mount('#dzzoffice');
+</script>
+<!--{template common/container/pc/footer}-->

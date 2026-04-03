@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<root>
+	<item id="Title"><![CDATA[Dzz! app]]></item>
+	<item id="Version"><![CDATA[30.1.5.2]]></item>
+	<item id="Time"><![CDATA[2025-03-11 14:37]]></item>
+	<item id="From"><![CDATA[欧奥-zyx (http://127.0.0.6:86/)]]></item>
+	<item id="Data">
+		<item id="app">
+			<item id="mid"><![CDATA[0]]></item>
+			<item id="appname"><![CDATA[阿里云以图搜图]]></item>
+			<item id="appico"><![CDATA[data:image/png;base64,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
+7+Az6WG/AAAAAElFTkSuQmCC
+]]></item>
+			<item id="appdesc"><![CDATA[]]></item>
+			<item id="appurl"><![CDATA[{dzzscript}?mod=imageSearchAli]]></item>
+			<item id="appadminurl"><![CDATA[{dzzscript}?mod=imageSearchAli]]></item>
+			<item id="noticeurl"><![CDATA[]]></item>
+			<item id="disp"><![CDATA[113]]></item>
+			<item id="vendor"><![CDATA[]]></item>
+			<item id="haveflash"><![CDATA[0]]></item>
+			<item id="isshow"><![CDATA[0]]></item>
+			<item id="havetask"><![CDATA[0]]></item>
+			<item id="hideInMarket"><![CDATA[1]]></item>
+			<item id="feature"><![CDATA[]]></item>
+			<item id="fileext"><![CDATA[]]></item>
+			<item id="group"><![CDATA[1]]></item>
+			<item id="position"><![CDATA[1]]></item>
+			<item id="system"><![CDATA[0]]></item>
+			<item id="notdelete"><![CDATA[1]]></item>
+			<item id="open"><![CDATA[0]]></item>
+			<item id="nodup"><![CDATA[0]]></item>
+			<item id="identifier"><![CDATA[imageSearchAli]]></item>
+			<item id="app_path"><![CDATA[dzz]]></item>
+			<item id="version"><![CDATA[1.0]]></item>
+			<item id="extra">
+				<item id="installfile"><![CDATA[install.php]]></item>
+				<item id="uninstallfile"><![CDATA[uninstall.php]]></item>
+			</item>
+
+			<item id="showadmin"><![CDATA[1]]></item>
+		</item>
+		<item id="version"><![CDATA[1.0]]></item>
+		<item id="hooks">
+			<item id="addfileafter" priority="0" description=""><![CDATA[dzz\imageSearchAli\classes\imageSearchadd]]></item>
+			<item id="pichomedatadeleteafter" priority="0" description=""><![CDATA[dzz\imageSearchAli\classes\imageSearchdel]]></item>
+			<item id="search_condition_filter" priority="0" description=""><![CDATA[dzz\imageSearchAli\classes\imageSearch]]></item>
+			<item id="updatedataafter" priority="0" description=""><![CDATA[dzz\imageSearchAli\classes\imageSearchupdate]]></item>
+			<item id="ResourceDataFilter" priority="0" description=""><![CDATA[dzz\imageSearchAli\classes\allowSearch]]></item>
+			<item id="imageSearchTask" priority="0" description=""><![CDATA[dzz\imageSearchAli\classes\imageSearchTask]]></item>
+		</item>
+	</item>
+</root>

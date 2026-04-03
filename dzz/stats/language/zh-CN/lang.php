@@ -1,6 +1,5 @@
 <?php
 $lang = array(
-    'appname'=>'统计',
     'app_name'=>'统计',
     'my_downloads' => '我的下载',
     'views_record' => '浏览记录',
@@ -44,4 +43,5 @@ $lang = array(
     'updatedate'=>'更新时间',
     'overview'=>'概览',
     'statistics'=>'统计',
+    'is_deleted'=>'已删除'
 );

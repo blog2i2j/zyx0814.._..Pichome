@@ -1,0 +1,142 @@
+<div class="content" >
+	<el-table
+		v-loading="HtmlLoading"
+		:data="tableData"
+		style="width: 100%">
+		<el-table-column
+			label="{lang searchName}"
+			show-overflow-tooltip>
+			<template #default="scope">
+				<el-link type="primary"  :href="'{MOD_URL}&tid='+scope.row.tid" style="margin-left: 8px;" target="ViewTarget">{{scope.row.title}}</el-link>
+			</template>
+		</el-table-column>
+		<el-table-column
+			label="{lang searchRange}"
+			show-overflow-tooltip>
+			<template #default="scope" >
+				<span style="margin-left: 8px;">{{scope.row.searchRange_names}}</span>
+			</template>
+		</el-table-column>
+		<el-table-column
+			label="{lang searchExts}"
+			show-overflow-tooltip>
+			<template #default="scope">
+				<span style="margin-left: 8px;">{{scope.row.exts}}</span>
+			</template>
+		</el-table-column>
+		<el-table-column
+			label="{lang layout}"
+			width="120">
+			<template #default="scope">
+				<span >{{scope.row.flayout}}</span>
+			</template>
+		</el-table-column>
+		<el-table-column
+			label="{lang operation}"
+			width="200">
+			<template #default="scope">
+				<el-button type="info" size="small" @click="TableEdit(scope.row)">{lang set}</el-button>
+				<el-button type="success" size="small" @click="TablePublish(scope.row)">{lang publish}</el-button>
+				<template v-if="scope.row.tid">
+					<el-popconfirm
+						@confirm="TableDelete(scope.row)"
+						title="{lang confirm_delete}">
+						<template #reference>
+						<el-button type="danger"  size="small">{lang delete}</el-button></template>
+					</el-popconfirm>
+				</template>
+
+			</template>
+		</el-table-column>
+	</el-table>
+
+
+</div>
+<script type="text/javascript">
+	var MainMixin = {
+		data(){
+			return {
+
+			}
+		},
+		created() {
+			
+		},
+		methods:{
+			
+			async TableDelete(item){
+				var self = this;
+				self.loading = true;
+				var res = await axios.post(MOD_URL+'&op=setting&do=delete',{tid:item.tid});
+				if(res == 'intercept'){
+					return false;
+				}
+				var json = res.data;
+				if(json.success){
+					let index=self.tableData.findIndex(function(val){
+						return  item.tid == val.tid;
+					});
+					if(index>-1) self.tableData.splice(index,1);
+					self.$message({
+						message:'{lang delete_success}',
+						type:'success'
+					});
+				}else{
+					self.$message.error(json.msg);
+				}
+				self.loading = false;
+			},
+			
+			TableEdit(item){
+				this.SettingDialog.Visible=true;
+				this.SettingForm.tid=item.tid;
+				this.SettingForm.title=item.title;
+				
+			},
+			TablePublish(item){
+				window.open('index.php?mod=publish&op=choose&ptype=5&value='+item.tid);
+			},
+			handleTemplateAdd() {
+				this.Catalogue.dialogVisible = true;
+			},
+			TableDownQrcodeurl(url){
+				let a = document.createElement('a')
+				a.href = url;
+				a.download = '{lang QR_code}'
+				a.click()
+			},
+			//获取二维码
+			async TableGeturlqrcode(tid,type){
+				const self = this;
+				let curr = '';
+				if(type){
+					this.SettingQrcode.isqrcode = false;
+					this.SettingQrcode.qrcodeurl = '';
+				}else{
+					curr = this.tableData.find((current) => {
+						return current.tid == tid;
+					});
+					if(curr && curr.isqrcode){
+						return false;
+					}
+				}
+				var {data: res} = await axios.post(MOD_URL+'&op=intelligent&op=ajax&operation=geturlqrcode',{
+					tid:tid
+				});
+				if(res.success){
+					if(type){
+						this.SettingQrcode.isqrcode = true;
+						this.SettingQrcode.qrcodeurl = res.qrcode;
+					}else{
+						curr.isqrcode = true;
+						curr.qrcodeurl = res.qrcode;
+					}
+
+				}else{
+					self.$message.error(res.msg || '{lang Get_QR_error}');
+				}
+
+			},
+		}
+	};
+</script>

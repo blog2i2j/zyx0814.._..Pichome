@@ -23,7 +23,10 @@ class table_setting extends dzz_table
 
 	public function fetch($skey, $auto_unserialize = false) {
 		$data = DB::result_first('SELECT svalue FROM '.DB::table($this->_table).' WHERE '.DB::field($this->_pk, $skey));
-		return (is_serialized($data['svalue']) || $auto_unserialize) ? (array)unserialize($data) : $data;
+		if(empty($data)){
+			return $data;
+		}
+		return (is_serialized($data) || $auto_unserialize) ? (array)unserialize($data) : $data;
 	}
 
 	public function fetch_all($skeys = array(), $auto_unserialize = false){
@@ -36,7 +39,7 @@ class table_setting extends dzz_table
 		return $data;
 	}
 
-	public function update($skey, $svalue){
+	public function update($skey, $svalue,$unbuffered = false, $low_priority = false){
 		return DB::insert($this->_table, array($this->_pk => $skey, 'svalue' => is_array($svalue) ? serialize($svalue) : $svalue), false, true);
 	}
 

@@ -1,0 +1,191 @@
+<!--{template common/container/pc/header_start}-->
+<link rel="stylesheet" href="static/scss/default/index.css?{VERHASH}">
+<link rel="stylesheet" href="{MOD_PATH}/template/setting/pc/assets/css/library.css?{VERHASH}">
+<script type="text/javascript" src="static/vue_components/LibrarySelect/index.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/js/sortable.min.js?{VERHASH}"></script>
+<script type="text/javascript" src="static/vue_components/locale/index.js?{VERHASH}"></script>
+<style>
+.notification{
+		position: relative;
+		background: var(--el-bg-color);
+		border: var(--el-border);
+		padding: 0px 20px 16px;
+		background: var(--el-bg-color);
+		border-radius: 12px;
+	}
+	.hidden{
+		display: none;
+	}
+</style>
+<script>
+	function debounce(fun, delay) {
+		var time;
+		return function(args) {
+			var that = this;
+			var _args = args;
+			if (time) clearTimeout(time);
+			time = setTimeout(function() {
+				fun.call(that, _args)
+			}, delay)
+		}
+	};
+</script>
+<!--{template common/container/pc/header_end}-->
+<div id="dzzoffice">
+	<el-container class="page-main">
+		<!--{template common/container/pc/header_return}-->
+		    <el-main class="container">
+				<div class="admin-tabs-header" style="padding-top:0;">
+					<el-menu
+							:default-active="activeName"
+							mode="horizontal"
+							class="admin-tabs"
+							@select="handleTabsClick">
+						<el-menu-item index="list" style="font-size: 16px;">
+							{lang list}
+							<el-text size="small" style="margin-left: 6px;">{{pageset.total}}</el-text>
+						</el-menu-item>
+
+					</el-menu>
+					<div class="admin-tabs-action">
+						<el-input
+							size="large"
+							placeholder="{lang search}"
+							style="width: 200px;margin-right: 10px;"
+							class="el-input__inner"
+							clearable
+							v-model="keyword"
+							@keyup.enter="handleSearch"
+							@clear="handleSearch"
+							@change="handleSearch"
+						>
+						</el-input>
+						<el-button icon="CirclePlus" size="large" type="primary" @click="handleTemplateAdd">{lang create}</el-button>
+					</div>
+				</div>
+			<div class="notification">
+				<!--{template setting/pc/components/main}-->
+			</div>
+				<div class="pageContainer" v-if="pageset.total>pageset.perpage" style="padding:20px 0 10px 0;display:flex;justify-content: center">
+					<el-pagination
+							large
+							background
+							@size-change="handleSizeChange"
+							@current-change="handleCurrentChange"
+							:current-page="currentPage"
+							:page-sizes="pageset.pagesizes"
+							:page-size="pageset.perpage"
+							layout="total, sizes, prev, pager, next"
+							:total="pageset.total">
+					</el-pagination>
+				</div>
+			</el-main>
+		  </el-container>
+	</el-container>
+	<!-- 创建 -->
+	<!--{template setting/pc/components/created}-->
+
+	<!-- 设置 -->
+	<!--{template setting/pc/components/right}-->
+</div>
+<script>
+	const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch,defineAsyncComponent, onBeforeUpdate } = Vue;
+	const dzzoffice = Vue.createApp({
+		data(){
+			return {
+				DocumentThemeColor:'',
+				tableData:[],
+				activeName:'list',
+				keyword:'',
+				pageset:{
+					page:parseInt('$page'),
+					perpage:parseInt('$perpage'),
+					total:0,
+					pagesizes:[10,20,50,100]
+				}
+			}
+		},
+		
+		created(){
+			//主题颜色
+			let theme = localStorage.getItem('theme');
+			if(theme){
+				this.DocumentThemeColor=theme;
+			}else{
+				this.DocumentThemeColor = 'light'
+			}
+			this.getData();
+		},
+		mixins:[CreatedMixin,MainMixin,RightMixin],
+		watch:{
+			DocumentThemeColor:{
+				handler(newval){
+					document.querySelector('html').className = newval
+				},
+				deep:true,
+				// immediate:true
+			}
+		},
+		
+		methods:{
+			handleSizeChange(perpage){
+				this.pageset.perpage = perpage;
+				this.getData();
+			},
+			handleCurrentChange(page){
+				this.pageset.page = page;
+				this.getData();
+			},
+			handleSearch(){
+				this.pageset.page = 1;
+				this.getData();
+			},
+			async getData() {//获取数据
+				const self=this;
+				this.tableData=[];
+				const {data: res} = await axios.post(MOD_URL + '&op=setting&do=list', {
+					page: self.pageset.page,
+					perpage: self.pageset.perpage,
+					keyword: self.keyword
+				});
+				this.tableData = res.data;
+				this.pageset.total = parseInt(res.total);
+			},
+			TableAdd(type){
+				this.Catalogue.type = type;
+				this.Catalogue.dialogtype = 'add';
+				this.Catalogue.dialogVisible = true;
+			},
+			DocumentThemeChange(){
+				if(this.DocumentThemeColor=='light'){
+					this.DocumentThemeColor='dark';
+					localStorage.setItem('theme','dark');
+				}else{
+					this.DocumentThemeColor='light';
+					localStorage.setItem('theme','light');
+				}
+				
+			}
+		},
+		components: {
+			'library-select':LibrarySelect,
+			language
+		},
+		mounted(){
+
+		}
+	});
+	dzzoffice.component('comavatar',comavatar);
+	dzzoffice.component('international',international);
+	dzzoffice.use(ElementPlus, {
+		locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+	});
+	for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+		dzzoffice.component(key, component)
+	}
+	// 屏蔽警告信息
+	dzzoffice.config.warnHandler = function(){return null};
+	dzzoffice.mount('#dzzoffice');
+</script>
+
+<!--{template common/container/pc/footer}-->

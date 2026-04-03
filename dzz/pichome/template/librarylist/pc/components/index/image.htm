@@ -55,6 +55,12 @@
 									<el-icon><Search /></el-icon>
                                     {lang search_picture}
 								</el-dropdown-item>
+								<el-dropdown-item 
+									:command="ImageOperationVal('publish',data)"
+									@click.stop>
+									<el-icon><Position /></el-icon>
+                                    {lang publish}
+								</el-dropdown-item>
 							</el-dropdown-menu>
 						</template>
 					</el-dropdown>
@@ -90,6 +96,12 @@
 								<el-icon><Search /></el-icon>
 								{lang search_picture}
 							</el-dropdown-item>
+							<el-dropdown-item 
+									:command="ImageOperationVal('publish',data)"
+									@click.stop>
+									<el-icon><Position /></el-icon>
+                                    {lang publish}
+								</el-dropdown-item>
 						</el-dropdown-menu>
 					</template>
 				</el-dropdown>
@@ -159,6 +171,12 @@
 			@click.stop="ImageOperation('address')">
 			<el-icon><Location /></el-icon>
             {lang fix_address}
+		</li>
+		<li
+			class="el-dropdown-menu__item" 
+			@click.stop="ImageOperation('publish')">
+			<el-icon><Position /></el-icon>
+			{lang publish}
 		</li>
 		<li
 			class="el-dropdown-menu__item" 
@@ -260,6 +278,7 @@
 			async ImageOperationf(data){
 				let self = this;
 				if(data.type == 'down'){
+
 					window.open(SITEURL+MOD_URL+'&op=download&dpath='+data.resourcedata.dpath);
 				}else if(data.type == 'collect'){
                     self.$refs.RefImageLayout.ImageQuickChangeCollect(data.resourcedata.rid)
@@ -272,10 +291,13 @@
 					img.onload = function() {
 						self.SearchUploadSubmit(img);
 					};
+				}else if(data.type == 'publish'){
+					window.open('index.php?mod=publish&op=choose&ptype=1&value='+data.resourcedata.rid);
 				}else if(data.type == 'share'){
 					self.shareDialog.visible=true;
-					self.shareDialog.id=data.resourcedata.rid;
+					self.shareDialog.filepaths=[data.resourcedata.rid];
 					self.shareDialog.stype=0;
+					self.shareDialog.sperm=data.resourcedata.perm;
 					self.shareDialog.title=data.resourcedata.name;
 				}
 			},
@@ -529,12 +551,30 @@
 				let self = this;
 				switch(type){
 					case 'share'://{lang share}
-						self.shareDialog.visible=true;
-						self.shareDialog.id=self.ImageMenu.data.rid;
-						self.shareDialog.stype=0;
-						self.shareDialog.title=self.ImageMenu.data.name;
+						
+						if(this.ImageParam.checkedKdys.length>1){
+							const result = JSON.parse(JSON.stringify(self.ImageDataParam.data.filter(item => self.ImageParam.checkedKdys.includes(item.rid))));
+							const element=result[0];
 
-					break;
+							let title=element.name;
+							if(!element.ext) {
+								let regx = new RegExp('/\.' + element.ext + '$/i');
+								title = element.name.replace(regx, '') + '.'+element.ext;
+							}
+							self.shareDialog.visible=true;
+							self.shareDialog.filepaths=self.ImageParam.checkedKdys
+							self.shareDialog.stype=0;
+							self.shareDialog.sperm=element.perm;
+							self.shareDialog.title=title + '{lang deng}';
+
+						}else{
+							self.shareDialog.visible=true;
+							self.shareDialog.filepaths=[self.ImageMenu.data.rid]
+							self.shareDialog.stype=0;
+							self.shareDialog.sperm=self.ImageMenu.data.perm;
+							self.shareDialog.title=self.ImageMenu.data.name;
+						}
+						break;
 					case 'cover'://设置封面
 						var res = await axios.post(MOD_URL+'&op=library&do=folder&operation=setfoldercover',{
 							fid:this.LeftTree.Currentkey,
@@ -582,6 +622,22 @@
 						img.onload = function() {
 							self.SearchUploadSubmit(img);
 						};
+					break;
+					case 'publish'://发布
+						let rids = '';
+						if(self.RightActiveRid.length > 1){
+							rids = self.RightActiveRid.join(',');
+							window.open('index.php?mod=publish&op=choose&ptype=2&value='+rids);
+						}else{
+							// let dpath = '';
+							// for(var i in this.ImageDataParam.data){
+							// 	if(self.RightActiveRid.indexOf(self.ImageDataParam.data[i].rid) > -1){
+							// 		dpath = this.ImageDataParam.data[i].dpath;
+							// 	}
+								
+							// }
+							window.open('index.php?mod=publish&op=choose&ptype=1&value='+self.RightActiveRid[0]);
+						}
 					break;
 					case 'address'://固定地址
 						var res = await axios.post(MOD_URL+'&op=library&do=ajax&operation=realfianllypath',{path:this.ImageMenu.data.dpath});

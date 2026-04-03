@@ -1,96 +1,82 @@
+<style type="text/css">
 
-<van-popup 
-	v-model:show="shareDialog.visible" 
-	class="detail-popup-message"
-	position="right" 
-	:overlay="false" 
-    @open="getShareData"
-	get-container="#DetailPopup">
-	<van-nav-bar class="header-top" title="{lang share_create}" left-arrow @click-left="shareDialog.visible=false"></van-nav-bar>
-	<div style="position: relative;height: 100%;background: var(--bg-content);padding-top: 46px;" v-cloak>
-		<div class="DetailPopup-content" style="padding: 16px 0;">
-            <van-form  @submit="handleShareDialogSubmit">
-                <van-cell-group style="margin: 0;">
-                    <van-field
-                        v-model="ShareAddDialogForm.title"
-                        label="{lang share_title}"
-                        placeholder="{lang share_title}"
-                    ></van-field>
+</style>
+<el-dialog
+        v-model="shareDialog.visible"
+        title="{lang share_create}"
+        align="center"
+        width="100%"
 
-                    <van-field label="{lang share_times}">
-                        <template #input>
-                            <van-stepper v-model="ShareAddDialogForm.times" />
-                        </template>
-                    </van-field>
-                    <p class="van-cell__label" style="padding: 0 16px;">{lang share_times_tip}</p>
+        style="margin:0;"
+        class="share-dialog"
+        @open="getShareData"
+>
+    <el-form
+            ref="editFormRef"
+            :model="ShareAddDialogForm"
+            label-position="top"
+    >
+        <el-form-item label="{lang share_title}" prop="title">
+            <el-input v-model="ShareAddDialogForm.title" placeholder="{lang share_title}"></el-input>
+        </el-form-item>
+        <el-form-item label="{lang share_times}" >
+            <el-input-number v-model="ShareAddDialogForm.times" ></el-input-number>
+            <el-text size="small" type="info" class="form-item-helper">{lang share_times_tip}</el-text>
+        </el-form-item>
+        <el-form-item label="{lang share_password}" prop="password">
+            <el-input v-model="ShareAddDialogForm.password" placeholder="{lang share_password}"></el-input>
+            <el-text size="small" type="info" class="form-item-helper">{lang share_password_tip}</el-text>
+        </el-form-item>
+        <el-form-item label="{lang share_endtime}" >
+            <el-date-picker
+                    v-model="ShareAddDialogForm.fendtime"
+                    type="date"
+                    placeholder="{lang share_endtime}"></el-date-picker>
+            <el-text size="small" type="info" class="form-item-helper">{lang share_endtime_tip}</el-text>
+        </el-form-item>
+        <el-form-item label="{lang share_perm}" prop="perm" v-if="ShareAddDialogForm.allowdownload">
+            <el-checkbox  v-model="ShareAddDialogForm.perm" name="perm">
+                {lang download}
+            </el-checkbox>
+        </el-form-item>
 
-                    <van-cell title="{lang share_password}" >
-                        <template #value>
-                            <van-field
-                                style="padding: 0;"
-                                v-model="ShareAddDialogForm.password"
-                                placeholder="{lang share_password}"
-                            ></van-field>
-                        </template>
-                        
+        <el-form-item v-if="shareDialog.shareData.sid" label="{lang share_address}">
 
-                    </van-cell>
-                    <p class="van-cell__label" style="padding: 0 16px;">{lang share_password_tip}</p>
-
-
-                    <van-cell 
-                        title="{lang share_endtime}"  
-                        :value="ShareAddDialogForm.fendtime" 
-                        is-link
-                        @click="actionsheetTime"></van-cell>
-                    <p class="van-cell__label" style="padding: 0 16px;">{lang share_endtime_tip}</p>
-
-
-                    <van-cell title="{lang share_perm}" >
-                        <template #value>
-                            <van-checkbox v-model="ShareAddDialogForm.perm">{lang download}</van-checkbox>
-                        </template>
-                    </van-cell>
-
-                    <van-cell title="{lang share_address}" >
-                        <template #value>
-                            <van-field
-                            style="padding: 0;"
-                                v-model="shareDialog.shareData.shareurl"
-                                :disabled="true"
-                            ></van-field>
-                        </template>
-                    </van-cell>
-                </van-cell-group>
-                <div style="margin: 16px;display: flex;gap: 10px;">
-                    <van-button round type="default" style="flex: 1;" @click="shareDialog.visible = false">
-                        {lang cancel}
-                      </van-button>
-                    <van-button round type="primary"  style="flex: 1;" native-type="submit">
-                        {lang submit}
-                  </van-button>
+                <el-input
+                        v-model="shareDialog.shareData.shareurl"
+                        :readonly="true"
+                        @click="RightCopyUrl(shareDialog.shareData.fshareurl)"
+                >
+                </el-input>
+                <div style="white-space: nowrap;margin-top:10px;">
+                    <el-button icon="CopyDocument" @click="RightCopyUrl(shareDialog.shareData.fshareurl)" plain>{lang copy_link}</el-button>
                 </div>
-            </van-form>
-		</div>
-		<van-action-sheet v-model:show="ActionsheetTimeData.visible" title="{lang share_endtime}">
-            <van-date-picker
-                v-model="ActionsheetTimeData.value"
-                @confirm="ActionsheetConfirm"
-                @cancel="ActionsheetTimeData.visible=false"
-                :min-date="ActionsheetTimeData.minDate"
-                :max-date="ActionsheetTimeData.maxDate"
-                />
-        </van-action-sheet>
-	</div>
-</van-popup>
+
+        </el-form-item>
+    </el-form>
+
+    <template #footer>
+        <div style="display: flex;justify-content: space-between; ">
+            <div  style="display: inline-flex">
+                <el-button v-if="shareDialog.shareData.sid"  size="large" type="danger" @click="handelShareDelete(shareDialog.shareData.sid)" >{lang delete}</el-button>
+            </div>
+            <div  style="display: inline-flex">
+                <el-button size="large" @click="shareDialog.visible = false">{lang cancel}</el-button>
+                <el-button type="primary" size="large" :loading="shareDialog.shareAddBtnLoading" @click="handleShareDialogSubmit">{lang submit}</el-button>
+            </div>
+        </div>
+    </template>
+</el-dialog>
 <script>
     const  ShareAddDialogMixin = {
         data() {
             return {
                 shareDialog: {
+                    sid:0,
                     title:'',
-                    id:'',
+                    filepaths:[],
                     stype:0,
+                    sperm:0,
                     visible: false,
                     shareAddBtnLoading:false,
                     shareData: {
@@ -98,87 +84,117 @@
                     }
                 },
                 ShareAddDialogForm: {
-                    id:'',
+                    sid:0,
+                    filepaths:[],
                     stype:'',
                     title:'',
                     times:0,
                     password:'',
                     fendtime:'',
-                    perm:1,
+                    perm:true,
+                    sperm:0,
+                    allowdownload:1
                 },
                 rules: {
                     title: [
                         { required: true, message: '{lang share_title_empty}', trigger: 'blur' }
                     ]
-                },
-                ActionsheetTimeData:{
-                    visible:false,
-                    value:[],
-                    minDate: new Date(2020, 0, 1),
-                    maxDate: new Date(2026, 0, 1),
                 }
             }
         },
-        created(){
-        },
         methods: {
-            actionsheetTime(){
-                this.ActionsheetTimeData.visible = true;
-            },
-            ActionsheetConfirm(data){
-                this.ShareAddDialogForm.fendtime = data.selectedValues.join('-');
-                this.ActionsheetTimeData.visible = false;
-            },
             getShareData() {
                 let self = this;
-                if(self.shareDialog.id==''){
+                if(self.shareDialog.filepaths.length<1){
                     return false;
                 }
                 axios.post('index.php?mod=shares&op=ajax&do=getShareDataById', {
-                    id: self.shareDialog.id,
+                    sid: self.shareDialog.sid,
+                    filepaths: self.shareDialog.filepaths,
                     stype: self.shareDialog.stype,
+                    sperm: self.shareDialog.sperm
                 }).then(function (response) {
                     if (response.data.success) {
                         self.ShareAddDialogForm = response.data.data;
+                        self.ShareAddDialogForm.perm = response.data.data.perm  ? true : false;
                         self.shareDialog.shareData = response.data.sharedata;
                     } else {
-                        showToast({
-							type:'fail',
-							message:response.data.msg,
-							forbidClick:true,
-							duration:0
-						});
+                        self.shareDialog={
+                            sid:0,
+                            title:'',
+                            filepaths:[],
+                            stype:0,
+
+                            shareAddBtnLoading:false,
+                            shareData: {
+                                sid:0
+                            }
+                        }
+                        self.$message(response.data.msg);
                     }
                 });
             },
             handleShareDialogSubmit() {
                 let self = this;
-                self.shareAddBtnLoading = true;
-                let param={
-                    id: self.ShareAddDialogForm.id,
-                    stype: self.ShareAddDialogForm.stype,
-                    title: self.ShareAddDialogForm.title,
-                    times: self.ShareAddDialogForm.times,
-                    password: self.ShareAddDialogForm.password,
-                    fendtime: self.ShareAddDialogForm.fendtime,
-                    perm: self.ShareAddDialogForm.perm?1:0,
-                }
-                axios.post('index.php?mod=shares&op=ajax&do=shareAddSubmit', param).then(function (response) {
-                    if (response.data.success) {
-                        self.shareDialog.shareData = response.data.data;
-                        self.RightCopyUrl(response.data.data.fshareurl);
-                        self.shareDialog.visible = false;
-                    } else {
-                        showToast({
-							type:'fail',
-							message:response.data.msg,
-							forbidClick:true,
-							duration:0
-						});
+                self.$refs.editFormRef.validate(async function(valid){
+                    if (valid) {
+                        self.shareAddBtnLoading = true;
+                        let param={
+                            sid: self.ShareAddDialogForm.sid,
+                            filepaths: self.shareDialog.filepaths,
+                            stype: self.ShareAddDialogForm.stype,
+                            title: self.ShareAddDialogForm.title,
+                            times: self.ShareAddDialogForm.times,
+                            password: self.ShareAddDialogForm.password,
+                            fendtime: self.ShareAddDialogForm.fendtime,
+                            perm: (self.ShareAddDialogForm.perm && self.ShareAddDialogForm.allowdownload)?true:false,
+                            sperm:self.ShareAddDialogForm.sperm
+                        }
+
+                        axios.post('index.php?mod=shares&op=ajax&do=shareAddSubmit', param).then(function (response) {
+                            if (response.data.success) {
+
+                                self.RightCopyUrl(response.data.data.fshareurl);
+                                self.shareDialog.visible = false;
+                            } else {
+                                self.$message(response.data.msg);
+                            }
+                            self.shareAddBtnLoading = false;
+                        });
+                    }else{
+                        self.$message.error('{lang submit_invalid_msg}');
+                        return false;
                     }
-                    self.shareAddBtnLoading = false;
                 });
-        
+            },
+            handelShareDelete(sid){
+                let self=this;
+                self.$messageBox.confirm('{lang share_delete_confirm}')
+                    .then(()=>{
+                        axios.post('index.php?mod=shares&&op=ajax&do=delete', {
+                            id:sid
+                        }).then(function(res){
+                            //window.location.reload();
+                            if(res.data.success){
+                                self.$message({
+                                    message: '{lang share_delete_success}',
+                                    type: 'success',
+                                });
+                                self.shareDialog.visible=false;
+                            }else{
+                                self.$message({
+                                    message: res.data.msg,
+                                    type: 'error',
+                                });
+                            }
+                        }).catch(function (error) {
+                            console.log(error);
+                        });
+                    })
+                    .catch(() => {
+                        // self.$message.error('取消删除');
+                    });
+
             },
             RightCopyUrl(url){
                 const self = this;
@@ -187,7 +203,10 @@
                 document.getElementsByTagName('body')[0].appendChild(input);
                 document.getElementById('copyInput').select();
                 document.execCommand('copy')
-                showSuccessToast('{lang copy_clipboard}');
+                self.$message({
+                    message: '{lang copy_clipboard}',
+                    type: 'success'
+                });
                 document.getElementById('copyInput').remove();
             },
             TableGeturlqrcode(sid){

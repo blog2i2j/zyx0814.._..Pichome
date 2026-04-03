@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+    <title>$data['name'] </title>
+    <link rel="stylesheet" href="{MOD_PATH}/vditor/dist/index.css?{VERHASH}">
+    <script src="{MOD_PATH}/vditor/dist/method.js?{VERHASH}" ></script>
+    <style>
+        html,body {
+            overflow: hidden;
+            margin: 0;
+            height:100%;
+        }
+        * {
+            box-sizing: border-box;
+        }
+
+        #previewWrap {
+            padding: 20px 20px 20px 20px;
+            overflow: auto;
+            height:100%;
+        }
+
+
+        #preview {
+            margin: 0 auto;
+            max-width: 800px;
+
+        }
+
+        #outline {
+            display: none;
+            position: fixed;
+            max-width: 250px;
+            top: 10px;
+            left: 0;
+            bottom: 10px;
+            overflow: auto;
+            font-size: 12px;
+            border-left: 0;
+            border-right: 0;
+            --border-color: #eee;
+            --toolbar-icon-hover-color: #4285f4;
+            --textarea-text-color: #616161;
+            --hover-background-color: #f6f8fa;
+
+
+        }
+
+        #outline.dark {
+            --border-color: #d1d5da;
+            --toolbar-icon-hover-color: #fff;
+            --textarea-text-color: #a6aab0;
+            --hover-background-color: #444d56;
+        }
+        .vditor-outline li > span > span{
+            white-space: inherit;
+        }
+        .vditor-reset ul[data-style="*"] {
+            list-style-type: disc
+        }
+
+        .vditor-reset ul[data-style="*"] ul {
+            list-style-type: circle
+        }
+
+        .vditor-reset ul[data-style="*"] ul ul {
+            list-style-type: square
+        }
+
+        .vditor-reset ul[data-style="+"] {
+            list-style-type: "\2764";
+        }
+
+        .vditor-reset ul[data-style="+"] ul {
+            list-style-type: "\1f49a"
+        }
+
+        .vditor-reset ul[data-style="+"] ul ul {
+            list-style-type: "\1f49b"
+        }
+
+        .vditor-reset ul[data-style="-"] {
+            list-style-type: korean-hangul-formal
+        }
+
+        .vditor-reset ul[data-style="-"] ul {
+            list-style-type: decimal-leading-zero
+        }
+
+        .vditor-reset ul[data-style="-"] ul ul {
+            list-style-type: lower-alpha
+        }
+
+        .vditor-reset ol[data-style="1)"] {
+            list-style-type: simp-chinese-formal
+        }
+
+        .vditor-reset ol[data-style="1)"] ol {
+            list-style-type: simp-chinese-informal
+        }
+
+        .vditor-reset ol[data-style="1)"] ol ol {
+            list-style-type: trad-chinese-formal
+        }
+        @media screen and (max-width: 1280px) {
+
+            #outline {
+                display: none !important;
+            }
+        }
+
+        @media screen and (max-width: 768px) {
+            #previewWrap {
+                padding: 0 20px 20px 0;
+            }
+
+            #outline {
+                display: none !important;
+            }
+        }
+
+    </style>
+</head>
+<body>
+<div id="previewWrap">
+    <div id="preview" class="preview"></div>
+</div>
+<div id="outline"></div>
+
+<pre id="content" style="display: none">$content</pre>
+<script >
+    window.setTheme = (theme) => {
+        if (theme === 'dark') {
+            Vditor.setCodeTheme('native')
+            Vditor.setContentTheme('dark', 'dzz/markdown/vditor/dist/css/content-theme')
+            outlineElement.classList.add('dark')
+            document.querySelector('html').style.backgroundColor = '#303134'
+        } else {
+            Vditor.setCodeTheme('github')
+            Vditor.setContentTheme('light', 'dzz/markdown/vditor/dist/css/content-theme')
+            outlineElement.classList.remove('dark')
+            document.querySelector('html').style.backgroundColor = '#fff'
+        }
+    }
+    const theme = localStorage.getItem('theme');
+    const previewElement = document.getElementById('preview');
+    const outlineElement = document.getElementById('outline');
+    previewElement.addEventListener('click', function (event) {
+        if (event.target.tagName === 'IMG') {
+            Vditor.previewImage(event.target, 'zh_CN', outlineElement.classList.contains('dark') ? 'dark' : 'classic')
+        }
+    });
+    window.onload = function() {
+        Vditor.preview(previewElement, document.getElementById('content').innerHTML, {
+            cdn: 'dzz/markdown/vditor',
+            markdown: {
+                toc: true,
+            },
+            speech: {
+                enable: true,
+            },
+            theme: theme,
+            anchor: 1,
+            after() {
+                Vditor.outlineRender(previewElement, outlineElement)
+                if (outlineElement.innerText.trim() !== '') {
+                    outlineElement.style.display = 'block'
+                }
+            },
+            lazyLoadImage: 'dzz/markdown/vditor/dist/images/img-loading.svg',
+            renderers: {
+                renderHeading: (node, entering) => {
+                    const id = Lute.GetHeadingID(node)
+                    if (entering) {
+                        return [`<h${node.__internal_object__.HeadingLevel} id="${id}" class="vditor__heading"><span>`, Lute.WalkContinue]
+                    } else {
+                        return [`</span></h${node.__internal_object__.HeadingLevel}>`, Lute.WalkContinue]
+                    }
+                },
+            },
+        });
+    }
+
+    document.addEventListener('click', function (e) {
+
+        if (e.target.tagName == 'A') {
+            e.preventDefault();
+            let href = e.target.getAttribute('href');
+            if (href) {
+                window.open(href);
+            }
+        }
+
+    });
+
+    setTheme(theme);
+
+</script>
+</body>
+</html>

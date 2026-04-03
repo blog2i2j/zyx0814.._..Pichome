@@ -350,7 +350,7 @@ function daddslashes($string, $force = 1)
             unset($string[$key]);
             $string[addslashes($key)] = daddslashes($val, $force);
         }
-    } else {
+    } elseif(is_string($string)) {
         $string = addslashes($string);
     }
     return $string;
@@ -395,7 +395,7 @@ function authcode($string, $operation = 'DECODE', $key = '', $expiry = 0, $ckey_
     }
 
     if ($operation == 'DECODE') {
-        if ((substr($result, 0, 10) == 0 || substr($result, 0, 10) - time() > 0) && substr($result, 10, 16) === substr(md5(substr($result, 26) . $keyb), 0, 16)) {
+        if (intval(substr($result, 0, 10) == 0 || intval(substr($result, 0, 10)) - time() > 0) && substr($result, 10, 16) === substr(md5(substr($result, 26) . $keyb), 0, 16)) {
             return substr($result, 26);
         } else {
             return '';
@@ -681,7 +681,7 @@ function checkrobot($useragent = '')
     static $kw_browsers = array('msie', 'netscape', 'opera', 'konqueror', 'mozilla');
 
     $useragent = strtolower(empty($useragent) ? $_SERVER['HTTP_USER_AGENT'] : $useragent);
-    if (strpos($useragent, 'http://') === false && dstrpos($useragent, $kw_browsers)) return false;
+    if ((strpos($useragent, 'http://') === false || strpos($useragent, 'https://') === false) && dstrpos($useragent, $kw_browsers)) return false;
     if (dstrpos($useragent, $kw_spiders)) return true;
     return false;
 }
@@ -846,7 +846,7 @@ function avatar_group($gid, $groupcolors = array(), $class = 'iconFirstWord')
         if ($groupcolor = $groupcolors[$gid]['aid']) {
             if (preg_match('/^\#.+/', $groupcolor)) {
                 return '<span class="iconFirstWord" style="background:' . $groupcolor . ';" title="' . $groupcolors[$gid]['orgname'] . '">' . strtoupper(new_strsubstr($groupcolors[$gid]['orgname'], 1, '')) . '</span>';
-            } elseif (preg_match('/^\d+$/', $groupcolor) && $groupcolors > 0) {
+            } elseif (preg_match('/^\d+$/', $groupcolor) && $groupcolor > 0) {
                 return '<img src="index.php?mod=io&op=thumbnail&width=24&height=24&path=' . dzzencode('attach::' . $groupcolor) . '" class="img-circle" title="' . $groupcolors[$gid]['orgname'] . '">';
             }
         } else {
@@ -964,6 +964,48 @@ function lang($langvar = null, $vars = array(), $default = null, $curpath = '')
 
     $checkLanguage = $_G['language'];
     $defaultLanguage=$_G['defaultlang'];
+
+    if (defined('CURSCRIPT')) {
+        $key1 = CURSCRIPT . '_template';
+    }
+    if (defined('CURSCRIPT') && defined('CURMODULE')) {
+        $key2 = CURSCRIPT . '_' . CURMODULE . '_template';
+    }
+
+    if (!isset($_G['lang']['template'])) {
+        $_G['lang']['template'] = array();
+
+        if (file_exists(DZZ_ROOT . './core/language/' . $checkLanguage . '/' . 'lang.php')) {
+            include DZZ_ROOT . './core/language/' . $checkLanguage . '/' . 'lang.php';
+            if(isset($lang) && is_array($lang))  $_G['lang']['template'] = $lang;
+        } else {
+            include DZZ_ROOT . './core/language/'.$defaultLanguage.'/' . 'lang.php';
+            if(isset($lang) && is_array($lang))  $_G['lang']['template'] = $lang;
+        }
+    }
+
+    if (isset($key1) && !isset($_G['lang'][$key1])) {
+        if (file_exists(DZZ_ROOT . './' . CURSCRIPT . '/language/' . $checkLanguage . '/' . 'lang.php')) {
+            include DZZ_ROOT . './' . CURSCRIPT . '/language/' . $checkLanguage . '/' . 'lang.php';
+            if(isset($lang) && is_array($lang))  $_G['lang']['template'] = array_merge($_G['lang']['template'], $lang);
+
+        } else {
+            include DZZ_ROOT . './' . CURSCRIPT . '/language/'.$defaultLanguage.'/' . 'lang.php';
+            if(isset($lang) && is_array($lang))  $_G['lang']['template'] = array_merge($_G['lang']['template'], $lang);
+
+        }
+    }
+
+    if (isset($key2) && !isset($_G['lang'][$key2])) {
+        if (file_exists(DZZ_ROOT . './' . CURSCRIPT . '/' . CURMODULE . '/language/' . $checkLanguage . '/' . 'lang.php')) {
+
+            include DZZ_ROOT . './' . CURSCRIPT . '/' . CURMODULE . '/language/' . $checkLanguage . '/' . 'lang.php';
+            if(isset($lang) && is_array($lang))  $_G['lang']['template'] = array_merge($_G['lang']['template'], $lang);
+        } else {
+            include DZZ_ROOT . './' . CURSCRIPT . '/' . CURMODULE . '/language/'.$defaultLanguage.'/' . 'lang.php';
+            if(isset($lang) && is_array($lang))  $_G['lang']['template'] = array_merge($_G['lang']['template'], $lang);
+        }
+    }
     if ($curpath) {
         if (!isset($_G['lang']['template'])) {
             $_G['lang']['template'] = array();
@@ -980,54 +1022,10 @@ function lang($langvar = null, $vars = array(), $default = null, $curpath = '')
                     break;
                 }
             }
-
         }
-
-        $_G['lang']['template'] = array_merge( $_G['lang']['template'] ,$lang);
-    } else {
-        if (defined('CURSCRIPT')) {
-            $key1 = CURSCRIPT . '_template';
-        }
-        if (defined('CURSCRIPT') && defined('CURMODULE')) {
-            $key2 = CURSCRIPT . '_' . CURMODULE . '_template';
-        }
-
-        if (!isset($_G['lang']['template'])) {
-            $_G['lang']['template'] = array();
-
-            if (file_exists(DZZ_ROOT . './core/language/' . $checkLanguage . '/' . 'lang.php')) {
-                include DZZ_ROOT . './core/language/' . $checkLanguage . '/' . 'lang.php';
-                $_G['lang']['template'] = $lang;
-            } else {
-                include DZZ_ROOT . './core/language/'.$defaultLanguage.'/' . 'lang.php';
-                $_G['lang']['template'] = $lang;
-            }
-        }
-
-        if (isset($key1) && !isset($_G['lang'][$key1])) {
-            if (file_exists(DZZ_ROOT . './' . CURSCRIPT . '/language/' . $checkLanguage . '/' . 'lang.php')) {
-                include DZZ_ROOT . './' . CURSCRIPT . '/language/' . $checkLanguage . '/' . 'lang.php';
-                $_G['lang']['template'] = array_merge($_G['lang']['template'], $lang);
-
-            } else {
-                include DZZ_ROOT . './' . CURSCRIPT . '/language/'.$defaultLanguage.'/' . 'lang.php';
-                $_G['lang']['template'] = array_merge($_G['lang']['template'], $lang);
-
-            }
-        }
-
-        if (isset($key2) && !isset($_G['lang'][$key2])) {
-            if (file_exists(DZZ_ROOT . './' . CURSCRIPT . '/' . CURMODULE . '/language/' . $checkLanguage . '/' . 'lang.php')) {
-
-                include DZZ_ROOT . './' . CURSCRIPT . '/' . CURMODULE . '/language/' . $checkLanguage . '/' . 'lang.php';
-                $_G['lang']['template'] = array_merge($_G['lang']['template'], $lang);
-            } else {
-                include DZZ_ROOT . './' . CURSCRIPT . '/' . CURMODULE . '/language/'.$defaultLanguage.'/' . 'lang.php';
-                $_G['lang']['template'] = array_merge($_G['lang']['template'], $lang);
-            }
-        }
-
+        if(isset($lang) && is_array($lang)) $_G['lang']['template'] = array_merge( $_G['lang']['template'] ,$lang);
     }
+
     $returnvalue = &$_G['lang'];
 
     $return = $langvar !== null ? (isset($returnvalue['template'][$langvar]) ? $returnvalue['template'][$langvar] : null) : $returnvalue['template'];
@@ -1143,6 +1141,7 @@ function dgmdate($timestamp, $format = 'dt', $timeoffset = '9999', $uformat = ''
         $lang = lang('date');
     }
     $timeoffset = $timeoffset == 9999 ? $offset : $timeoffset;
+    $timestamp = intval($timestamp);
     $timestamp += $timeoffset * 3600;
     $format = empty($format) || $format == 'dt' ? $dtformat : ($format == 'd' ? $dformat : ($format == 't' ? $tformat : $format));
     if ($format == 'u') {
@@ -1402,9 +1401,6 @@ function output()
         $_G['gzipcompress'] ? ob_start('ob_gzhandler') : ob_start();
         echo $content;
     }
-    if (defined('DZZ_DEBUG') && DZZ_DEBUG && @include(libfile('function/debug'))) {
-        function_exists('debugmessage') && debugmessage();
-    }
 }
 
 
@@ -1483,9 +1479,6 @@ function output_ajax()
     ob_end_clean();
     $s = preg_replace("/([\\x01-\\x08\\x0b-\\x0c\\x0e-\\x1f])+/", ' ', $s);
     $s = str_replace(array(chr(0), ']]>'), array(' ', ']]&gt;'), $s);
-    if (defined('DZZ_DEBUG') && DZZ_DEBUG && @include(libfile('function/debug'))) {
-        function_exists('debugmessage') && $s .= debugmessage(1);
-    }
 
     $havedomain = isset($_G['setting']['domain']['app']) ? implode('', $_G['setting']['domain']['app']) : '';
     if ((isset($_G['setting']['rewritestatus']) && $_G['setting']['rewritestatus']) || !empty($havedomain)) {
@@ -1511,7 +1504,7 @@ function debuginfo()
 {
     global $_G;
     if (getglobal('config/debug')) {
-        $db = &DB::object();
+        $db = DB::object();
         $_G['debuginfo'] = array(
             'time' => number_format((microtime(true) - $_G['starttime']), 6),
             'queries' => $db->querynum,
@@ -1581,7 +1574,7 @@ function space_merge(&$values, $tablename, $isarchive = false)
 
                 if ($tablename == 'field') {
                     $_G['setting']['privacy'] = empty($_G['setting']['privacy']) ? array() : (is_array($_G['setting']['privacy']) ? $_G['setting']['privacy'] : dunserialize($_G['setting']['privacy']));
-                    $_G[$var]['privacy'] = empty($_G[$var]['privacy']) ? array() : is_array($_G[$var]['privacy']) ? $_G[$var]['privacy'] : dunserialize($_G[$var]['privacy']);
+                    $_G[$var]['privacy'] = empty($_G[$var]['privacy']) ? array() : (is_array($_G[$var]['privacy']) ? $_G[$var]['privacy'] : dunserialize($_G[$var]['privacy']));
                 } elseif ($tablename == 'profile') {
                     if ($_G[$var]['department']) {
                         $_G[$var]['department_tree'] = C::t('organization')->getPathByOrgid(intval($_G[$var]['department']));
@@ -1803,21 +1796,46 @@ function getexpiration()
     return mktime(0, 0, 0, $date['mon'], $date['mday'], $date['year']) + 86400;
 }
 
-function return_bytes($val)
-{
-    $val = trim($val);
-    $last = strtolower($val[strlen($val) - 1]);
-    switch ($last) {
-        case 'g':
-            $val *= 1024;
-        case 'm':
-            $val *= 1024;
-        case 'k':
-            $val *= 1024;
-    }
-    return $val;
-}
 
+/* 解析存储单位字符串为字节数
+* @param string $sizeStr 带单位的大小字符串（如 102m、5K、2G、1024b 等）
+* @param int $default 解析失败时的默认返回值（默认 0）
+* @return int 对应的字节数（解析失败返回默认值）
+*/
+function return_bytes( $sizeStr,  $default = 0)
+{
+    // 1. 预处理：去除空格、转小写，统一格式
+    $sizeStr = trim(strtolower($sizeStr));
+    if (empty($sizeStr)) {
+        return $default;
+    }
+
+    // 2. 正则匹配：提取数字和单位（支持小数，如 1.5m）
+    $pattern = '/^(\d+(\.\d+)?)\s*([bkmgst]?)$/';
+    if (!preg_match($pattern, $sizeStr, $matches)) {
+        return $default;
+    }
+
+    // 3. 提取匹配结果
+    $number = (float)$matches[1]; // 数值（支持小数）
+    $unit = $matches[3] ?: 'b';   // 单位，默认 b（字节）
+
+    // 4. 定义单位与字节的换算关系（1K = 1024B，1M = 1024K 以此类推）
+    $units = [
+        'b' => 1,                  // 字节
+        'k' => 1024,               // 千字节
+        'm' => 1024 * 1024,        // 兆字节
+        'g' => 1024 * 1024 * 1024, // 吉字节
+        't' => 1024 ** 4,          // 太字节
+        's' => 1024 ** 5           // 拍字节（可选扩展）
+    ];
+
+    // 5. 计算字节数（小数自动取整，也可根据需求用 round/floor/ceil）
+    $bytes = $number * $units[$unit];
+
+    // 6. 返回整数（避免浮点精度问题）
+    return (int)round($bytes);
+}
 
 function getimgthumbname($fileStr, $extend = '.thumb.jpg', $holdOldExt = true)
 {
@@ -2070,29 +2088,6 @@ function array_sort($arr, $keys, $type = 'asc')
         $new_array[$k] = $arr[$k];
     }
     return $new_array;
-}
-
-
-if (!function_exists('json_decode')) {
-    function json_decode($content, $assoc = false)
-    {
-        require_once DZZ_ROOT . '/dzz/class/class_json.php';
-        if ($assoc) {
-            $json = new Services_JSON(SERVICES_JSON_LOOSE_TYPE);
-        } else {
-            $json = new Services_JSON;
-        }
-        return $json->decode($content);
-    }
-}
-
-if (!function_exists('json_encode')) {
-    function json_encode($content)
-    {
-        require_once DZZ_ROOT . '/dzz/class/class_json.php';
-        $json = new Services_JSON;
-        return $json->encode($content);
-    }
 }
 
 function arr_encode(&$array)
@@ -2842,7 +2837,7 @@ function getTxtAttachByMd5($message, $filename_title, $ext)
     //$ext=strtolower(substr(strrchr($filename_title, '.'), 1, 10));
 
     if (!$ext) $ext = 'dzzdoc';
-    if ($ext && in_array($ext, $_G['setting']['unRunExts'])) {
+    if ($ext && in_array(strtolower($ext), $_G['setting']['unRunExts'])) {
         $unrun = 1;
     } else {
         $unrun = 0;
@@ -2934,7 +2929,7 @@ function delete_icoid_from_container($icoid, $pfid)
     global $_G;
     $typefid = C::t('folder')->fetch_typefid_by_uid($_G['uid']);
     if ($pfid == $typefid['dock']) {
-        $docklist = DB::result_first("select docklist from " . DB::table('user_field') . " where uid='{$_G[uid]}'");
+        $docklist = DB::result_first("select docklist from " . DB::table('user_field') . " where uid='{$_G['uid']}'");
         $docklist = $docklist ? explode(',', $docklist) : array();
         foreach ($docklist as $key => $value) {
             if ($value == $icoid) {
@@ -2944,7 +2939,7 @@ function delete_icoid_from_container($icoid, $pfid)
         C::t('user_field')->update($_G['uid'], array('docklist' => implode(',', $docklist)));
     } elseif ($pfid == $typefid['desktop']) {
 
-        $icos = DB::result_first("select screenlist from " . DB::table('user_field') . " where uid='{$_G[uid]}'");
+        $icos = DB::result_first("select screenlist from " . DB::table('user_field') . " where uid='{$_G['uid']}'");
         $icos = $icos ? explode(',', $icos) : array();
         foreach ($icos as $key => $value) {
             if ($value == $icoid) {
@@ -3670,12 +3665,12 @@ function dzz_userconfig_init($hasnoavailable = false)
         if ($app['position'] == 1) {
             continue;
         } elseif ($app['position'] == 2) { //桌面
-            $fid = DB::result_first("select fid from " . DB::table('folder') . " where uid='{$_G[uid]}' and flag='desktop'");
+            $fid = DB::result_first("select fid from " . DB::table('folder') . " where uid='{$_G['uid']}' and flag='desktop'");
         } else { //dock条
-            $fid = DB::result_first("select fid from " . DB::table('folder') . " where uid='{$_G[uid]}' and flag='dock'");
+            $fid = DB::result_first("select fid from " . DB::table('folder') . " where uid='{$_G['uid']}' and flag='dock'");
         }
         if (!$fid) continue;
-        if ($rid = DB::result_first("select rid from " . DB::table('resources') . " where uid='{$_G[uid]}' and oid='{$appid}' and type='app'")) {
+        if ($rid = DB::result_first("select rid from " . DB::table('resources') . " where uid='{$_G['uid']}' and oid='{$appid}' and type='app'")) {
             C::t('resources')->update_by_rid($rid, array('pfid' => $fid, 'isdelete' => 0));
             if ($app['position'] == 2) $userconfig['screenlist'][] = $rid;
             else $userconfig['docklist'][] = $rid;
@@ -3810,6 +3805,30 @@ function get_flag_by_pfid($pfid)
     }
     return $flag;
 
+}
+/**
+ * 根据传入的方法名动态调用类方法，用于处理语言解析。
+ *
+ * 此函数旨在提供一种灵活的方式来解析语言数据。它通过传入一个方法名和额外的参数，
+ * 来动态调用类中的相应方法。这种方法特别适用于需要根据不同的条件或配置来解析语言数据的场景。
+ *
+ * @param array &$datas 语言数据数组，函数将直接在这个数组上进行操作。
+ * @param array $params 一个包含额外参数的数组。其中 'method' 参数指定要调用的方法名，
+ *                      'ismore' 参数用于某些方法来指示多个数据需要处理。
+ */
+function langParse($datas,$params){
+    Hook::listen('lang_parse',$datas,$params);
+    return $datas;
+}
+
+/*
+ *  markdown转html;
+ */
+function mdtohtml($content,$arr=array())
+{
+    global $_G;
+    Hook::listen('mdtohtml', $content,$arr);
+    return $content;
 }
 
 function getThumburl($path, $size, $thumbtype = 1, $create = 0, $original = 0, $extparams = array(), $width = 0, $height = 0)
@@ -5836,6 +5855,7 @@ function GetThemeColor()
  * 当idtype为1，为文件下载统计，idval为文件rid name参数为文件名
  * 当idtype为3，为文件上传统计，idval为文件rid name参数为文件名
  * 当idtype为2,为专题浏览统计idval为专辑id name专题名称
+ * 当idtype为6,为发布浏览统计idval为发布id name发布名称
  * 当statstype为2时,由idtype确定统计方式
  * idtype为0为库关键词统计 idval为库id
  * idtype为1为专辑关键词统计 idval为专辑id
@@ -6002,27 +6022,139 @@ function toCamelCase($str,$ucfirst=false,$split='-')
 }
 //处理内容中的附件copy数
 function getcontentdata($data,$odata){
-
     $data = str_replace(getglobal('siteurl'),'',$data);
     $data= preg_replace_callback('/path=(\w+)/',function($matchs){
-
         if($aidstr = dzzdecode($matchs[1])){
             $aid = str_replace('attach::','',$aidstr);
             C::t('attachment')->addcopy_by_aid($aid);
-
             return 'path='.dzzencode('attach::'.$aid,'',0);
         }
-
+        return $matchs[0];
     },$data);
+    //删除富文本中的域名
+    $data=str_replace('"'.getglobal('siteurl'),'"',$data);
     //旧数据copy数减一
     if($odata){
-        preg_match_all('/path=(\w+)/',$odata,$match);
-        foreach($match[1] as $v){
-            $aidstr =  dzzdecode($match[1]);
+        preg_match_all('/path=(\w+)/',$odata,$matchs);
+        foreach($matchs[1] as $v){
+            $aidstr =  dzzdecode($v);
             $oaid = str_replace('attach::','',$aidstr);
-            C::t('attachment')->delete_by_aid($oaid);
+            C::t('attachment')->addcopy_by_aid($oaid,-1);
         }
     }
     return $data;
 
+}
+//处理内容中的附件
+/*<ul class="main-menu">
+        <!-- 一级菜单1 - 无下级 -->
+        <li><a href="#">首页</a></li>
+
+        <!-- 一级菜单2 - 二级菜单 -->
+        <li class="has-submenu">
+            <a href="#">产品中心</a>
+            <ul class="submenu">
+                <li><a href="#">智能硬件</a></li>
+                <li><a href="#">软件服务</a></li>
+                <li class="has-submenu">
+                    <a href="#">解决方案</a>
+                    <ul class="submenu">
+                        <li><a href="#">企业版</a></li>
+                        <li><a href="#">个人版</a></li>
+                        <li><a href="#">定制版</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </li>
+    </ul>*/
+function handleHtmlData($data)
+{
+    $aids = array();
+    $data = str_replace(getglobal('siteurl'), '', $data);
+    $data = preg_replace_callback('/path=(\w+)/', function ($matchs) use (&$aids) {
+        if ($aidstr = dzzdecode($matchs[1])) {
+            $aid = str_replace('attach::', '', $aidstr);
+            $aids[] = $aid;
+            return 'path=' . dzzencode('attach::' . $aid, '', 0);
+        }
+    }, $data);
+    return array('data' => $data, 'aids' => array_unique($aids));
+}
+function getBannerTmpl($bannerlist)
+{
+    $tmpl = '';
+
+    foreach ($bannerlist as $value) {
+        if (!empty($value['children'])) {
+            $tmpl .= '<li class="has-submenu">';
+            $href = $value['url'] ? getglobal('siteurl') . $value['url'] : $value['realurl'];
+            if (empty($href)) $href = 'javascript:;';
+            $tmpl .= '  <a href="' . $href . '">' . $value['bannername'] . '</a>';
+            $tmpl .= '  <ul class="submenu">';
+            $tmpl .= getBannerTmpl($value['children']);
+            $tmpl .= '  </ul>';
+            $tmpl .= '</li>';
+        } else {
+            $tmpl .= '<li>';
+            $href = $value['url'] ? getglobal('siteurl') . $value['url'] : $value['realurl'];
+            if (empty($href)) $href = 'javascript:;';
+            $tmpl .= '<a href="' . $href . '">' . $value['bannername'] . '</a>';
+            $tmpl .= '</li>';
+        }
+    }
+    return $tmpl;
+}
+function dzzgetimagesize($filename){
+    if(!$info=@getimagesize($filename)){
+        return false;
+    }
+    if(!extension_loaded('imagick')){
+        return $info;
+    }
+    try {
+        $imgick = new \Imagick($filename);
+        $orientation = $imgick->getImageOrientation();
+        switch ($orientation) {
+            case \imagick::ORIENTATION_TOPRIGHT:
+                // 水平翻转
+                $imgick->flopImage();
+                break;
+            case \imagick::ORIENTATION_BOTTOMRIGHT:
+                // 旋转180度
+                $imgick->rotateImage(new ImagickPixel(), 180);
+                break;
+            case \imagick::ORIENTATION_BOTTOMLEFT:
+                // 垂直翻转
+                $imgick->flipImage();
+                break;
+            case \imagick::ORIENTATION_LEFTTOP:
+                // 旋转90度并水平翻转
+                $imgick->rotateImage(new ImagickPixel(), 90);
+                $imgick->flopImage();
+                break;
+            case \imagick::ORIENTATION_RIGHTTOP:
+                // 旋转90度
+                $imgick->rotateImage(new ImagickPixel(), 90);
+                break;
+            case \imagick::ORIENTATION_RIGHTBOTTOM:
+                // 旋转270度并水平翻转
+                $imgick->rotateImage(new ImagickPixel(), 270);
+                $imgick->flopImage();
+                break;
+            case \imagick::ORIENTATION_LEFTBOTTOM:
+                // 旋转270度
+                $imgick->rotateImage(new ImagickPixel(), 270);
+                break;
+            case \imagick::ORIENTATION_TOPLEFT:
+                return $info;
+        }
+
+        // Now that it's auto-rotated, make sure the EXIF data is correct in case the EXIF gets saved with the image!
+        $imgick->setImageOrientation(\imagick::ORIENTATION_TOPLEFT);
+        $info[0] = $imgick->getImageWidth();
+        $info[1] = $imgick->getImageHeight();
+    }catch(\Exception $e){
+
+    }
+    return $info;
 }

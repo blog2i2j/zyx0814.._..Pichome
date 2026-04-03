@@ -1,0 +1,200 @@
+<!--{template common/container/pc/header_start}-->
+<!-- {MOD_PATH}/template/singlefile/default/view/assets/css/index.css?{VERHASH} -->
+<link rel="stylesheet" type="text/css" href="{MOD_PATH}/template/singlefile/default/view/pc/assets/css/header.css?{VERHASH}"/>
+<link rel="stylesheet" type="text/css" href="{MOD_PATH}/template/singlefile/default/view/pc/assets/css/details.css?{VERHASH}"/>
+<link rel="stylesheet" type="text/css" href="{MOD_PATH}/template/singlefile/default/view/pc/assets/css/xuanzhuan/index.css?{VERHASH}"/>
+<script>
+	function CopyTxt(item,text){
+		var input = document.createElement('input'); input.setAttribute('id', 'copyInput');
+		input.setAttribute('value', text);
+		document.getElementsByTagName('body')[0].appendChild(input);
+		document.getElementById('copyInput').select();
+		document.execCommand('copy');
+		item.$message({
+		  message: '{lang copy_clipboard}',
+		  type: 'success'
+		});
+		document.getElementById('copyInput').remove();
+	};
+</script>
+<!--{template common/container/pc/header_end}-->
+<div id="dzzoffice">
+	<el-container>
+		<el-header class="page-header" height="70px" style="padding: 0;z-index: 10;">
+			<div id="top_header">
+				<!--{template singlefile/default/view/pc/components/header}-->
+			</div>
+		</el-header>
+		<el-main>
+			<div class="page-content" v-loading="HtmlLoading" style="display: flex;flex-direction: column;height: 100%;overflow: hidden;">
+				<div class="details-top" style="padding-right: 0;" v-if="!HtmlLoading">
+					<div class="details-maincontainer">
+						<div class="floating-layer clearfix" :class="HideInformation?'HideInformation':''">
+							<!--{template singlefile/default/view/pc/components/image}-->
+							<!--{template singlefile/default/view/pc/components/right}-->
+						</div>
+					</div>
+				
+				</div>
+				
+			</div>
+
+		</el-main>
+	</el-container>
+	<!--分享对话框加载-->
+	<!--{eval  include template('shareAddDialog','./dzz/shares/template/')}-->
+</div>
+
+<script type="text/javascript">
+	const { createApp, reactive, toRefs, toRef, ref, onMounted, nextTick, watch, computed, onBeforeUpdate , onUnmounted } = Vue;
+	const dzzoffice = createApp({
+		el: '#dzzoffice',
+		data() {
+			return {
+				rid:'',
+				ColorPopver: {
+					base: '',
+					rgb: '',
+					rgba: '',
+					hsl: '',
+					hsv: '',
+					cmyk: ''
+				},
+				HtmlLoading:true,
+				DocumentAdminId:'$_G['adminid']',
+				HideInformation:false,
+				IsFullScreen:false,
+				imagesData:{} ,
+				ImgParam:{
+					slider:0,
+					proportion:0,
+					fproportion:0,
+					scaleX:0,
+					scaleY:0,
+					rotate:0,
+					total:0,
+					index:0,
+					LoadFirst:false
+				},
+				imagesSize:{
+					width:0,
+					height:0,
+					show:false
+				},
+				DocumentThemeColor:'',//dark,
+				previews:{
+					data:[],
+					transform:0,
+					active:0,
+					size:false
+				},
+				pageset:$json_pageset
+			}
+		},
+		watch: {
+			'ImgParam.proportion':function(val){
+				// this.ImgParam.fproportion = Math.round(val*100);
+				// this.imageSize(val);
+			},
+			'ImgParam.rotate':function(val){
+				this.imageTransform();
+			},
+			'ImgParam.scaleX':function(val){
+				this.imageTransform();
+			},
+			'ImgParam.scaleY':function(val){
+				this.imageTransform();
+			},
+			DocumentThemeColor:{
+				handler(newval){
+					document.querySelector('html').className = newval
+				},
+				deep:true,
+				// immediate:true
+			}
+		},
+		created() {
+			let theme = localStorage.getItem('theme');
+			if(theme){
+				this.DocumentThemeColor=theme;
+			}else{
+				this.DocumentThemeColor = 'light'
+			}
+			this.GetDetailsData("{$data['pval']}");
+
+		},
+		mixins:[HeaderMixin,RightMixin,ImageMixin,ShareAddDialogMixin],
+		methods: {
+
+			async GetDetailsData(val){
+				let self = this;
+				if(!val)return false;
+				let {data: res} = await axios.post('{MOD_URL}&op=ajax&do=getfiledetails',{
+					pid:'$id',
+					path:val
+				})
+				if(res.status == 2){
+					self.$message.error(res.error)
+					return false;
+				}
+				this.imagesData = res.resourcesdata;
+				this.previews.data = res.resourcesdata.preview;
+				self.$nextTick(function(){
+					self.HtmlLoading = false;
+					if(self.imagesData.opentype=='image' || self.imagesData.opentype=='other'){
+						self.imageSet();
+					}
+					
+				});
+			},
+			DocumentThemeChange(){
+				if(this.DocumentThemeColor=='light'){
+					this.DocumentThemeColor='dark';
+					localStorage.setItem('theme','dark');
+				}else{
+					this.DocumentThemeColor='light';
+					localStorage.setItem('theme','light');
+				}
+			},
+		},
+		mounted() {
+			var self = this;
+			window.onresize = function(){
+				var h = document.getElementById('ImgScroll').clientHeight;
+				document.querySelector('#ImgScroll .el-scrollbar__view').style.lineHeight = h+'px';
+			}
+			self.$nextTick(function () {
+				self.previewSize()
+			});
+			//禁止鼠标右击
+			// document.oncontextmenu = function() {
+			// 	event.returnValue = false;
+			// 	// alert('请不要右击');
+			// 	return false;
+			// };
+			//禁用开发者工具F12
+			// document.onkeydown = document.onkeyup = document.onkeypress = function(event) {
+			// 	let e = event || window.event || arguments.callee.caller.arguments[0];
+			// 	if (e && e.keyCode == 123) {
+			// 		e.returnValue = false;
+			// 		// alert('F12是不礼貌的');
+			// 		return false;
+			// 	}
+			// };
+		},
+
+	});
+	dzzoffice.use(ElementPlus, {
+		locale: {$_G['language_list'][$_G['language']]['elementflagCamel']},
+	});
+	for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+		dzzoffice.component(key, component)
+	}
+	dzzoffice.component('comavatar', comavatar);
+	dzzoffice.component('international',international);
+	// 屏蔽警告信息
+	dzzoffice.config.warnHandler = function(){return null};
+	dzzoffice.mount('#dzzoffice');
+</script>
+
+<!--{template common/container/pc/footer}-->

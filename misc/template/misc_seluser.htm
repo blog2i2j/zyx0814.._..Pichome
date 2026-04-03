@@ -114,7 +114,7 @@ overflow-y:hidden;
               <!--{if $orgtree}-->
                <li class="dropdown <!--{if $org}-->active<!--{/if}-->">
                <!--{if $org}-->
-               <a href="javascript:;" data-toggle="dropdown" role="button" id="drop-org" _orgid="$org[orgid]" class="dropdown-toggle" style="padding:8px 10px;">$org[orgname]<b class="caret"></b></a>
+               <a href="javascript:;" data-toggle="dropdown" role="button" id="drop-org" _orgid="$org['orgid']" class="dropdown-toggle" style="padding:8px 10px;">$org['orgname']<b class="caret"></b></a>
               <!--{else}-->
                <a href="{BASESCRIPT}?mod=$mod&orgid=0" data-toggle="dropdown" role="button" id="drop-org" _orgid="0" class="dropdown-toggle">{lang all}<b class="caret"></b></a>
               <!--{/if}-->
@@ -143,15 +143,15 @@ overflow-y:hidden;
          </h5>
     	 <ul id="seluser_selected" class="user-list seluser-selected">
         	<!--{loop $userlist $value}-->
-            	<li username="$value[username]" uid="$value[uid]">
-                 <!--{if $value[ismoderator]}-->
+            	<li username="$value['username']" uid="$value['uid']">
+                 <!--{if $value['ismoderator']}-->
                  <a href="javascript:;"   class="setmoderator glyphicon glyphicon-user"  title="{lang cancel_administrator}"><i class="glyphicon-ismoderator glyphicon  glyphicon-user "></i></a>
                  <!--{else}-->
                  <a href="javascript:;"   class="setmoderator glyphicon"  title="{lang set_administrator}"><i class="glyphicon glyphicon-ismoderator"></i></a>
                   <!--{/if}-->
-                  <img src="avatar.php?uid=$value[uid]">
-                  <span>$value[username]</span>
-                 <a class="pull-right remove" href="javascript:;" onclick="deleteMember(this,'$value[uid]');" title="{lang delete}"><i class="glyphicon glyphicon-remove"></i></a>
+                  <img src="avatar.php?uid=$value['uid']">
+                  <span>$value['username']</span>
+                 <a class="pull-right remove" href="javascript:;" onclick="deleteMember(this,'$value['uid']');" title="{lang delete}"><i class="glyphicon glyphicon-remove"></i></a>
                 </li>
             <!--{/loop}-->
         </ul>
@@ -159,7 +159,7 @@ overflow-y:hidden;
   </div>
 </div>
 <script type="text/javascript" >
-jQuery('#myModalLabel').html('{lang member_management}&nbsp;－&nbsp;$org[orgname]');
+jQuery('#myModalLabel').html('{lang member_management}&nbsp;－&nbsp;{$org['orgname']}');
 fixTree_seluser();
 setCount();
 getUserList('{$orgid}');

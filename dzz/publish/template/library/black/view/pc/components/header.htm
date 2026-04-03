@@ -1,0 +1,105 @@
+<el-header class="page-header" height="76px">
+    <div class="h-left">
+        <template v-if="parseFloat(RightformLick._file_logo.aid)">
+            <el-image class="logo" :src="RightformLick._file_logo.src+'?{VERHASH}'" fit="contain">
+                <template #error><div class="el-image__placeholder"></div></template>
+            </el-image>
+        </template>
+        
+        <el-text tag="b" size="large" style="color:var(--el-text-color-primary);white-space: nowrap;">{{RightformLick.logo}}</el-text>
+    </div>
+    <div class="h-center sm-hidding" style="overflow: hidden;padding: 0px 20px;">
+        <!-- <el-menu
+            :default-active="menuData.active"
+            mode="horizontal">
+            <el-menu-item v-for="item in menuData.data" :index="item.fid">{{item.fname}}</el-menu-item>
+        </el-menu> -->
+        <el-menu
+			:default-active="menuData.active"
+			mode="horizontal"
+			style="border:0;height: 100%;max-width: 100%;">
+			<template v-for="item in menuData.data">
+				<template v-if="item.children && item.children.length">
+					<el-sub-menu 
+					:index="item.fid" 
+					:class="{'is-active':menuData.active==item.fid}">
+						<template #title>
+							<el-image v-if="item.icon" class="icon" :src="item.icon" fit="cover">
+								<template #error><div class="el-image__placeholder"></div></template>
+							</el-image>
+							{{item.fname}}
+							<div class="title-text" @click.stop="parseInt(item.btype) != 5 && handleSelect(item)"></div>
+						</template>
+						<menuitem 
+							:datalist="item.children" 
+							@handleselect="handleSelect"
+							:active="menuData.active"></menuitem>
+					</el-sub-menu>
+				</template>
+				<template v-else>
+					<el-menu-item :index="item.fid" :disabled="parseInt(item.btype) == 3 || parseInt(item.btype) == 5">
+						<template #title>
+							<el-image  v-if="item.icon" class="icon" :src="item.icon" fit="cover">
+								<template #error><div class="el-image__placeholder"></div></template>
+							</el-image>
+							{{item.fname}}
+							<div class="title-text" @click.stop="parseInt(item.btype) != 5 && handleSelect(item)"></div>
+						</template>
+					</el-menu-item>
+					
+				</template>
+			</template>
+		</el-menu>
+    </div>
+    <div class="h-right sm-hidding"> 
+        <international current="$_G['language']"></international>
+        <comavatar
+            :level="parseInt($_G['pichomelevel'])"
+            iscollect="<!--{if defined('PICHOME_LIENCE') && (!$_G['config']['pichomeclosecollect'] || $_G['adminid'])}--><!--{/if}-->"
+            :adminid="parseInt($_G['adminid'])"
+            PICHOME_LIENCE="<!--{if defined('PICHOME_LIENCE')}--><!--{/if}-->"
+            :uid="parseInt($_G['uid'])"
+            upgrade="<!--{if $_G['setting']['upgrade']}--><!--{/if}-->"
+            version="$_G['setting']['version']"
+            formhash="{FORMHASH}"
+            :isrefresh="true">
+            <el-avatar size="40">
+                {eval echo avatar_block($_G['uid']);}
+            </el-avatar>
+        </comavatar>
+    </div>
+    <div class="h-right sm-show"> 
+        <el-button 
+            class="small-menu-btn"
+            text 
+            style="font-size: var(--el-font-size-extra-large);" 
+            circle  
+            size="large">
+            <el-icon style="color: #FFFFFF;">
+                <svg viewBox="0 0 48 48" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M7.94971 11.9497H39.9497" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.94971 23.9497H39.9497" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.94971 35.9497H39.9497" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </el-icon>
+        </el-button>
+    </div>
+</el-header>
+<el-dialog fullscreen v-model="dialogTableVisible" modal-class="small-menu-box">
+    <!-- <el-menu
+		class="dzz-menu-m"
+		:default-active="menuData.active">
+            <el-sub-menu 
+            :index="headerDrawer.data.id" 
+            :class="{'is-active':menuData.active==headerDrawer.data.id}"
+            popper-class="dzz-sub-menu">
+                <template #title>
+                    <el-image  v-if="headerDrawer.data.icon" class="icon" :src="headerDrawer.data.icon" fit="cover">
+                        <template #error><div class="el-image__placeholder"></div></template>
+                    </el-image>
+                    {{headerDrawer.data.bannername}}
+                    <div class="title-text" @click.stop="parseInt(headerDrawer.data.btype) != 5 && handleSelect(headerDrawer.data)"></div>
+                </template>
+                <menuitem 
+                    :datalist="headerDrawer.data.children" 
+                    @handleselect="handleSelect"
+                    :active="menuData.active"></menuitem>
+            </el-sub-menu>
+	</el-menu> -->
+</el-dialog>

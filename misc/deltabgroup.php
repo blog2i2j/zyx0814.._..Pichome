@@ -9,7 +9,7 @@ $locked = true;
 $processname = 'DZZ_TABGROUPDEL_LOCK';
 //dzz_process::unlock($processname);
 if (!dzz_process::islocked($processname, 10 * 60)) {
-    foreach(DB::fetch_first("select gid from %t where  issystem = 0 and isdelete = 1",array('tab_group')) as $v){
+    foreach(DB::fetch_first("select gid from %t where  issystem = 0 and isdelete = 2",array('tab_group')) as $v){
         $processname1 = 'DZZ_TABGROUPDEL_LOCK_'.$v;
         if (!dzz_process::islocked($processname1, 5 * 60)) {
             C::t('#tab#tab_group')->delete_data_by_gid($v);
