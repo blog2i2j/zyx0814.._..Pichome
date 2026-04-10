@@ -323,7 +323,7 @@ class table_pichome_folder extends dzz_table
             }else {
                 $filenum = DB::result_first("SELECT count(DISTINCT fr.rid) FROM %t fr
                      left join %t r on r.rid=fr.rid
-                    where fr.appid = %s and fr.pathkey  like %s and r.isdelete = 0 ", array('pichome_folderresources', 'pichome_resources', $appid, $v . '%'));
+                    where  fr.pathkey like %s and r.isdelete = 0 ", array('pichome_folderresources', 'pichome_resources', $v . '%'));
                 memory('check') && memory('set',$cachekey,$filenum,60*60*5);
             }
             $returndata[] = ['pathkey'=>$v,'filenum'=>$filenum];
