@@ -210,10 +210,9 @@ elseif ($_GET['step'] == 'prepare') {
 
     $specid = intval($_GET['specid']);
 
-
     $newcols = getcolumn($newsqls[$i]);
-
-    if (!$query = DB::query("SHOW CREATE TABLE " . DB::table($newtable), 'SILENT')) {
+    $query=DB::result_first(" SHOW TABLES LIKE '" . DB::table($newtable)."'");
+    if (!$query) {
         preg_match("/(CREATE TABLE .+?)\s*(ENGINE|TYPE)\s*=\s*(\w+)/s", $newsqls[$i], $maths);
         $maths[3] = strtoupper($maths[3]);
         if ($maths[3] == 'MEMORY' || $maths[3] == 'HEAP') {
@@ -236,6 +235,8 @@ elseif ($_GET['step'] == 'prepare') {
             $msg = '添加表 ' . DB::table($newtable) . ' 完成';
         }
     } else {
+
+        $query = DB::query("SHOW CREATE TABLE " . DB::table($newtable), 'SILENT');
         $value = DB::fetch($query);
         $oldcols = getcolumn($value['Create Table']);
         $tablepre = $_G['config']['db'][1]['tablepre'];
@@ -281,7 +282,11 @@ elseif ($_GET['step'] == 'prepare') {
                         }
                     } else {
                         $usql = "ALTER TABLE  " . DB::table($newtable) . " DROP INDEX `$subkey`";
-                        DB::query($usql, 'SILENT');
+                        try{
+                            DB::query($usql, 'SILENT');
+                        }catch (\Exception $e){
+
+                        }
                         $updates[] = "ADD UNIQUE INDEX `$subkey` $subvalue";
                     }
                 }
@@ -300,10 +305,14 @@ elseif ($_GET['step'] == 'prepare') {
 
         if (!empty($updates)) {
             $usql = "ALTER TABLE " . DB::table($newtable) . " " . implode(', ', $updates);
-            if (!DB::query($usql, 'SILENT')) {
-                show_msg('升级表 ' . DB::table($newtable) . ' 出错,请手工执行以下升级语句后,再重新运行本升级程序:<br><br><b>升级SQL语句</b>:<div style=\"position:absolute;font-size:11px;font-family:verdana,arial;background:#EBEBEB;padding:0.5em;\">' . dhtmlspecialchars($usql) . "</div><br><b>Error</b>: " . DB::error() . "<br><b>Errno.</b>: " . DB::errno());
-            } else {
-                $msg = '升级表 ' . DB::table($newtable) . ' 完成！';
+            try{
+                if (!DB::query($usql, 'SILENT')) {
+                    show_msg('升级表 ' . DB::table($newtable) . ' 出错,请手工执行以下升级语句后,再重新运行本升级程序:<br><br><b>升级SQL语句</b>:<div style=\"position:absolute;font-size:11px;font-family:verdana,arial;background:#EBEBEB;padding:0.5em;\">' . dhtmlspecialchars($usql) . "</div><br><b>Error</b>: " . DB::error() . "<br><b>Errno.</b>: " . DB::errno());
+                } else {
+                    $msg = '升级表 ' . DB::table($newtable) . ' 完成！';
+                }
+            }catch (\Exception $e){
+                show_msg('升级表 ' . DB::table($newtable) . ' 出错,请手工执行以下升级语句后,再重新运行本升级程序:<br><br><b>升级SQL语句</b>:<div style=\"position:absolute;font-size:11px;font-family:verdana,arial;background:#EBEBEB;padding:0.5em;\">' . dhtmlspecialchars($usql) . "</div><br><b>Error</b>: " .$e->getMessage() . "<br><b>Errno.</b>: " .$e->getCode());
             }
         } else {
             $msg = '检查表 ' . DB::table($newtable) . ' 完成，不需升级，跳过';
