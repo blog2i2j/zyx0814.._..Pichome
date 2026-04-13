@@ -327,12 +327,15 @@ class table_pichome_resources extends dzz_table
 
     public function getOpensrc($ext, $bz)
     {
-        $openexts = C::t('app_open')->fetch_all_ext();
-       // print_r($openexts);die;
-        $bzarr = explode(':', $bz);
-        $bzpre = $bzarr[0];
+        static $openexts = [];
+        if(empty($openexts)) $openexts = C::t('app_open')->fetch_all_ext();
         $openlist = [];
-        $bzext = $bzpre . '::' . $ext;
+        $bzarr = explode(':', $bz);
+        if(isset($bzarr[0])){
+            $bzext = $bzarr[0] . '::' . $ext;
+        }else{
+            $bzext = $ext;
+        }
         foreach ($openexts as $v) {
             if ($bzext == $v['ext'] || $ext == $v['ext']) {
                 if ($v['isdefault']) {
