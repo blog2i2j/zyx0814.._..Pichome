@@ -2,7 +2,7 @@
     if (!defined('IN_OAOOA')) {//所有的php文件必须加上此句，防止被外部调用
         exit('Access Denied');
     }
-$navtitle="资料修改";
+    $navtitle="资料修改";
     Hook::listen('check_login');
     global $_G;
     $uid = $_G['uid'];
@@ -137,6 +137,12 @@ $navtitle="资料修改";
     elseif ($do == 'uploadimg') {//上传用户头像
         $uid = getglobal('uid');
         $files = $_FILES['file'];
+        if(!$info=getimagesize($files['tmp_name'])){
+            exit(json_encode(array('error' => 'file is not invalite')));
+        }
+        if(strpos($info['mime'],'image/')!==0){
+            exit(json_encode(array('error' => 'file is not invalite')));
+        }
         $type = pathinfo($files['name'],PATHINFO_EXTENSION);
         if (!preg_match('/(gif|jpe?g|png)$/i', $type) || !preg_match('/(gif|jpe?g|png)$/i', $files['type'])|| $files['size'] >= 1024 * 1024 * 2) {
             exit(json_encode(array('error' => 'file is not invalite')));
