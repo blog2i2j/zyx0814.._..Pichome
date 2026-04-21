@@ -331,7 +331,7 @@ class eagleexport
                     $i++;
                     $this->lastid++;
                     if ($i > $this->onceexportnum) {
-                        C::t('pichome_vapp')->update($this->appid, array('lastid' => $this->lastid));
+                        C::t('pichome_vapp')->update($this->appid, array('lastid' => $this->lastid-1));
                         break;
 
                     }
@@ -606,7 +606,7 @@ class eagleexport
                    */
                     $lastid = $this->lastid;
                     //记录导入起始位置，以备中断后从此处,更改导入状态为正在导入
-                    C::t('pichome_vapp')->update($this->appid, array('lastid' => $lastid, 'percent' => $percent, 'donum' => $this->donum,  'filenum' => $this->filenum));
+                    C::t('pichome_vapp')->update($this->appid, array('lastid' => $lastid-1, 'percent' => $percent, 'donum' => $this->donum,  'filenum' => $this->filenum));
                     if ($spl_object) $spl_object->next();
 
                 }

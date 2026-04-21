@@ -63,7 +63,7 @@ class thumb
             $attach['stream'] = IO::getFileUri($attach['path']);
 
             if($meta['aid']) $attach['stream'] = $this->onlyDocumentdocUrl . 'index.php?mod=io&op=getStream&hash=' . VERHASH . '&path=' . dzzencode('attach::'.$meta['aid']);
-            else $attach['stream'] = $this->onlyDocumentdocUrl . 'index.php?mod=io&op=getStream&hash=' . VERHASH . '&path=' . dzzencode($attach['rid'] . '_3', '', 0, 0);
+            else $attach['stream'] = $this->onlyDocumentdocUrl . 'index.php?mod=io&op=getStream&hash=' . VERHASH . '&path=' . dzzencode($attach['rid']);
 
             if ($url = $this->getThumb($attach)) {
 
